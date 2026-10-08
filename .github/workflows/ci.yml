@@ -1,0 +1,190 @@
+name: 知学 CI
+run-name: CI · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }} · ${{ github.sha }}
+
+on:
+  push:
+    branches: [main, refactor/ui-redesign-s1-settings]
+  pull_request:
+    branches: [main, refactor/ui-redesign-s1-settings]
+  workflow_dispatch:
+
+# Verification only: no write token, patch application, deployment or production secrets.
+permissions:
+  contents: read
+concurrency:
+  group: zhixue-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  full:
+    name: 完整校验（Windows）
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the exact event commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          # Source attestation compares the pinned historical baseline tree.
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: companion/requirements.txt
+      - name: Record and verify source identity
+        run: node scripts/ci-report.mjs identity "${{ runner.temp }}/ci-full"
+      - name: Prepare isolated Python and canonical temporary paths
+        shell: pwsh
+        run: |
+          "PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
+          "PYTHONUTF8=1" >> $env:GITHUB_ENV
+          "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          python -m pip install -r companion/requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install original locked dependencies
+        run: npm ci
+      - name: Full original npm test (release, lint, types, build, Node)
+        id: tests
+        shell: pwsh
+        run: |
+          & npm.cmd test *> "$env:RUNNER_TEMP/ci-full/full-verification.log"
+          $result = $LASTEXITCODE
+          Get-Content -LiteralPath "$env:RUNNER_TEMP/ci-full/full-verification.log"
+          exit $result
+      - name: Report actual totals and reject incomplete coverage
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node scripts/ci-report.mjs full "${{ runner.temp }}/ci-full"
+      - name: Full Companion Python suite with explicit skip report
+        id: python
+        shell: pwsh
+        run: |
+          & npm.cmd run test:python -- --report "$env:RUNNER_TEMP/ci-full/python-result.json" *> "$env:RUNNER_TEMP/ci-full/python-verification.log"
+          $result = $LASTEXITCODE
+          Get-Content -LiteralPath "$env:RUNNER_TEMP/ci-full/python-verification.log"
+          exit $result
+      - name: Preserve full log, identity and machine-readable result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-full-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-full
+          retention-days: 14
+          if-no-files-found: warn
+
+  browser:
+    name: 浏览器回归（${{ matrix.suite }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: first-visit
+            expected: 16
+          - suite: feedback
+            expected: 10
+          - suite: theme
+            expected: 12
+          - suite: audit
+            expected: 24
+          - suite: remedies
+            expected: 16
+          - suite: word-context
+            expected: 32
+          - suite: causal
+            expected: 16
+          - suite: recall-flow
+            expected: 32
+          - suite: recall-content
+            expected: 20
+          - suite: automatic-day
+            expected: 8
+          - suite: grouped-study
+            expected: 4
+          - suite: edu-quality
+            expected: 76
+          - suite: edu-remediation
+            expected: 36
+          - suite: edu-math
+            expected: 40
+          - suite: study-attempt
+            expected: 56
+          - suite: planning
+            expected: 28
+          - suite: source-sync
+            expected: 40
+          - suite: backend
+            expected: 32
+    steps:
+      - name: Check out the same exact event commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Record and verify source identity
+        run: node scripts/ci-report.mjs identity "$RUNNER_TEMP/ci-browser-${{ matrix.suite }}"
+      - name: Install original locked dependencies
+        run: npm ci
+      - name: Install isolated, explicitly versioned Chromium driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/browser-driver" --ignore-scripts --no-audit --no-fund playwright@1.63.0
+          "$RUNNER_TEMP/browser-driver/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Real components, synthetic state, desktop and mobile viewports
+        id: tests
+        shell: bash
+        env:
+          UX_BROWSER_DRIVER: ${{ runner.temp }}/browser-driver
+          UX_EVIDENCE: ${{ runner.temp }}/ci-browser-${{ matrix.suite }}
+        run: |
+          set -euo pipefail
+          node ".github/${{ matrix.suite }}-browser.mjs" 2>&1 | tee "$UX_EVIDENCE/browser.log"
+      - name: Report actual scenarios and reject incomplete coverage
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node scripts/ci-report.mjs browser "$RUNNER_TEMP/ci-browser-${{ matrix.suite }}" "${{ matrix.expected }}"
+      - name: Preserve browser evidence and source identity
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-browser-${{ matrix.suite }}-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-browser-${{ matrix.suite }}
+          retention-days: 14
+          if-no-files-found: warn
+
+  result:
+    name: CI 总结果
+    if: always()
+    needs: [full, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Publish a fail-closed final result for this commit
+        env:
+          CI_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci-report.mjs gate

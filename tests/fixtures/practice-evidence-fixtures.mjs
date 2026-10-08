@@ -1,0 +1,8 @@
+export const hash='a'.repeat(64);
+export const binding={ownerId:'owner',libraryId:'library',snapshotId:'snapshot',itemKey:'item',contentHash:hash,groupId:'group',roundId:'round'};
+export const attempt=(mode='code',submitted=true)=>({schemaVersion:1,attemptId:'attempt',binding:{...binding},parentAttemptId:null,revision:2,answerRevision:1,answer:'raw original',updatedAt:'2026-10-08T00:00:00Z',checkpoint:{phase:submitted?'submitted':'answering',position:0,traversed:false,mode},submitted:submitted?{answer:'raw original',answerRevision:1,submittedAt:'2026-10-08T00:00:00Z',assistance:'unknown'}:null,evaluation:{status:'pending',reason:'not-requested'},formal:null,operations:[]});
+export const report=(runId=1,outcome='unknown')=>({schemaVersion:1,runId,identity:{attemptId:'attempt',revision:1,sourceVersion:hash,testVersion:hash},status:'failed',phase:'program',outcome,assertionsPassed:0,assertionsExecuted:0,mapping:{prefixLineCount:0,originalLineCount:1}});
+export const mutation=(kind,extra={},revision=0,id='op')=>({schemaVersion:1,operationId:id,attemptId:'attempt',binding:{...binding},expectedRevision:revision,updatedAt:'2026-10-08T00:00:00Z',kind,...extra});
+export const support={schemaVersion:2,type:'calculation',mode:'numeric',variables:[],domain:'real',step:{stepId:'source-step',prompt:'Give intermediate result',reference:'2',mode:'numeric'}};
+export const source=()=>({binding:{...binding},calculation:support});
+export const diagnostic=(status='undetermined',source='none')=>({answerRevision:1,stepRevision:1,stepId:'source-step',sourceVersion:hash,status,source,explanation:'checked'});

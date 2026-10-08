@@ -1,0 +1,2 @@
+ALTER TABLE `account_study_ai_settings` ADD `provider` text DEFAULT 'deepseek' NOT NULL;--> statement-breakpoint
+ALTER TABLE `account_study_ai_settings` ADD `provider_configs` text DEFAULT '{}' NOT NULL;

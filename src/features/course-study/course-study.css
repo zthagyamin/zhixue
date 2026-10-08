@@ -1,0 +1,47 @@
+.course-study { min-width: 0; max-width: 100%; color: var(--ink); }
+.course-study *, .course-study *::before, .course-study *::after { box-sizing: border-box; }
+.course-study .nonword-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.course-study .nonword-code { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; padding: 1rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface-2); font-size: .95rem; }
+.course-study .katex-display { max-width: 100%; overflow-x: auto; padding-block: .35rem; }
+.course-study-source { color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
+.course-study-source p { margin-block: .25rem; }
+.course-study-prompt { font-size: 1.15rem; font-weight: 600; margin-block: 1rem; }
+.course-study-scope { color: var(--muted); margin-block: .6rem; }
+.course-study-scope summary { cursor: pointer; font-size: .9rem; }
+.course-study-scope .nonword-text { margin-block: .5rem; }
+.course-study-conditions { margin-block: .8rem; }
+.course-study-conditions > span { color: var(--muted); font-size: .9rem; }
+.course-study-conditions ul { padding-left: 1.25rem; margin-block: .35rem; }
+.course-study-scope > span, .course-study-answer > span { display: block; color: var(--muted); font-size: .9rem; margin-block: .4rem; }
+.course-study-scope ul { padding-left: 1.25rem; margin-block: .4rem; }
+.course-study-answer { display: block; }
+.course-study-answer textarea { display: block; width: 100%; min-width: 0; resize: vertical; font: inherit; line-height: 1.65; padding: .8rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); color: var(--ink); overflow-wrap: anywhere; }
+.course-study-answer textarea[readonly] { background: var(--surface-2); }
+.course-study-answer small { display: block; color: var(--muted); margin-block: .5rem; }
+.course-study kbd { font: inherit; padding: .05rem .25rem; border: 1px solid var(--line); border-radius: .2rem; }
+.course-study-options { min-width: 0; border: 0; margin: 0; padding: 0; }
+.course-study-options legend { color: var(--muted); font-size: .9rem; margin-block: .5rem; }
+.course-study-option { display: flex; align-items: flex-start; gap: .6rem; padding: .9rem; border: 1px solid var(--line); border-radius: .5rem; margin-block: .6rem; cursor: pointer; }
+.course-study-option:has(input:checked) { border-color: var(--accent, #2563eb); background: var(--surface-2); }
+.course-study-option input { flex: 0 0 auto; margin-top: .35rem; accent-color: var(--accent, #2563eb); }
+.course-study-option-letter { flex: 0 0 auto; line-height: 1.65; }
+.course-study-option .nonword-text { flex: 1 1 auto; }
+.course-study-options:disabled .course-study-option { cursor: default; }
+.course-study-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-block: 1rem; }
+.course-study :is(.study-primary-action, .study-secondary-action) { max-width: 100%; white-space: normal; overflow-wrap: anywhere; font: inherit; transition: background-color .15s, border-color .15s; }
+.course-study button:disabled { opacity: .55; cursor: default; }
+.course-study button:active:not(:disabled) { transform: translateY(1px); }
+.course-study button:hover:not(:disabled) { filter: brightness(.96); }
+.course-study :is(button, textarea, input, summary):focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 3px; }
+.course-study-feedback { padding-block: 1rem; border-top: 1px solid var(--line); margin-top: 1rem; }
+.course-study-feedback h3 { margin: 0 0 .75rem; font-size: 1.15rem; }
+.course-study-key { margin-bottom: 1rem; }
+.course-study-key strong { display: block; font-size: .9rem; margin-bottom: .35rem; }
+.course-study-feedback summary { color: var(--muted); cursor: pointer; padding-block: .5rem; }
+.course-study-feedback blockquote { margin: 1rem 0; padding-left: .8rem; border-left: 2px solid var(--line); }
+.course-study-limit { color: var(--muted); line-height: 1.65; }
+.course-study-error { color: var(--danger, #b91c1c); overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .course-study-option { padding: .75rem; gap: .5rem; }
+  .course-study-actions button { flex: 1 1 10rem; }
+}

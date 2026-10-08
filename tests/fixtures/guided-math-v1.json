@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "status": "development-engineering-fixtures",
+  "humanReviewed": false,
+  "cases": [
+    {"id":"inverse-fraction","templateId":"inverse-linear","parameters":{"x":2,"b":3,"y":10},"input":{"answerKind":"number","answer":"7/2"},"expectedFinal":"correct"},
+    {"id":"inverse-negative","templateId":"inverse-linear","parameters":{"x":-2,"b":4,"y":1},"input":{"answerKind":"number","answer":"1.5"},"expectedFinal":"correct"},
+    {"id":"inverse-zero-all","templateId":"inverse-linear","parameters":{"x":0,"b":3,"y":3},"input":{"answerKind":"all","answer":""},"expectedFinal":"correct"},
+    {"id":"inverse-zero-none","templateId":"inverse-linear","parameters":{"x":0,"b":3,"y":4},"input":{"answerKind":"none","answer":""},"expectedFinal":"correct"},
+    {"id":"inverse-no-pretend-zero","templateId":"inverse-linear","parameters":{"x":0,"b":3,"y":4},"input":{"answerKind":"number","answer":"0"},"expectedFinal":"wrong","critical":true},
+    {"id":"inverse-wrong-number","templateId":"inverse-linear","parameters":{"x":2,"b":3,"y":10},"input":{"answerKind":"number","answer":"3"},"expectedFinal":"wrong","critical":true},
+    {"id":"sqrt-negative","templateId":"sqrt-sign","parameters":{"x":-2},"input":{"answerKind":"number","answer":"2","method":"principal-root","condition":"negative","transformation":"0-x"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"correct"},
+    {"id":"sqrt-negative-result","templateId":"sqrt-sign","parameters":{"x":-2},"input":{"answerKind":"number","answer":"-2"},"expectedFinal":"wrong","critical":true},
+    {"id":"sqrt-correct-result-illegal-step","templateId":"sqrt-sign","parameters":{"x":-2},"input":{"answerKind":"number","answer":"2","method":"principal-root","condition":"negative","transformation":"x"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"wrong","critical":true},
+    {"id":"sqrt-zero","templateId":"sqrt-sign","parameters":{"x":0},"input":{"answerKind":"number","answer":"0"},"expectedFinal":"correct"},
+    {"id":"sqrt-unsupported-function","templateId":"sqrt-sign","parameters":{"x":-2},"input":{"answerKind":"number","answer":"abs(-2)"},"expectedFinal":"unknown"},
+    {"id":"sqrt-unsupported-step","templateId":"sqrt-sign","parameters":{"x":-2},"input":{"answerKind":"number","answer":"2","method":"principal-root","condition":"negative","transformation":"abs(x)"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"unknown"},
+    {"id":"cancel-with-zero","templateId":"cancel-domain","parameters":{"k":2,"nonzero":0},"input":{"answerKind":"not-allowed","answer":"","method":"split-zero","condition":"includes-zero","transformation":"x*x-2*x"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"correct"},
+    {"id":"cancel-illegal","templateId":"cancel-domain","parameters":{"k":2,"nonzero":0},"input":{"answerKind":"allowed","answer":""},"expectedFinal":"wrong","critical":true},
+    {"id":"cancel-no-solution-still-legal-operation","templateId":"cancel-domain","parameters":{"k":0,"nonzero":1},"input":{"answerKind":"allowed","answer":"","method":"divide","condition":"nonzero","transformation":"x^2"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"correct"},
+    {"id":"cancel-redundant-valid-method","templateId":"cancel-domain","parameters":{"k":2,"nonzero":1},"input":{"answerKind":"allowed","answer":"","method":"split-zero","condition":"nonzero","transformation":"x^2-2*x"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"correct"},
+    {"id":"context-fraction","templateId":"context-linear","parameters":{"rate":3,"baseline":2,"target":12},"input":{"answerKind":"number","answer":"10/3"},"expectedFinal":"correct"},
+    {"id":"context-subtract-first","templateId":"context-linear","parameters":{"rate":3,"baseline":2,"target":12},"input":{"answerKind":"number","answer":"10/3","method":"divide-total","condition":"positive-rate","transformation":"10/3"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"wrong","critical":true},
+    {"id":"context-zero-baseline","templateId":"context-linear","parameters":{"rate":2,"baseline":0,"target":12},"input":{"answerKind":"number","answer":"6","method":"divide-total","condition":"positive-rate","transformation":"12/2"},"withSteps":true,"expectedFinal":"correct","expectedSteps":"correct"},
+    {"id":"context-zero-time","templateId":"context-linear","parameters":{"rate":8,"baseline":12,"target":12},"input":{"answerKind":"number","answer":"0"},"expectedFinal":"correct"}
+  ]
+}

@@ -1,0 +1,29 @@
+/* Context is a reading task, not an oversized single-word headline. Keep rules scoped. */
+.study-app .study-word-card[data-quiet-study][data-stage="2"]{max-width:760px;padding:8px 0 12px;align-items:stretch}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-heading h2{margin:0;font-size:clamp(22px,3vw,32px);line-height:1.35;letter-spacing:-.015em;overflow-wrap:anywhere}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-heading p{margin:0;font-size:14px;line-height:1.5;color:var(--muted);font-weight:500}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-example{width:100%;box-sizing:border-box;margin:0;padding:16px 0 16px 20px;border:0;border-left:2px solid var(--study-accent-text);font-size:clamp(23px,2.3vw,30px);line-height:1.7;font-style:normal;font-weight:400;text-align:left;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.study-context-example code{font-size:.85em;white-space:pre-wrap;overflow-wrap:anywhere}
+.study-context-gap{display:inline-block;min-width:5ch;padding:0 .12em;color:var(--study-accent-text);border-bottom:2px solid currentColor;line-height:1.2}
+.study-context-gap>span{visibility:hidden}
+.study-context-answer{background:var(--study-accent-soft);color:var(--study-accent-text);border-radius:3px;padding:.05em .12em}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-meaning{margin:18px 0 0;font-size:18px;font-weight:500;line-height:1.7;color:var(--ink);text-align:left;overflow-wrap:anywhere}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-response{width:100%}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .word-actions{margin-top:24px}
+.study-app .study-word-card[data-quiet-study][data-stage="2"] .word-actions button{min-height:52px;padding:12px 16px;font-size:16px}
+.study-app .study-session-shell:has(.study-word-card[data-stage="2"][data-context-view]){min-height:0}
+.study-app .study-session-shell:has(.study-word-card[data-stage="2"][data-context-view]) .study-session-content{flex:0 1 auto;padding-top:28px;padding-bottom:28px}
+.study-plugin-context-option{font-size:14px;line-height:1.65;margin-bottom:20px;color:var(--ink)}
+.study-plugin-context-option label{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.study-plugin-context-option input[type="checkbox"]{width:18px;height:18px;min-height:18px;accent-color:var(--study-accent)}
+.study-plugin-context-option p,.study-context-options{font-size:13px;line-height:1.65;color:var(--muted)}
+.study-context-options{margin-top:16px}.study-context-options>summary{cursor:pointer;min-height:36px}
+.study-context-options summary:focus-visible,.study-plugin-context-option input:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}
+@media(max-width:640px){
+ .study-app .study-word-card[data-quiet-study][data-stage="2"]{padding:0}
+ .study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-heading{gap:10px;margin-bottom:12px}
+ .study-app .study-word-card[data-quiet-study][data-stage="2"] .study-context-example{font-size:22px;padding:12px 0 12px 14px;line-height:1.65}
+ .study-app .study-session-shell:has(.study-word-card[data-stage="2"][data-context-view]) .study-session-content{padding:20px}
+ .study-app .study-word-card[data-quiet-study][data-stage="2"] .word-actions{margin-top:20px;gap:10px}
+}

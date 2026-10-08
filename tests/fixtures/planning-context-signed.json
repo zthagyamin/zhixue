@@ -1,0 +1,119 @@
+{
+  "context": {
+    "catalog": {
+      "schemaVersion": 1,
+      "sourceHash": "5674b2aeff6873b19bbf11fa689ce4a98aa836aa6b9e3e02e8ae5789cabbf7fe",
+      "subjects": [
+        {
+          "subjectId": "astronomy-fixture",
+          "name": "Test subject",
+          "priority": 3,
+          "planningStatus": "none",
+          "words": [],
+          "units": [
+            {
+              "unitId": "astronomy-fixture:item:astronomy-fixture:lesson-a:q1",
+              "subjectId": "astronomy-fixture",
+              "title": "Which planet?",
+              "planningLabel": "练习单元 1",
+              "order": 0,
+              "prerequisites": [],
+              "sourceHash": "b0622d79ac6fd1b2abdb798744a1e3d38de593c0319bb5106718763cdc661491",
+              "action": {
+                "kind": "practice",
+                "itemKeys": [
+                  "practice:astronomy-fixture:lesson-a:q1"
+                ]
+              },
+              "completionRule": "graded-practice",
+              "formalComplete": false,
+              "taskComplete": false
+            }
+          ],
+          "goals": [],
+          "lastProgressAt": "2026-08-24T10:00:00.000Z"
+        }
+      ],
+      "practiceSources": [
+        {
+          "itemKey": "practice:stable-card",
+          "subjectId": "astronomy-fixture",
+          "title": "Card",
+          "sourceHash": "44974962f4c30b3832b34a771fd8efde68a2f59baac052aea0a7a5e6c5c554a2",
+          "completionRule": "graded-practice"
+        },
+        {
+          "itemKey": "practice:astronomy-fixture:lesson-a:q1",
+          "subjectId": "astronomy-fixture",
+          "title": "Which planet?",
+          "sourceHash": "b0622d79ac6fd1b2abdb798744a1e3d38de593c0319bb5106718763cdc661491",
+          "completionRule": "graded-practice"
+        }
+      ],
+      "diagnostics": []
+    },
+    "sourceReviews": [
+      {
+        "itemKey": "practice:stable-card",
+        "subjectId": "astronomy-fixture",
+        "completionRule": "graded-practice",
+        "sourceHash": "44974962f4c30b3832b34a771fd8efde68a2f59baac052aea0a7a5e6c5c554a2",
+        "state": {
+          "enabled": true,
+          "dueAt": "2026-09-07T00:00:00+08:00"
+        }
+      }
+    ],
+    "captureReviews": [],
+    "observedAt": "2026-08-31T12:38:03.665Z",
+    "planRevision": 0,
+    "capabilities": []
+  },
+  "page": {
+    "records": [
+      {
+        "event": {
+          "schemaVersion": 3,
+          "eventId": "golden-observation",
+          "coreHash": "02c9f227d3cb747821928efb8893625f7f544448c89e7372b654f5d483c2de2a",
+          "occurredAt": "2026-08-24T10:00:00.000Z",
+          "domain": "ielts",
+          "eventType": "practice-attempt",
+          "item": {
+            "kind": "word",
+            "key": "practice:stable-card"
+          },
+          "attempt": {
+            "rating": "good",
+            "correct": true,
+            "stageBefore": 2,
+            "stageAfter": 3
+          },
+          "scheduling": {
+            "reviewedAt": "2026-08-24T10:00:00.000Z",
+            "schedulerVersion": "ts-fsrs-5.4.1-default-v1"
+          }
+        },
+        "subjectId": "astronomy-fixture",
+        "planningEvidence": {
+          "beforeReview": {
+            "enabled": true,
+            "dueAt": "2026-01-01T00:00:00+08:00"
+          },
+          "schemaVersion": 1,
+          "eventId": "golden-observation",
+          "coreHash": "02c9f227d3cb747821928efb8893625f7f544448c89e7372b654f5d483c2de2a",
+          "afterReview": {
+            "enabled": true,
+            "dueAt": "2026-09-07T00:00:00+08:00"
+          },
+          "evidenceHash": "4a11657ea6a63241bc5c51deadaad5be013b785b0576ffe5e7d7a6d44814bbaf"
+        }
+      }
+    ],
+    "snapshotHash": "8fef87532c461111627118db7c92a6079ef2a8efb13c7126dc1f305e736f1e0d",
+    "nextCursor": null,
+    "sourceHash": "5674b2aeff6873b19bbf11fa689ce4a98aa836aa6b9e3e02e8ae5789cabbf7fe",
+    "planRevision": 0
+  }
+}

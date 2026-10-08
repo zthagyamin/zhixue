@@ -1,0 +1,31 @@
+name: Bug report / 缺陷报告
+description: Reproduce a problem without sharing private data / 去敏复现问题
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include keys, pairing codes, private notes/answers or account identifiers. Security issues use SECURITY.md. / 不上传凭据、私人笔记、作答或账号标识。"
+  - type: input
+    id: version
+    attributes:
+      label: Version and platform / 版本与平台
+      placeholder: Public source version, browser, OS; website or Companion
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps with synthetic material / 合成材料复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: expectation
+    attributes:
+      label: Expected and actual behavior / 预期与实际表现
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence / 去敏证据
+      description: Optional minimal logs or screenshots; remove personal content first.

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "day": "2026-08-31",
+  "inputHash": "6642a359a2c4452573903da8ed949f0d2dad11160b89e00cbce23c546a0d9c6f",
+  "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "draftVersion": 1,
+  "tasks": [
+    {
+      "taskId": "new:2026-08-31:vocab:three-stage:required:ready",
+      "subjectId": "vocab",
+      "title": "新学单词 · 5 词",
+      "category": "new-word",
+      "origin": "fixed",
+      "required": true,
+      "unitIds": [],
+      "quantity": 5,
+      "action": {
+        "kind": "practice",
+        "itemKeys": [
+          "word:0",
+          "word:1",
+          "word:2",
+          "word:3",
+          "word:4"
+        ]
+      },
+      "completionRule": "three-stage",
+      "sourceHash": "3f39c752cd93794de478429d1acc12480b0b9ba5ad5686734ace253df66b95ce"
+    }
+  ],
+  "longTermAllocation": {
+    "schemaVersion": 1,
+    "planId": "shared-quota",
+    "day": "2026-08-31",
+    "vocabularyTarget": 5,
+    "items": [
+      {
+        "itemId": "word:0",
+        "subjectId": "vocab",
+        "kind": "vocabulary",
+        "itemKeys": [
+          "word:0"
+        ],
+        "unitIds": [],
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "lexemeKey": "en:term0"
+      },
+      {
+        "itemId": "word:1",
+        "subjectId": "vocab",
+        "kind": "vocabulary",
+        "itemKeys": [
+          "word:1"
+        ],
+        "unitIds": [],
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "lexemeKey": "en:term1"
+      },
+      {
+        "itemId": "word:2",
+        "subjectId": "vocab",
+        "kind": "vocabulary",
+        "itemKeys": [
+          "word:2"
+        ],
+        "unitIds": [],
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "lexemeKey": "en:term2"
+      },
+      {
+        "itemId": "word:3",
+        "subjectId": "vocab",
+        "kind": "vocabulary",
+        "itemKeys": [
+          "word:3"
+        ],
+        "unitIds": [],
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "lexemeKey": "en:term3"
+      },
+      {
+        "itemId": "word:4",
+        "subjectId": "vocab",
+        "kind": "vocabulary",
+        "itemKeys": [
+          "word:4"
+        ],
+        "unitIds": [],
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "lexemeKey": "en:term4"
+      }
+    ]
+  },
+  "vocabulary": {
+    "target": 5,
+    "assignedLexemeKeys": [
+      "en:term0",
+      "en:term1",
+      "en:term2",
+      "en:term3",
+      "en:term4"
+    ],
+    "snapshot": [
+      {
+        "itemKey": "word:0",
+        "subjectId": "vocab",
+        "word": "term0",
+        "language": "en",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage"
+      },
+      {
+        "itemKey": "word:1",
+        "subjectId": "vocab",
+        "word": "term1",
+        "language": "en",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage"
+      },
+      {
+        "itemKey": "word:2",
+        "subjectId": "vocab",
+        "word": "term2",
+        "language": "en",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage"
+      },
+      {
+        "itemKey": "word:3",
+        "subjectId": "vocab",
+        "word": "term3",
+        "language": "en",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage"
+      },
+      {
+        "itemKey": "word:4",
+        "subjectId": "vocab",
+        "word": "term4",
+        "language": "en",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage"
+      }
+    ]
+  },
+  "manual": {
+    "lockedTaskIds": [],
+    "excludedUnitIds": []
+  },
+  "planHash": "22c2c03ffb487d5bc57f4d69b296800990e2cc22d1aef6f8c0a0b94a52266244"
+}

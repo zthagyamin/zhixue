@@ -1,0 +1,118 @@
+{
+  "commit": "f9260eb778b4ae06ead6a20725dd8b6f664d53fb",
+  "scope": "app, db, worker, middleware TypeScript/JavaScript; named Python composition roots",
+  "summary": {
+    "files": 313,
+    "edges": 1230,
+    "runtimeCycles": 0
+  },
+  "largestFiles": [
+    {
+      "file": "app/study-dashboard/use-dashboard-controller.ts",
+      "lines": 2531,
+      "bytes": 192257,
+      "imports": 85,
+      "stateHooks": 180,
+      "maxLine": 1641
+    },
+    {
+      "file": "app/study-dashboard/sources-view.tsx",
+      "lines": 1307,
+      "bytes": 63499,
+      "imports": 18,
+      "stateHooks": 1,
+      "maxLine": 297
+    },
+    {
+      "file": "app/study-dashboard/subject-view.tsx",
+      "lines": 607,
+      "bytes": 53104,
+      "imports": 34,
+      "stateHooks": 1,
+      "maxLine": 1658
+    },
+    {
+      "file": "app/landing-content.tsx",
+      "lines": 972,
+      "bytes": 50639,
+      "imports": 6,
+      "stateHooks": 2,
+      "maxLine": 275
+    },
+    {
+      "file": "app/account-study-controls.tsx",
+      "lines": 199,
+      "bytes": 48927,
+      "imports": 28,
+      "stateHooks": 31,
+      "maxLine": 4310
+    },
+    {
+      "file": "app/study-dashboard/today-view.tsx",
+      "lines": 490,
+      "bytes": 48643,
+      "imports": 23,
+      "stateHooks": 0,
+      "maxLine": 1922
+    },
+    {
+      "file": "app/account-study-api.ts",
+      "lines": 339,
+      "bytes": 35775,
+      "imports": 22,
+      "stateHooks": 0,
+      "maxLine": 2369
+    },
+    {
+      "file": "db/account-study-plan-store.ts",
+      "lines": 198,
+      "bytes": 32426,
+      "imports": 7,
+      "stateHooks": 0,
+      "maxLine": 931
+    },
+    {
+      "file": "app/plugins/plugin-paper.tsx",
+      "lines": 118,
+      "bytes": 27905,
+      "imports": 23,
+      "stateHooks": 36,
+      "maxLine": 1415
+    },
+    {
+      "file": "app/practice-session.tsx",
+      "lines": 404,
+      "bytes": 25776,
+      "imports": 18,
+      "stateHooks": 26,
+      "maxLine": 424
+    },
+    {
+      "file": "app/account-study-planning.ts",
+      "lines": 221,
+      "bytes": 25652,
+      "imports": 11,
+      "stateHooks": 0,
+      "maxLine": 574
+    },
+    {
+      "file": "app/local-account-study.ts",
+      "lines": 306,
+      "bytes": 25611,
+      "imports": 6,
+      "stateHooks": 0,
+      "maxLine": 812
+    }
+  ],
+  "pythonHotspots": {
+    "companion/server.py": {
+      "lines": 2665,
+      "bytes": 135561
+    },
+    "companion/index_gateway.py": {
+      "lines": 674,
+      "bytes": 38514
+    }
+  },
+  "cycles": []
+}

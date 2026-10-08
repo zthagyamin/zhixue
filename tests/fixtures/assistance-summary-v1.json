@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "attemptEventId": "event-one",
+  "attemptCoreHash": "9320891f0125ecb17ec472e482d44c0bc7b2ee84e0c8df1f9f3e6002974c21f1",
+  "practiceMode": "three-stage",
+  "observationScope": "current-page-attempt",
+  "preSubmitAssistance": [{"action": "meaning-check", "count": 1}],
+  "postSubmitFeedback": [],
+  "summaryId": "assistance:38241f58b03f779792c67174e62bfe11af9051735911e222d0c44a3e02dc8770",
+  "summaryHash": "5621326091009f1759db1f0ce8fbc051e60648f664e2f50028788de8df5488e0"
+}

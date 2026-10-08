@@ -1,0 +1,72 @@
+// Actual M4 hooks/use cases. All transports and records are synthetic and stay in this tab.
+import React,{useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {useCompanionSource,useConnectionValue,useSourceTransitions,useSourceMaintenance,useAccountSource,useAccountConnection} from '../../src/features/sources';
+import {useSyncCoordinator} from '../../src/features/sync';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+const query=new URLSearchParams(location.search),scenario=query.get('case');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const gate=()=>{let resolve;const promise=new Promise(done=>resolve=done);return{promise,resolve};};
+const probe={pending:0,trace:[],release:()=>{},formalEvents:0};window.__sources=probe;
+const held=()=>{const wait=gate();probe.release=()=>wait.resolve();return async value=>{probe.pending++;await wait.promise;return value;};};
+const pack=()=>({complete:true,pending:{coreUploads:[],coreWritebacks:[],recovery:[],assistance:[],tasks:[],legacyQueues:false},payload:{accountLibraries:[]}});
+const ownerId='account:synthetic';
+function Companion(){
+ const [connection,setConnection,getConnection]=useConnectionValue(scenario==='pair-account'?null:{token:'old'}),[account,setAccount]=useState(false),[message,setMessage]=useState('尚未操作');
+ const wait=useMemo(held,[]);
+ const api=useCompanionSource({scope:ownerId,connection,retry:0,retryMs:60000,
+  capture:()=>({key:ownerId,connection,current:()=>getConnection()===connection,user:{userId:'synthetic',displayName:'合成用户',email:''},code:'fixture',account:()=>account}),
+  health:async()=>({version:'fixture',capabilities:[]}),pair:()=>wait({token:'paired'}),
+  source:(_frame,kind)=>kind==='poll'?Promise.resolve({ok:true,httpStatus:200,payload:{status:'connected',subjects:[]}}):wait({ok:false,httpStatus:401,payload:{status:'offline'}}),
+  publish:notice=>{if(notice.kind==='paired'){probe.trace.push('paired');setConnection(notice.connection);setMessage('配对完成');}if(notice.kind==='expired'){probe.trace.push('expired');setConnection(null);}},
+  apply:()=>true,flushActivities:async()=>{},
+ });
+ return <><h2>本机连接</h2><button onClick={()=>void api.pair()}>开始配对</button><button onClick={()=>setAccount(true)}>账号资料到达</button><button onClick={()=>void api.refresh()}>刷新旧连接</button><button onClick={()=>{setConnection({token:'new'});setMessage('新连接已就绪');}}>建立新连接</button><p role="status">{message}</p><output data-testid="value">{connection?.token??'none'}</output></>;
+}
+function Transition(){
+ const [source,setSource]=useState('账号资料'),[answer,setAnswer]=useState('first'),[message,setMessage]=useState('准备切换');
+ const epoch=useRef(0),drafts=useMemo(()=>createLearningDraftStore('synthetic'),[]),wait=useMemo(held,[]),connection=useMemo(()=>({token:'fixture'}),[]),client=useMemo(()=>({}),[]);
+ const adapter=useMemo(()=>drafts.adapter('question','recall'),[drafts]);
+ const api=useSourceTransitions({scope:ownerId,connection,client,capture:()=>{const version=epoch.current;return{owner:ownerId,connection,current:()=>epoch.current===version,pending:drafts.isPending,buffers:drafts.hasBuffers,draftVersion:drafts.getMutationVersion};},
+  confirm:()=>true,begin:()=>epoch.current++,readLocal:()=>wait('本机资料'),adoptAccount:async()=>()=>{},clearDrafts:()=>{probe.trace.push('clear');drafts.clear();},commitLocal:value=>setSource(value),commitAccount:()=>{},reloadAccount:async()=>null,message:setMessage,
+ });
+ return <><h2>切换学习来源</h2><label>当前答案<input aria-label="当前答案" value={answer} onChange={e=>{adapter.write('answer',e.target.value);setAnswer(e.target.value);}}/></label><button onClick={()=>void api.switchLocal()}>切到本机</button><p role="status">{message}</p><output data-testid="value">{source}</output></>;
+}
+function Maintenance(){
+ const [client,setClient]=useState({version:1}),[message,setMessage]=useState('待操作'),[saved,setSaved]=useState(false),pending=useRef(false),revision=useRef(0),wait=useMemo(held,[]);
+ const connection=useRef('old');
+ const api=useSourceMaintenance({scope:ownerId,client,capture:()=>({owner:ownerId,ready:true,current:()=>true,pending:()=>pending.current,buffers:()=>false,version:()=>revision.current}),
+  confirm:()=>true,export:async()=>scenario==='clear-during-save'?wait(pack()):({...pack(),complete:scenario!=='partial-export'}),download:()=>{probe.trace.push('download');setSaved(true);},
+  clearLibrary:async()=>{probe.trace.push('clear');},clearRead:async()=>{probe.trace.push('clear');},clearWorkspace:async()=>{probe.trace.push('clear');},cancelRead(){},pauseRead(){},message:setMessage,
+  prepareNavigation:()=>()=>true,clearViews:async()=>{},retire:()=>probe.trace.push('retire'),
+  captureConnection:()=>{const token=connection.current;return{revoke:()=>{probe.trace.push('revoke:'+token);return wait(null);},clear:()=>{if(connection.current===token){connection.current=null;probe.trace.push('clear-connection');}}};},
+  redirect:()=>{probe.trace.push('redirect');setMessage('已退出网站');},
+ });
+ return <><h2>恢复与退出</h2><button onClick={()=>void api.signOut()}>退出网站</button><button onClick={()=>setClient({version:2})}>更新连接能力</button><button onClick={()=>{connection.current='new';setMessage('新配对');}}>替换配对</button><button onClick={()=>void api.run('clear')}>清理读取缓存</button><button onClick={()=>{pending.current=true;revision.current++;setMessage('正在保存新作答');}}>开始保存</button><button onClick={()=>void api.run('export')}>导出恢复数据</button><p role="status">{message}</p><output data-testid="value">{api.modal??'none'}</output>{saved&&<p>已生成合成下载</p>}</>;
+}
+function Sync(){
+ const [owner,setOwner]=useState('A'),[message,setMessage]=useState('尚未同步'),live=useRef(owner);live.current=owner;const wait=useMemo(held,[]);
+ const api=useSyncCoordinator({scope:owner,capture:()=>{const selected=owner;return{key:owner,owner,accountOwner:owner,ready:true,current:()=>live.current===selected,
+  legacy:{enabled:true,events:[{eventId:'synthetic'}],send:()=>wait({snapshot:{hasProgress:true,progress:{itemStages:{},answered:0,correct:0},cursor:7},processedEventIds:['synthetic']})},
+  journal:async()=>({recovered:0,failed:0,states:[]}),targets:async()=>({projectionMismatches:[]}),bootstrap:async()=>({supported:true}),diagnostics:async()=>{},recovery:async()=>pack()};},
+  publish:notice=>{if(notice.kind==='cloud-receipt'){probe.trace.push('receipt:'+owner);setMessage('收到回执');}},now:()=>new Date().toISOString(),
+ });
+ return <><h2>同步状态归属</h2><button onClick={()=>void api.flushLegacy()}>发送旧账号记录</button><button onClick={()=>{live.current='B';setOwner('B');setMessage('新账号尚未同步');}}>切换账号</button><p role="status">{message}</p><output data-testid="value">{owner}:{String(api.busy.legacy)}</output></>;
+}
+function Account(){
+ const [visible,setVisible]=useState({revision:1}),[message,setMessage]=useState('正在作答'),active=useRef(true),view=useRef(visible);view.current=visible;const wait=useMemo(held,[]),client=useMemo(()=>({cached:async()=>null,load:()=>wait({revision:2})}),[wait]);
+ const api=useAccountSource({scope:ownerId,client,capture:()=>({key:ownerId,owner:ownerId,modeEpoch:0,ready:true,identity:{userId:'synthetic',displayName:'',email:''},local:false,paused:false,current:()=>true,studying:()=>active.current,mutation:()=>0,visible:()=>view.current,client}),
+  version:value=>({libraryId:'synthetic',snapshotId:'s'+value.revision,revision:value.revision,eventThrough:0,taskThrough:0,observedAt:'2026-09-19'}),prepare:async()=>[],project:async(_frame,value)=>value,
+  receipts(){},publish:(_frame,value)=>{setVisible(value);setMessage('已使用新资料');},status:(_frame,status)=>{if(status.deferred)setMessage('新资料等待当前练习结束');},clear(){},identityChanged(){},now:()=>new Date().toISOString(),
+ });
+ return <><h2>当前题面保护</h2><button onClick={()=>void api.read()}>刷新账号资料</button><button onClick={()=>{active.current=false;void api.apply(api.getPending());}}>结束当前练习</button><p role="status">{message}</p><output data-testid="value">{visible.revision}</output></>;
+}
+function Grant(){
+ const [client,setClient]=useState({owner:'A'}),wait=useMemo(held,[]);
+ const api=useAccountConnection({client,status:async()=>({links:[]}),prepare:()=>wait({grantId:'old-grant'}),start:async id=>probe.trace.push('start:'+id),stop:async()=>{},read:async()=>null,count:()=>0,replacementRequired:()=>false});
+ return <><h2>后台同步授权</h2><button onClick={()=>void api.prepare()}>连接账号题库</button><button onClick={()=>setClient({owner:'B'})}>切换资料连接</button><p role="status">{api.message||'新连接尚未授权'}</p><output data-testid="value">{client.owner}:{String(api.busy)}</output></>;
+}
+const Component=scenario.startsWith('pair-')||scenario==='refresh-repair'?Companion:scenario==='edit-during-switch'?Transition:scenario==='old-sync'?Sync:scenario==='frozen-account'?Account:scenario==='retired-grant'?Grant:Maintenance;
+createRoot(document.getElementById('root')).render(<main className="study-page-shell"><p className="study-eyebrow">知学 · 合成资料验收</p><h1>资料连接与同步</h1><Component/><p>此页面使用隔离的测试资料，不产生正式学习成绩。</p></main>);

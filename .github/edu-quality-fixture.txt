@@ -1,0 +1,63 @@
+import React,{useMemo,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {registry} from '../../app/plugins';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import {LearningDraftBoundary} from '../../app/learning-draft';
+import {waitForRecallResult} from '../../app/recall-flow-model';
+import {adaptStudyItemForPlugin} from '../../app/plugin-routing';
+import {StudySessionShell} from '../../app/study-session-shell';
+import {PracticeSession} from '../../app/practice-session';
+import {ExtraPracticeSession} from '../../app/extra-practice-session';
+import '../../app/globals.css';import '../../app/c-study.css';import '../../app/study-guidance.css';
+const query=new URLSearchParams(location.search),mode=query.get('mode');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const probe={aiCalls:0,writeCalls:0,grades:[],skips:0,resolveAI:null};
+Object.assign(window,{__eduProbe:probe});
+const criteria=[{id:'definition',text:'说明观察结果与因果结论的区别',weight:1},{id:'condition',text:'比较目标因素时，需要控制其他条件。',weight:3,mandatory:true}];
+let item={id:'edu-q1',itemId:'edu-q1',fingerprint:'synthetic-edu',questionType:'recall',prompt:'如何区分观察结果与单项因素的贡献？',answer:'观察到整体提升，并不能单独确定某个因素的贡献；需要控制其他条件进行比较。',explanation:'观察到整体提升，并不能单独确定某个因素的贡献；需要控制其他条件进行比较。'};
+let pluginMode='recall',sourceMode='recall',source=item;
+if(['echo','inline','extra'].includes(mode))Object.assign(item,{answer:item.prompt,explanation:item.prompt});
+if(['mandatory','partial'].includes(mode))item.learningSupport={schemaVersion:1,type:'recall',criteria};
+if(mode==='invalid-config')item.learningSupport={schemaVersion:999,type:'recall',criteria};
+if(mode==='quiz'){
+ pluginMode=sourceMode='quiz';Object.assign(item,{questionType:'quiz',prompt:'请选择正确项。',options:['相同文本','相同文本'],answer:0,explanation:'材料存在矛盾。'});
+}
+if(['empty-back','zero','switched','extra-switched'].includes(mode)){
+ pluginMode='flashcard';sourceMode=mode.endsWith('switched')?'recall':'flashcard';
+ if(mode.endsWith('switched'))source={...item,prompt:'解释概念。',answer:'解释概念。',explanation:'解释概念。'};
+ Object.assign(item,{front:mode==='zero'?'相同数相减的结果是多少？':'解释概念。',back:mode==='zero'?0:mode.endsWith('switched')?'解释概念。':'',questionType:'flashcard'});
+ if(mode==='empty-back')Object.assign(item,{answer:'',explanation:''});
+}
+if(mode==='word-recall'||mode==='word-flashcard'){
+ pluginMode=sourceMode=mode==='word-recall'?'recall':'flashcard';
+ source={word:'Tree',meaning:'树',context:'植物',example:'A tree grows here.'};item=adaptStudyItemForPlugin(pluginMode,source);
+}
+if(mode==='legacy-flashcard'){
+ pluginMode=sourceMode='flashcard';source={prompt:'Question',answer:'',explanation:'Valid reference'};
+ item={front:'Question',back:'Valid reference'};
+}
+Object.freeze(source);Object.freeze(item);probe.original=JSON.stringify([item,source]);
+function Trial(){
+ const store=useMemo(()=>createLearningDraftStore('edu-browser'),[]),[done,setDone]=useState(false);
+ const draft=store.adapter('q1',pluginMode),Plugin=registry.get('@zhixue/plugin-'+pluginMode);
+ const skip=()=>{probe.skips++;store.clearItem('q1');setDone(true);};
+ if(done)return <section><h2>本轮练习结束</h2><p>这是隔离测试，没有写入正式学习成绩。</p></section>;
+ return <StudySessionShell title="可信自测" scope="隔离测试 · 合成材料" progress="已练 0 / 1" mode="学习内容与评价核对" onExit={()=>setDone(true)} options={<p>测试设置</p>} source={<p>合成参考材料，不是个人学习笔记。</p>} queue={null} subjects={null}>
+  <LearningDraftBoundary store={store} interactiveWhileGrading><Plugin.renderUI data={item} context={{draft,guidanceScope:'edu-fixture',guidanceInOptions:true,recallPersistenceRequired:false,contentSource:{mode:sourceMode,data:source},contentNavigation:{onSkip:skip},recallNavigation:{continueLabel:'结束本轮',onSkip:skip},gradeRecall:(_q,_a,signal)=>store.grade(()=>waitForRecallResult(async()=>{
+   probe.aiCalls++;
+   if(mode==='cancel')return new Promise(resolve=>{probe.resolveAI=resolve;});
+   if(mode==='conflict')return {source:'ai',verdict:'incorrect',rating:'good',feedback:'矛盾测试结果'};
+   if(mode==='model-easy')return {source:'ai',verdict:'correct',rating:'easy',feedback:'不得升级自动评级'};
+   if(['mandatory','partial'].includes(mode))return {source:'ai',verdict:mode==='mandatory'?'correct':'partial',rating:mode==='mandatory'?'good':'hard',feedback:'你解释了观察结果，还需要说明比较条件。',matchedPointIds:['definition'],missedPointIds:['condition']};
+   return {source:'ai',verdict:'correct',rating:'good',feedback:'参考要点已覆盖。'};
+  },signal))}} onGrade={(rating,options)=>{
+   const ticket=draft.begin();if(!ticket)return;probe.writeCalls++;
+   if(mode==='save-fail'&&probe.writeCalls===1){store.fail(ticket);return;}
+   if(store.commit(ticket,options?.deferAdvance?()=>setDone(true):undefined)){probe.grades.push(rating);if(!options?.deferAdvance)setDone(true);}
+  }}/></LearningDraftBoundary>
+ </StudySessionShell>;
+}
+function Inline(){const [done,setDone]=useState(false),store=useMemo(()=>createLearningDraftStore('edu-inline'),[]);return done?<h2>本轮练习结束</h2>:<PracticeSession items={[item]} drafts={store} onRecordAttempt={async({rating})=>{probe.grades.push(rating);}} onFinish={()=>setDone(true)}/>;}
+function App(){return <main className="study-app study-focus"><section className="workspace">{mode==='inline'?<Inline/>:mode.startsWith('extra')?<ExtraPracticeSession snapshot={{scopeKey:'edu-extra',title:'额外核对',items:[source],modes:[pluginMode],sourceModes:[sourceMode],source:{title:'合成材料',scope:'测试'}}} onExit={()=>{}} canOpenLocal={false} getObsidianUri={()=>''}/>:<Trial/>}</section></main>;}
+probe.unchanged=()=>JSON.stringify([item,source])===probe.original;
+createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);

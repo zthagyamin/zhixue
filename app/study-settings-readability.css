@@ -1,0 +1,82 @@
+.study-settings{--ink:var(--study-ink);--muted:var(--study-muted);--line:var(--study-rule);--accent:var(--study-accent);--blue:var(--study-accent-text);--accent-soft:var(--study-accent-soft);--warning:var(--study-warning);--orange:var(--study-warning);gap:24px}
+.dark .study-settings{--ink:var(--study-ink);--muted:var(--study-muted);--line:var(--study-rule);--accent:var(--study-accent);--blue:var(--study-accent-text);--accent-soft:var(--study-accent-soft);--warning:var(--study-warning);--orange:var(--study-warning);color-scheme:dark}
+.study-settings :is(p,span,em,label,summary)[class~="opacity-50"],.study-settings :is(p,span,em,label,summary)[class~="opacity-40"],.study-settings :is(p,span,em,label,summary)[class~="opacity-30"]{opacity:1;color:var(--muted)}
+.study-settings :is(h2,h3,h4,h5){color:var(--ink);font-weight:650;font-family:inherit;letter-spacing:0}
+.settings-page-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}.settings-page-heading h2{font-size:25px;line-height:1.5;margin:0}.settings-page-heading p{font-size:14px;color:var(--muted);margin:5px 0 0}.study-app .settings-page-heading .study-primary-action{border-color:var(--accent);background:var(--accent);color:#fff;border-radius:7px;font-size:14px;font-weight:650}.dark .study-app .settings-page-heading .study-primary-action{color:var(--study-on-accent)}
+.settings-display-options{padding:12px 0;border-bottom:1px solid var(--line)}.settings-display-options summary{font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;min-height:32px}.settings-display-options .study-layout-toolbar{margin-top:12px}.study-settings .study-layout-toolbar p{color:var(--muted)}
+.study-settings nav{gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px}.study-settings nav button{color:var(--muted);opacity:1;font-weight:600;border:1px solid transparent;min-height:44px}.study-settings nav button[aria-current=page]{color:var(--study-accent-text);background:var(--accent-soft);border-color:var(--accent);box-shadow:none}.study-settings nav button:hover{background:var(--accent-soft);color:var(--study-accent-text)}
+.study-settings .c-settings-toolbar h3{font-size:16px}.study-settings .c-settings-overview-card{padding:24px;border-color:var(--line)}.study-settings .c-settings-connection-row{border-radius:12px;box-shadow:none;padding:16px 18px;border:1px solid var(--line);transition:all 0.15s ease}.study-settings .c-settings-connection-row strong{color:var(--ink)}.study-settings .c-settings-connection-row:hover{border-color:var(--accent);background:var(--accent-soft)}.study-settings .c-settings-connection-row p{font-size:13px;color:var(--muted)}
+.study-settings :is(input,select,textarea){border-color:var(--line);color:var(--ink)}.study-settings :focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}.study-settings .note-sources-entry{border-color:var(--line)}
+.study-app .study-settings nav button[aria-current=page]{color:var(--study-accent-text)}
+
+/* Linear + Readwise 标杆级设计系统：双栏与微晶质感 */
+.settings-layout-container{display:grid;grid-template-columns:260px 1fr;gap:32px;align-items:start;width:100%}
+.settings-sidebar{position:sticky;top:24px;align-self:start}
+.settings-nav{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.settings-nav-item{position:relative;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;text-align:left;transition:all 0.15s ease;width:100%}
+.settings-nav-item:hover{background:rgba(0,0,0,0.03)}
+.dark .settings-nav-item:hover{background:rgba(255,255,255,0.04)}
+.settings-nav-item.active{background:var(--accent-soft);border-color:rgba(16,185,129,0.25);color:var(--study-accent-text)}
+.settings-nav-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
+.settings-nav-icon{display:flex;align-items:center;justify-content:center;width:22px;height:22px;flex-shrink:0;color:var(--ink);opacity:0.75;transition:opacity 0.15s ease}
+.settings-nav-item:hover .settings-nav-icon{opacity:1}
+.settings-nav-item.active .settings-nav-icon{color:var(--study-accent-text);opacity:1}
+.settings-nav-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.settings-nav-label{font-size:13.5px;font-weight:650;color:var(--ink);letter-spacing:-0.01em}
+.settings-nav-item.active .settings-nav-label{color:var(--study-accent-text)}
+.settings-nav-desc{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.settings-main-pane{min-width:0;width:100%}
+.settings-content-pane{display:flex;flex-direction:column;gap:20px;min-width:0;width:100%}
+.settings-section-header{margin-bottom:4px}
+.settings-section-header h3{font-size:20px;font-weight:700;color:var(--ink);margin:0 0 4px;letter-spacing:-0.015em}
+.settings-section-header p{font-size:13px;color:var(--muted);margin:0}
+
+.settings-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.dark .settings-card{box-shadow:0 1px 3px rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.08)}
+.settings-card-danger{border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.02)}
+.dark .settings-card-danger{border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04)}
+
+/* 主题微缩视窗可视化切换卡片 */
+.theme-switcher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:12px}
+.theme-option-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;transition:all 0.2s ease;text-align:left}
+.theme-option-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.03)}
+.theme-option-card.active{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+.theme-preview-box{height:72px;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;overflow:hidden;position:relative;border:1px solid rgba(0,0,0,0.08)}
+.theme-preview-light{background:#fbfbfa;border-color:#e5e7eb}
+.theme-preview-dark{background:#0d1117;border-color:#30363d}
+.theme-preview-dots{display:flex;gap:4px}
+.theme-preview-dots span{width:6px;height:6px;border-radius:50%;opacity:0.7}
+.theme-preview-light .theme-preview-dots span:nth-child(1){background:#ef4444}
+.theme-preview-light .theme-preview-dots span:nth-child(2){background:#f59e0b}
+.theme-preview-light .theme-preview-dots span:nth-child(3){background:#10b981}
+.theme-preview-dark .theme-preview-dots span{background:#484f58}
+.theme-preview-body{display:flex;gap:8px;flex:1}
+.theme-preview-sidebar{width:28px;border-radius:4px}
+.theme-preview-light .theme-preview-sidebar{background:#e5e7eb}
+.theme-preview-dark .theme-preview-sidebar{background:#21262d}
+.theme-preview-content{flex:1;display:flex;flex-direction:column;gap:4px}
+.theme-preview-line{height:4px;border-radius:2px}
+.theme-preview-light .line-header{width:55%;background:#3b82f6}
+.theme-preview-light .line-body{width:90%;background:#cbd5e1}
+.theme-preview-light .line-sub{width:75%;background:#e2e8f0}
+.theme-preview-dark .line-header{width:55%;background:#38bdf8}
+.theme-preview-dark .line-body{width:90%;background:#30363d}
+.theme-preview-dark .line-sub{width:75%;background:#21262d}
+.theme-option-meta{display:flex;flex-direction:column;gap:2px}
+.theme-option-title-row{display:flex;align-items:center;justify-content:space-between}
+.theme-active-dot{font-size:11px;font-weight:bold;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+
+@media(max-width:960px){
+  .settings-layout-container{grid-template-columns:1fr;gap:20px}
+  .settings-sidebar{position:static;top:auto}
+  .settings-nav{flex-direction:row;overflow-x:auto;white-space:nowrap;border-radius:16px;padding:6px;gap:6px;scrollbar-width:none}
+  .settings-nav::-webkit-scrollbar{display:none}
+  .settings-nav-item{width:auto;padding:8px 14px;border-radius:10px}
+  .settings-nav-item.active::before{display:none}
+  .settings-nav-desc{display:none}
+  .settings-page-heading{flex-direction:column;align-items:stretch}
+  .settings-page-heading h2{font-size:22px}
+  .settings-card{padding:18px}
+  .theme-switcher-grid{grid-template-columns:1fr 1fr}
+}

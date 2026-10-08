@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {applyPracticeEvidenceMutation,parsePracticeEvidence,parsePracticeEvidenceMutation} from '../src/domain/practice-evidence/index.ts';
+import {attempt,report,mutation,source,diagnostic} from './fixtures/practice-evidence-fixtures.mjs';
+import {createMappedMathVariant} from '../src/domain/guided-math/index.ts';
+
+test('first code report immutable, latest pending can resolve only exact submitted identity',async()=>{
+ const original=attempt(),raw=structuredClone(original),first=mutation('code-report',{report:report()});
+ let r=await applyPracticeEvidenceMutation(null,first,{attempt:original});assert.equal(r.status,'accepted');
+ assert.equal((await applyPracticeEvidenceMutation(r.record,first,{attempt:original})).status,'duplicate');
+ assert.equal((await applyPracticeEvidenceMutation(r.record,{...first,report:report(2)},{attempt:original})).status,'conflict');
+ const passed={...report(2),status:'passed',phase:'program',outcome:'success'};
+ r=await applyPracticeEvidenceMutation(r.record,mutation('code-report',{report:passed},1,'resolved'),{attempt:original});
+ assert.equal(r.record.execution.first.runId,1);assert.equal(r.record.execution.latest.runId,2);
+ assert.equal((await applyPracticeEvidenceMutation(r.record,mutation('code-report',{report:report(3)},2,'new'),{attempt:{...original,formal:{status:'linked'}}})).status,'conflict');
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,first,{attempt:attempt('code',false)}),/submitted/);
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,{...first,report:{...report(),identity:{...report().identity,revision:2}}},{attempt:original}),/identity/);
+ assert.deepEqual(original,raw);
+});
+test('refresh resets page-local run IDs without weakening saved-answer CAS or first evidence',async()=>{
+ const a=attempt(),first=mutation('code-report',{report:report(7)}),r=(await applyPracticeEvidenceMutation(null,first,{attempt:a})).record;
+ const fresh={...report(1),status:'passed',phase:'program',outcome:'success'},m=mutation('code-report',{report:fresh},1,'refresh-run');
+ const updated=await applyPracticeEvidenceMutation(r,m,{attempt:a});assert.equal(updated.status,'accepted');assert.equal(updated.record.execution.first.runId,7);assert.equal(updated.record.execution.latest.runId,1);
+ assert.equal((await applyPracticeEvidenceMutation(updated.record,{...m,expectedRevision:1,operationId:'stale-tab'},{attempt:a})).status,'conflict');
+ assert.equal((await applyPracticeEvidenceMutation(updated.record,m,{attempt:a})).status,'duplicate');
+ const reusedId=mutation('code-report',{report:report(7)},2,'reused-page-run');
+ assert.equal((await applyPracticeEvidenceMutation(updated.record,reusedId,{attempt:a})).status,'accepted');
+});
+for(const hintSource of ['preset','model']) test(`changed report invalidates ${hintSource} hint despite reused page-local run and case IDs`,async()=>{
+ const a=attempt(),first={...report(1,'student-error'),phase:'tests',assertionsExecuted:1,exception:{kind:'AssertionError',message:'first error',isAssertion:true,location:{origin:'tests',file:'<题目测试>',line:1}},firstFailure:{caseId:'same-case',functionName:'f',args:[1],kwargs:{},expected:2,actual:3}};
+ const firstOutput='first full traceback',hint={runId:1,caseId:'same-case',text:'hint for actual 3',source:hintSource},authority={attempt:a,...(hintSource==='model'?{modelHint:hint}:{})};
+ let record=(await applyPracticeEvidenceMutation(null,mutation('code-report',{report:first,output:firstOutput}),authority)).record;
+ record=(await applyPracticeEvidenceMutation(record,mutation('code-hint',{hint},1,'hint'),authority)).record;
+ record=(await applyPracticeEvidenceMutation(record,mutation('code-report',{report:structuredClone(first),output:firstOutput},2,'same-observation'),authority)).record;
+ assert.deepEqual(record.execution.hint,hint);
+ const changed={...first,exception:{...first.exception,message:'different error after refresh'},firstFailure:{...first.firstFailure,actual:4}};
+ record=(await applyPracticeEvidenceMutation(record,mutation('code-report',{report:changed,output:'changed full traceback'},3,'changed-observation'),authority)).record;
+ assert.equal(record.execution.latest.runId,1);assert.equal(record.execution.latest.firstFailure.caseId,'same-case');assert.equal(record.execution.hint,undefined);
+ assert.deepEqual(record.execution.first,first);assert.equal(record.execution.firstOutput,firstOutput);assert.equal(record.execution.latestOutput,'changed full traceback');
+});
+test('changed full output invalidates hint even when bounded report metadata stays equal',async()=>{
+ const a=attempt(),first=report(1),hint={runId:1,text:'hint for original full details',source:'preset'},authority={attempt:a};
+ let record=(await applyPracticeEvidenceMutation(null,mutation('code-report',{report:first,output:'original full detail'}),authority)).record;
+ record=(await applyPracticeEvidenceMutation(record,mutation('code-hint',{hint},1,'hint'),authority)).record;
+ record=(await applyPracticeEvidenceMutation(record,mutation('code-report',{report:first,output:'different full detail'},2,'changed-details'),authority)).record;
+ assert.equal(record.execution.hint,undefined);assert.equal(record.execution.firstOutput,'original full detail');assert.equal(record.execution.latestOutput,'different full detail');
+});
+test('step draft invalidates diagnosis, submission freezes input; post formal optional diagnosis recovers once',async()=>{
+ const draft=attempt('calculation',false),authority={attempt:draft,source:source()};
+ let record=(await applyPracticeEvidenceMutation(null,mutation('step-input',{text:'2'}),authority)).record;
+ const edited=(await applyPracticeEvidenceMutation(record,mutation('step-input',{text:'3'},1,'draft-edit'),authority)).record;
+ assert.equal(edited.calculation.stepInput.revision,2);assert.equal(edited.calculation.diagnostic,undefined);
+ const saved=attempt('calculation'),context={attempt:saved,source:source()};
+ record=(await applyPracticeEvidenceMutation(record,mutation('step-diagnostic',{diagnostic:diagnostic()},1,'pending'),context)).record;
+ assert.equal((await applyPracticeEvidenceMutation(record,mutation('step-input',{text:'3'},2,'edit'),context)).status,'conflict');
+ const formal={...context,attempt:{...saved,formal:{status:'linked'}}};
+ record=(await applyPracticeEvidenceMutation(record,mutation('step-diagnostic',{diagnostic:diagnostic('correct','deterministic')},2,'checked'),formal)).record;
+ assert.equal(record.calculation.stepInput.text,'2');assert.equal(record.calculation.diagnostic.status,'correct');
+ assert.equal((await applyPracticeEvidenceMutation(record,mutation('step-diagnostic',{diagnostic:diagnostic('incorrect','deterministic')},3,'replace'),formal)).status,'conflict');
+ await assert.rejects(()=>applyPracticeEvidenceMutation(record,mutation('step-diagnostic',{diagnostic:{...diagnostic(),stepId:'invented'}},3,'bad'),context),/source/);
+});
+test('closed versions bounded payloads reject unsafe trees and unknown fields',async()=>{
+ const m=mutation('step-input',{text:'2'});
+ for(const row of [{...m,schemaVersion:2},{...m,approved:true},{...m,text:'x'.repeat(8001)},{...m,expectedRevision:Infinity},{...m,binding:Object.assign(Object.create({bad:true}),m.binding)},JSON.parse(JSON.stringify(m).replace('"text":"2"','"text":"2","__proto__":{}'))]) assert.throws(()=>parsePracticeEvidenceMutation(row));
+ const record=(await applyPracticeEvidenceMutation(null,mutation('code-report',{report:report()}),{attempt:attempt()})).record;
+ assert.deepEqual(parsePracticeEvidence(record),record);
+ assert.throws(()=>parsePracticeEvidence({...record,operations:Object.setPrototypeOf([...record.operations],{})}));
+ assert.throws(()=>parsePracticeEvidence({...record,operations:Array.from({length:257},()=>record.operations[0])}));
+ await assert.rejects(()=>applyPracticeEvidenceMutation(record,mutation('code-hint',{hint:{runId:99,text:'hint',source:'preset'}},1,'hint'),{attempt:attempt()}),/hint/);
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,mutation('code-report',{report:report()}),{attempt:{...attempt(),binding:{...attempt().binding,ownerId:'other'}}}),/binding/);
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,mutation('code-report',{report:report()}),{attempt:{...attempt(),answerRevision:-1}}),/answer-revision/);
+ assert.throws(()=>parsePracticeEvidenceMutation(mutation('step-diagnostic',{diagnostic:{...diagnostic(),answerRevision:-1}})),/integer/);
+});
+test('approved variant recovery rebuilds exact parameters/hash and rejects fabricated references',async()=>{
+ const parent={...attempt('calculation'),attemptId:'original'},a={...attempt('calculation',false),parentAttemptId:'original',checkpoint:{...attempt('calculation',false).checkpoint,purpose:'remediation'}},s=source();s.calculation={...s.calculation,variantMappingId:'mapped'};
+ s.mapping={schemaVersion:1,mappingId:'mapped',parentItemKey:a.binding.itemKey,parentContentHash:a.binding.contentHash,hashKind:'content',templateVersion:1,templateId:'sqrt-sign',sourceConditions:[],parameters:{x:-3}};
+ const result=await createMappedMathVariant({parent:s.mapping,support:s.calculation,mapping:s.mapping,seed:17});assert.equal(result.status,'available');
+ const v=result.variant,descriptor={schemaVersion:1,mappingId:'mapped',...v.parent,templateVersion:1,templateId:v.templateId,seed:v.seed,parameters:v.parameters,variantHash:v.variantHash};
+ const m=mutation('variant',{variant:descriptor}),context={attempt:a,source:s,parentAttempt:parent};
+ const record=(await applyPracticeEvidenceMutation(null,m,context)).record;
+ assert.deepEqual(record.variant,descriptor);assert.equal(record.variant.definition,undefined);
+ for(const variant of [{...descriptor,variantHash:'b'.repeat(64)},{...descriptor,parameters:{x:3}},{...descriptor,mappingId:'invented'}]) await assert.rejects(()=>applyPracticeEvidenceMutation(null,{...m,variant},context),/source/);
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,m,{attempt:a}),/source/);
+ assert.throws(()=>parsePracticeEvidenceMutation({...m,variant:{...descriptor,definition:v.definition}}));
+ const first={...a,parentAttemptId:null,checkpoint:{...a.checkpoint,purpose:'first'}};
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,m,{...context,attempt:first,parentAttempt:undefined}),/variant-remediation/);
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,m,{...context,attempt:{...a,checkpoint:{...a.checkpoint,purpose:'guided'}}}),/variant-remediation/);
+ const invalidParents=[undefined,{...parent,attemptId:'foreign'},{...parent,submitted:null},{...parent,checkpoint:{...parent.checkpoint,mode:'code'}},...Object.keys(parent.binding).map(key=>({...parent,binding:{...parent.binding,[key]:key==='contentHash'?'b'.repeat(64):'other'}}))];
+ for(const parentAttempt of invalidParents) await assert.rejects(()=>applyPracticeEvidenceMutation(null,m,{...context,parentAttempt}),/variant-parent/);
+});
+test('receipt count and UTF8 aggregate cap fail visibly without trimming existing first evidence',async()=>{
+ const a=attempt(),base=mutation('code-report',{report:report()});let record=(await applyPracticeEvidenceMutation(null,base,{attempt:a})).record;
+ for(let i=1;i<256;i++) record=(await applyPracticeEvidenceMutation(record,mutation('code-hint',{hint:{runId:1,text:'hint',source:'preset'}},i,`receipt-${i}`),{attempt:a})).record;
+ const before=structuredClone(record);assert.equal((await applyPracticeEvidenceMutation(record,mutation('code-hint',{hint:{runId:1,text:'new',source:'preset'}},256,'overflow'),{attempt:a})).status,'conflict');assert.deepEqual(record,before);
+ const large={...report(2,'student-error'),phase:'tests',assertionsExecuted:1,firstFailure:{caseId:'case',functionName:'f',args:['中'.repeat(2900),'文'.repeat(2900),'大'.repeat(2900)],kwargs:{x:['大'.repeat(2900),'文'.repeat(2900),'中'.repeat(2900)]},expected:['错'.repeat(2900),'误'.repeat(2900),'值'.repeat(2900)],actual:['实'.repeat(2900),'际'.repeat(2900),'值'.repeat(2900)]}};
+ const small=(await applyPracticeEvidenceMutation(null,base,{attempt:a})).record;
+ const largeMutation=mutation('code-report',{report:large},0,'large');assert.doesNotThrow(()=>parsePracticeEvidenceMutation(largeMutation));
+ await assert.rejects(()=>applyPracticeEvidenceMutation(null,largeMutation,{attempt:a}),/size/);
+ assert.equal(small.execution.first.runId,1);
+});

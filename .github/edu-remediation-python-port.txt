@@ -1,0 +1,11 @@
+// CI-only deterministic execution port. Real sandbox transport is tested separately.
+export function usePyodide(){
+ const probe=window.__remedy;
+ return {isReady:true,error:null,retry(){},cancel(){probe.cancels++;},async runPython(code,_capture,stdin,testCode){
+  probe.pythonCalls.push({code,stdin,testCode});
+  if(probe.pythonKind==='hang')return new Promise(resolve=>{probe.resolvePython=resolve;});
+  if(probe.pythonKind==='error')throw Object.assign(new Error('AssertionError: expected zero'),{name:'PythonError',executionPhase:'tests',assertionFailure:true});
+  if(probe.pythonKind==='environment')throw Object.assign(new Error('runtime unavailable'),{name:'RuntimeError'});
+  return {output:'synthetic output',assertionsPassed:probe.pythonKind==='empty'?0:1};
+ }};
+}

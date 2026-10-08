@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createElement as h} from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {loadTsx} from './fixtures/tsx-components.mjs';
+const {StudyAIMarkdown,StudyAIChatStream}=loadTsx(new URL('../app/components/ai-sidebar/study-ai-chat-stream.tsx',import.meta.url));
+test('responses retain a visible source page after navigation and label unknown legacy provenance',()=>{const html=renderToStaticMarkup(h(StudyAIChatStream,{messages:[{id:'a',role:'assistant',content:'Earlier answer',contextTitle:'Python 代码练习'},{id:'b',role:'assistant',content:'Old answer'}],busy:false}));assert.match(html,/Python 代码练习/);assert.match(html,/页面来源未记录/);});
+const {studyAIVisibleText}=loadTsx(new URL('../app/ai/study-ai-visible-text.tsx',import.meta.url));
+test('flashcard context keeps the visible front and excludes opaque source properties',()=>{
+ assert.equal(studyAIVisibleText('What is stability?'),'What is stability?');
+ assert.equal(studyAIVisibleText(h('p',{'data-private-source':'private-path'},'Compute ',h('strong',null,'2 + 2'))),'Compute  2 + 2');
+ assert.equal(studyAIVisibleText(h(()=>null,{sourceNote:'private-path',answer:'hidden'})),'');
+});
+test('shared renderer supports formula and highlighted code while refusing raw HTML and unsafe links',()=>{const html=renderToStaticMarkup(h(StudyAIMarkdown,{text:'# Heading\n\n**Reason** $x^2$\n\n```python\nprint("<script>alert(1)</script>")\n```\n\n<img src=x onerror=alert(1)> [bad](javascript:alert(1))'}));assert.match(html,/<h3>[\s\S]*Heading/);assert.match(html,/katex/);assert.match(html,/token/);assert.doesNotMatch(html,/<script|<img|href="javascript/);assert.match(html,/&lt;img/);assert.match(html,/复制/);});
+test('both providers share the same transcript with model attribution and copy controls',()=>{const messages=['deepseek','chatgpt'].map(provider=>({id:provider,role:'assistant',content:'A useful answer',provider,model:'configured-model'})),html=renderToStaticMarkup(h(StudyAIChatStream,{messages,busy:false}));assert.match(html,/DeepSeek/);assert.match(html,/OpenAI/);assert.equal((html.match(/configured-model/g)||[]).length,2);assert.equal((html.match(/复制/g)||[]).length,2);});

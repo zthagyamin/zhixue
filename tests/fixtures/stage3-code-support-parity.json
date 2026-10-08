@@ -1,0 +1,14 @@
+[
+  {"name":"empty arguments and nested JSON values","valid":true,"input":{"schemaVersion":1,"type":"code","functionNames":["collect"],"cases":[{"id":"nested","functionName":"collect","args":[],"expected":{"rows":[null,true,false,1.5,"text"]}}]}},
+  {"name":"null kwargs rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"kwargs":null,"expected":null}]}},
+  {"name":"explicit kwargs preserved","valid":true,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"kwargs":{"value":false},"expected":false,"hint":"Inspect the input."}]}},
+  {"name":"boolean version rejected","valid":false,"input":{"schemaVersion":true,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"expected":null}]}},
+  {"name":"missing expected rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[]}]}},
+  {"name":"unknown support key rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"expected":null}],"expression":"f()"}},
+  {"name":"prototype JSON key rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"expected":{"__proto__":1}}]}},
+  {"name":"constructor JSON key rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"expected":{"constructor":1}}]}},
+  {"name":"expression kwargs name rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"kwargs":{"value()":1},"expected":null}]}},
+  {"name":"dunder function rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["__import__"],"cases":[{"id":"one","functionName":"__import__","args":[],"expected":null}]}},
+  {"name":"non-object kwargs rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"kwargs":[],"expected":null}]}},
+  {"name":"whitespace hint rejected","valid":false,"input":{"schemaVersion":1,"type":"code","functionNames":["f"],"cases":[{"id":"one","functionName":"f","args":[],"expected":null,"hint":" \n\t"}]}}
+]

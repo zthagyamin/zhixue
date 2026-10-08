@@ -1,0 +1,27 @@
+/* Quiet by default: learning content and errors are never hidden by generic selectors. */
+.study-guidance{width:100%;font-size:13px;color:var(--muted);margin:0 0 12px}
+.study-first-use-tip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;line-height:1.65}
+.study-first-use-tip p{margin:0!important;font-size:13px!important;font-weight:400!important;color:var(--muted)!important}
+.study-first-use-tip button{flex-shrink:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.study-guidance-help{font-size:13px;line-height:1.75;color:var(--muted);margin:8px 0 16px}
+.study-guidance-help summary{cursor:pointer;min-height:32px;color:var(--ink)}
+.study-guidance-help h3{font-size:14px;margin:12px 0 6px}.study-guidance-help p{margin:8px 0}
+.study-guidance :is(button,summary):focus-visible,.study-guidance-help summary:focus-visible,.study-save-status summary:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}
+.study-session-shell:has(.study-word-card[data-quiet-study]) .study-session-status>span:first-child{visibility:visible}
+.study-word-card[data-quiet-study] .study-stage-compact{font-size:13px!important;font-weight:500!important;color:var(--muted)!important;margin:0 0 14px!important}
+.study-word-card[data-quiet-study] .study-word-phonetic:empty{display:none}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions{gap:12px;margin-top:20px}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button{min-height:56px;padding:14px 18px;font-size:17px;text-align:center;gap:8px}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button:first-child{background:var(--study-accent);color:var(--study-on-accent);border-color:var(--study-accent)}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button:last-child:not(:only-child){background:var(--surface);color:var(--ink);border-color:var(--line)}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions:has(>button:only-child){grid-template-columns:minmax(0,1fr);max-width:420px;margin-inline:auto}
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button:only-child{background:var(--study-accent);color:var(--study-on-accent);border-color:var(--study-accent)}
+.study-word-card[data-quiet-study] .word-actions .study-key-hint{font-size:12px;opacity:.75}
+.study-save-status{font-size:12px;color:var(--muted);margin:12px 0;line-height:1.65}.study-save-status summary{cursor:pointer;padding:6px 0;min-height:32px}.study-save-status p{margin:4px 0}
+.study-save-status[data-attention]>p{color:var(--ink);border-left:2px solid var(--study-accent-text);padding-left:10px}
+.study-inline-options{margin:0 0 14px;font-size:13px;color:var(--muted)}.study-inline-options>summary{min-height:36px;cursor:pointer;color:var(--ink)}.study-inline-options>summary:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:2px}
+.study-swipe-handle[data-quiet-handle]{min-height:44px;margin-top:12px;padding:6px}.study-swipe-handle[data-quiet-handle]>span{font-size:18px}
+.study-spelling .spelling-preferences-disclosure{font-size:13px;color:var(--muted);margin:0 0 12px;align-self:flex-start}.spelling-preferences-disclosure summary{min-height:32px;cursor:pointer}
+@media(max-width:640px){.study-app .study-word-card[data-quiet-study][data-stage] .word-actions{gap:10px}.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button{min-height:52px;font-size:16px}.study-first-use-tip{align-items:flex-start}.study-first-use-tip p{padding-top:10px}}
+
+.study-app .study-word-card[data-quiet-study][data-stage] .word-actions button > span{display:inline-flex;flex-direction:row;align-items:center;gap:8px}

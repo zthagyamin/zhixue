@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report / 私密安全报告
+    url: https://github.com/zthagyamin/zhixue/security/advisories/new
+    about: Do not disclose vulnerabilities in public issues / 不在公开问题披露漏洞
+  - name: User help / 使用帮助
+    url: https://github.com/zthagyamin/zhixue/blob/main/SUPPORT.md
+    about: Read the FAQ and support boundaries / 先阅读常见问题与支持边界

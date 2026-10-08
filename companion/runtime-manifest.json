@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "pythonVersion": "3.14.7",
+  "architecture": "amd64",
+  "archive": "runtime-windows-x64.zip",
+  "sha256": "269ec9275037c0b0568ca5b002dbf210af6198e44a0e167bb9082a7fd95d749f",
+  "pythonSource": "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip",
+  "pythonSha256": "d297e5ff019966817ad8502465176139f2d3d840fa4ed84b13bed399a6ab1f15",
+  "packages": [
+    {
+      "file": "jaraco.classes-3.4.0-py3-none-any.whl",
+      "sha256": "f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790"
+    },
+    {
+      "file": "jaraco_context-6.1.2-py3-none-any.whl",
+      "sha256": "bf8150b79a2d5d91ae48629d8b427a8f7ba0e1097dd6202a9059f29a36379535"
+    },
+    {
+      "file": "jaraco_functools-4.6.0-py3-none-any.whl",
+      "sha256": "99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30"
+    },
+    {
+      "file": "keyring-25.7.0-py3-none-any.whl",
+      "sha256": "be4a0b195f149690c166e850609a477c532ddbfbaed96a404d4e43f8d5e2689f"
+    },
+    {
+      "file": "more_itertools-11.1.0-py3-none-any.whl",
+      "sha256": "4b65538ae22f6fed0ce4874efd317463a7489796a0939fa66824dd542125a192"
+    },
+    {
+      "file": "pypdf-6.16.2-py3-none-any.whl",
+      "sha256": "c8b09a59399062fb45a1b8156c18a787a10a3dae03ac9674397a226712c94604"
+    },
+    {
+      "file": "pywin32_ctypes-0.2.3-py3-none-any.whl",
+      "sha256": "8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8"
+    },
+    {
+      "file": "tzdata-2026.3-py2.py3-none-any.whl",
+      "sha256": "dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+/* Recall-specific hierarchy; no generic hiding of errors, instructions or question content. */
+.study-app .recall-flow{width:100%;max-width:900px;margin-inline:auto;gap:20px}
+.study-app .recall-flow .study-question{font-size:clamp(22px,2.2vw,30px);line-height:1.65;letter-spacing:0;margin:0 0 24px;font-weight:600;overflow-wrap:anywhere}
+.recall-input-label{display:flex;flex-direction:column;gap:8px;color:var(--muted);font-size:14px}
+.recall-flow textarea{width:100%;box-sizing:border-box;min-height:148px;resize:vertical;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;line-height:1.7;border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.recall-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;align-items:center}
+.recall-actions button{min-height:48px;flex:1 1 210px}
+.recall-flow .recall-actions button:disabled{opacity:.55;cursor:default}
+.recall-oral-option,.recall-own-answer,.recall-more-feedback,.recall-policy-status{font-size:13px;color:var(--muted);margin-top:16px}
+.recall-flow summary{cursor:pointer;min-height:36px;line-height:1.7}
+.recall-flow p,.recall-reference{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75}
+.recall-reference{margin:16px 0;padding:16px 18px;border-left:3px solid var(--study-accent-text);background:var(--surface-2);color:var(--ink);border-radius:0 8px 8px 0}
+.recall-reference h3{margin:0 0 10px;font-size:15px}.recall-result-label{font-weight:600;color:var(--ink)}
+.recall-assessment{border:0;padding:0;margin:20px 0 8px;display:flex;flex-wrap:wrap;gap:12px;min-width:0}
+.recall-assessment legend{font-size:13px;color:var(--muted);margin-bottom:10px}.recall-assessment label{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.recall-flow input[type=radio],.recall-flow input[type=checkbox]{min-height:0;width:16px;height:16px;accent-color:var(--study-accent)}
+.recall-status{color:var(--muted);font-size:13px}.recall-save-error{color:var(--study-danger);font-size:14px;border-left:2px solid currentColor;padding-left:10px}
+.recall-text-action{background:none;border:0;color:var(--study-accent-text);text-decoration:underline;min-height:44px;cursor:pointer}
+.recall-flow :is(button,summary,input,textarea):focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}.recall-feedback:focus{outline:none}
+@media(max-width:600px){.study-app .recall-flow .study-question{font-size:22px;margin-bottom:18px}.recall-actions{gap:10px}.recall-actions button{flex-basis:100%}.recall-reference{padding:12px 14px}}

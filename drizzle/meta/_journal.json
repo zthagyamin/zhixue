@@ -1,0 +1,181 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1787309141656,
+      "tag": "0000_sad_human_cannonball",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787309824562,
+      "tag": "0001_large_outlaw_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787310077976,
+      "tag": "0002_confused_rachel_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787573237411,
+      "tag": "0003_study_events_v3",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788202784269,
+      "tag": "0004_early_the_anarchist",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788203356116,
+      "tag": "0005_chilly_masked_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788204710848,
+      "tag": "0006_graceful_zarek",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1788206479939,
+      "tag": "0007_illegal_killraven",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788211947344,
+      "tag": "0008_misty_phil_sheldon",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788212682972,
+      "tag": "0009_slow_otto_octavius",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788213189611,
+      "tag": "0010_cloudy_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1788213997593,
+      "tag": "0011_wooden_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788214871342,
+      "tag": "0012_bored_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788218645012,
+      "tag": "0013_dazzling_vermin",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788227621011,
+      "tag": "0014_skinny_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1788232871282,
+      "tag": "0015_material_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1788642438572,
+      "tag": "0016_assistance_summary_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1788805397882,
+      "tag": "0017_long_term_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1788813366914,
+      "tag": "0018_tearful_thunderbolt_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1788814355182,
+      "tag": "0019_oval_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1788842668915,
+      "tag": "0020_optimal_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1791158400000,
+      "tag": "0021_nonword_attempts_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1791244800000,
+      "tag": "0022_course_evidence_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1791331200000,
+      "tag": "0023_practice_evidence_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1791417600000,
+      "tag": "0024_math_variant_mappings_v1",
+      "breakpoints": true
+    }
+  ]
+}

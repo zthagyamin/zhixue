@@ -1,0 +1,55 @@
+/* Progressive controls reuse the existing light/dark palette. */
+.note-trial-featured{padding:20px 24px!important;border:1px solid var(--line);border-left:3px solid var(--study-accent-text);border-radius:8px;background:var(--surface);margin-bottom:20px!important}.note-trial-featured>summary{font-size:clamp(20px,3vw,26px);line-height:1.45}.note-trial-featured .note-trial-drop{background:var(--surface-2)}
+.saved-trial-materials{margin-top:16px}.saved-trial-materials summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.saved-trial-materials input{width:100%;padding:10px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px}.saved-trial-materials h4{margin-top:16px}.saved-trial-materials li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.saved-trial-materials input:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:2px}
+@media(max-width:600px){.note-trial-featured{padding:16px!important}}
+.note-trial{margin:0 0 24px;padding:14px 0;border-block:1px solid var(--line);color:var(--ink)}
+.note-trial>summary{cursor:pointer;font-weight:600;min-height:32px}.note-trial p{font-size:14px;line-height:1.7;margin:12px 0}.note-trial button,.study-source-detail button{padding:9px 12px;min-height:44px;margin:8px 8px 8px 0;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;cursor:pointer}.note-trial button:disabled{opacity:.6;cursor:default}
+.note-trial label,.study-source-detail label{display:flex;flex-direction:column;gap:8px;margin:12px 0;font-size:14px}.note-trial textarea,.study-source-detail input{max-width:100%;width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit;padding:10px;min-height:44px}.note-trial textarea{resize:vertical}.note-trial input{max-width:100%}.note-trial-drop{padding:12px;border:1px dashed var(--line);border-radius:6px}.note-trial-excerpt{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:var(--surface-2);color:var(--ink);border-left:3px solid var(--study-accent-text);max-height:50vh;overflow:auto}.note-trial :is(button,input,textarea,summary):focus-visible,.study-source-detail :is(button,input,a,summary):focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}.study-source-path{display:block;overflow-wrap:anywhere;font-size:13px}.study-source-detail summary{cursor:pointer}
+.paper-mobile-tabs{position:sticky;top:0;z-index:4;display:flex;gap:8px;padding:10px 0;background:var(--paper);border-bottom:1px solid var(--line)}.paper-mobile-tabs button{flex:1;min-height:44px;color:var(--ink);background:var(--surface)}.paper-mobile-tabs button[aria-selected=true]{background:var(--study-accent);color:var(--study-on-accent);border-color:var(--study-accent)}.paper-workspace-panel{min-width:0}.paper-workspace-panel[hidden]{display:none}.paper-workspace-panel:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:2px}
+.library-group-index{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}.library-group-index button{padding:8px 12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;min-height:44px;cursor:pointer}.learning-discipline .library-group-toggle{min-height:44px;padding:0;background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer;scroll-margin-top:90px}.library-group-toggle[aria-disabled=true]{opacity:1;cursor:default}.learning-discipline>div[hidden]{display:none}
+.study-review-context{font-size:13px;color:var(--muted);line-height:1.65;margin:8px 0 16px}.study-review-context summary{cursor:pointer}.study-review-context p{margin:6px 0}.study-review-context strong{color:var(--ink)}
+@media(max-width:800px){.paper-responsive-columns{grid-template-columns:1fr;gap:0;padding-top:12px}.paper-workspace-panel{max-height:none;overflow:visible;padding:2px 0 8px}.paper-responsive-columns .paper-board{border-top:0;padding-top:0}.paper-workspace-panel textarea,.note-trial textarea,.study-source-detail input{font-size:16px}.paper-dialog{height:96vh;height:96dvh;max-height:96dvh}.paper-mobile-tabs{scroll-margin-top:10px}}
+@media(prefers-reduced-motion:reduce){.paper-workspace-panel{scroll-behavior:auto}}
+.paper-label select{background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:10px;max-width:100%;border-radius:6px;font:inherit;min-height:44px}
+.study-first-visit .study-primary-action{background:transparent;color:var(--study-accent-text);border:1px solid var(--line);box-shadow:none}.study-first-visit .study-primary-action:hover{background:var(--surface-2)}
+.plan-relationship-disclosure{margin:8px 0 16px;font-size:13px;color:var(--muted)}.plan-relationship-disclosure>summary{cursor:pointer;min-height:32px;line-height:1.8}.plan-relationship-disclosure>summary:focus-visible,.c-legacy-plan-options>summary:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}.c-legacy-plan-options>summary{cursor:pointer;font-size:13px;color:var(--muted);line-height:1.8;padding:6px 0}.c-legacy-plan-options[open] .c-legacy-plan-actions{margin-top:12px}.c-legacy-plan-board>.study-primary-action{margin-bottom:18px}
+.study-app .study-account-read-note.study-account-optional{display:block;background:transparent;padding:6px 0;border:0;margin-bottom:12px;min-height:0}.study-account-optional summary{cursor:pointer;font-size:13px;color:var(--muted);padding:6px 0}.study-account-optional .study-account-read-pill{background:transparent;color:var(--muted);padding:0}.study-account-optional summary i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:7px}.study-account-optional summary:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}.study-account-optional>button{margin-top:8px}
+/* Reading stays ahead of document management, especially on phones. */
+.paper-material-manager{margin:8px 0;border-bottom:1px solid var(--line);padding:8px 0;font-size:14px}
+.paper-material-manager>summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;font-weight:600}
+.paper-material-manager>summary:focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}
+.paper-material-manager .paper-import select{max-width:100%;min-width:0;padding:8px;color:var(--ink);background:var(--surface);font:inherit}
+.trial-review-actions{display:flex;gap:10px;flex-wrap:wrap}
+.saved-trial-materials{scroll-margin-top:24px}
+.saved-trial-materials label{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.saved-trial-materials input{padding:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;max-width:100%;border-radius:6px}
+.saved-trial-materials li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+.saved-trial-materials li button:first-child{flex:1;text-align:left;min-width:180px;overflow-wrap:anywhere}
+@media(max-width:800px){
+ .paper-dialog{padding:12px}
+ .paper-close{min-height:44px}
+ .paper-heading{padding:12px 0 8px}
+ .paper-heading h1{margin:0 0 8px;font-size:24px;overflow-wrap:anywhere}
+ .paper-heading p:empty,.paper-eyebrow{display:none}
+ .paper-save-state{display:block;padding-top:0;font-size:13px}
+ .paper-topbar{padding:8px 0;font-size:14px}
+ .paper-topbar button{min-height:44px}
+ .paper-reading-tools p{font-size:14px;margin:0}
+ .paper-reading-tools button{font-size:14px;min-height:44px}
+ .paper-workshop .paper-raw{font-size:20px;line-height:1.8;padding:10px 0;margin-top:6px}
+ .paper-import{gap:8px}
+}
+.paper-workshop .paper-selection-help{margin:0;font-size:14px}
+.paper-selection-help summary{min-height:44px;align-content:center}
+@media(max-width:800px){
+ .study-app .paper-dialog{padding:12px}
+ .paper-dialog .paper-heading{padding:8px 0}
+ .paper-dialog .paper-heading h1{margin:0 0 6px;font-size:24px}
+ .paper-dialog .paper-heading p{margin:4px 0;font-size:13px}
+ .paper-dialog .paper-save-state{padding-top:0;font-size:13px}
+ .paper-dialog .paper-topbar{padding:6px 0;font-size:14px}
+ .paper-dialog .paper-responsive-columns{padding-top:8px;gap:0}
+ .paper-dialog .paper-reading-tools{align-items:center;gap:4px}
+ .paper-dialog .paper-reading-tools button{font-size:14px;min-height:44px}
+ .paper-dialog .paper-workshop .paper-raw{font-size:20px;line-height:1.8;padding:8px 0;margin:4px 0 12px}
+}

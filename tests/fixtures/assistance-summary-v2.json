@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "recallPolicy": {
+    "policyVersion": "recall-hints-v1",
+    "attemptId": "attempt-recall-golden",
+    "maxPreHintLevel": 2,
+    "requestedRating": "good",
+    "appliedRating": "hard"
+  },
+  "attemptEventId": "event-recall-golden",
+  "attemptCoreHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "practiceMode": "recall",
+  "observationScope": "current-page-attempt",
+  "preSubmitAssistance": [
+    {
+      "action": "ai-hint",
+      "count": 2
+    }
+  ],
+  "postSubmitFeedback": [
+    {
+      "action": "reference-answer",
+      "count": 1
+    }
+  ],
+  "summaryId": "assistance:dbfe7be991bb6e2d0698e7ced23da62cdb5b1f0c5eca0acd62949ee700f43588",
+  "summaryHash": "770117e6bfe780d3701eb886f2f9d427d460f8239720c6fdd2671da19358a572"
+}

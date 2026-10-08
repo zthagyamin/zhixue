@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "eventType": "task-completed",
+  "eventId": "task-event-001",
+  "taskId": "manual-orbit",
+  "subjectId": "astronomy",
+  "day": "2026-08-31",
+  "occurredAt": "2026-08-31T02:00:00.000Z",
+  "unitIds": [
+    "astronomy:orbit"
+  ],
+  "source": "self-report",
+  "evidenceRefs": [],
+  "coreHash": "9fa735df5c32136f06396a5c9a31f74d997691a4ac4ae92f88290a868231ee66"
+}

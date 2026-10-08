@@ -1,0 +1,80 @@
+// Real planning hooks, application rules and IndexedDB; transport/clock gates use synthetic data.
+import React,{useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {useLongTermPlanView,useAutomaticPlanning,usePlanningNavigation,useLegacyPlanState,useLegacyPlanning} from '../../src/features/planning';
+import {createTaskPlanController} from '../../src/application/planning';
+import {generateTaskPlan,hashTaskPlan,taskSourceHash,editTaskPlan,studyPracticeGroups,emptySubjectRound} from '../../src/domain/planning';
+import {loadLongTermPlanState,saveLongTermPlanState} from '../../app/local-long-term-plan';
+import {loadTaskDraft,saveTaskDraft} from '../../app/local-task-plan';
+import {useSubjectRoundSessions} from '../../app/use-subject-round-sessions';
+import {vocabularyInput} from '../../tests/fixtures/task-plan-input.mjs';
+import raw from '../../tests/fixtures/long-term-plan.json';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+const query=new URLSearchParams(location.search),scenario=query.get('case'),snapshot=structuredClone(raw.snapshot);
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const deferred=()=>{let resolve;const promise=new Promise(done=>resolve=done);return{promise,resolve};};
+const probe={pending:0,writes:[],prepared:[],navigation:[],busy:false,messages:[],formalEvents:0};window.__planning=probe;
+const owner='m3-browser',libraryId='synthetic',scope={workspaceId:owner,libraryId};
+let heldRead=null,loseReply=scenario==='lost-reply';
+const newId=()=>crypto.randomUUID(),message=error=>String(error.message??error);
+function LongTerm(){
+ const transport=useMemo(()=>({read:async()=>{const value=await loadLongTermPlanState(scope);if(heldRead){probe.pending++;await heldRead.promise;}return value;},
+  write:async command=>{probe.writes.push(command.operationId);const result=await saveLongTermPlanState(scope,command);if(loseReply){loseReply=false;throw Error('回执丢失，请重试');}return result;}}),[]);
+ const view=useLongTermPlanView(owner,transport,{newId,message});
+ const [error,setError]=useState('');
+ const save=async(enabled=true)=>{try{await view.save({expectedRevision:view.state?.revision??0,enabled,snapshot});setError('');}catch(error){setError(message(error));}};
+ probe.view=view;probe.read=()=>loadLongTermPlanState(scope);probe.release=()=>{const old=heldRead;heldRead=null;old?.resolve();};
+ return <main><h1>长期计划</h1><p>修订 <strong data-testid="revision">{view.state?.revision??'读取中'}</strong></p><p>{view.state?.enabled?'已启用':'已暂停'}</p>
+  <button onClick={()=>void save()}>保存计划</button><button onClick={()=>void save(false)}>暂停计划</button>
+  <button onClick={()=>{heldRead=deferred();void view.refresh().catch(()=>{});}}>延迟读取</button><p role="status">{error}</p></main>;
+}
+const goalState={revision:1,enabled:true,snapshot,lastOperationId:'synthetic-goal'};
+function Automatic(){
+ const [scope,setScope]=useState('A'),[editing,setEditing]=useState(false),gate=useRef(deferred()),attempts=useRef(0);
+ useAutomaticPlanning({input:{scope,mode:'native',day:snapshot.spec.startDate,sourceStamp:'facts',trigger:'ready',ready:true,state:goalState},
+  editing,historyReady:true,blocked:false,canContinue:()=>true,ports:{loadSource:async input=>{attempts.current++;if(attempts.current===1){probe.pending++;await gate.current.promise;}return{todayLocked:false};},
+   preview:input=>structuredClone(input.previous),save:()=>{throw Error('Unexpected goal rewrite');},refreshGoals:()=>{throw Error('Unexpected refresh');},now:()=>snapshot.createdAt??'2026-09-17T00:00:00Z',
+   prepareDaily:async(input,_state,current)=>{if(!current())throw Error('Retired preparation');probe.prepared.push(input.scope);return true;}}});
+ probe.release=()=>gate.current.resolve();
+ return <main><h1>今日草稿准备</h1><p>空间 {scope} · {editing?'编辑中':'可准备'}</p><button onClick={()=>setScope('B')}>切换空间</button>
+  <button onClick={()=>setEditing(true)}>编辑长期计划</button><button onClick={()=>setEditing(false)}>结束编辑</button></main>;
+}
+const input=vocabularyInput(4),base=await generateTaskPlan(input),original=base.tasks[0];
+const tasks=original.action.itemKeys.map((key,index)=>({...original,taskId:'review-'+index,title:'复习 '+index,category:'review',reviewRoundId:'round-'+index,quantity:1,action:{kind:'practice',itemKeys:[key]}}));
+tasks.push({...original,taskId:'new-words'});for(const task of tasks)task.sourceHash=await taskSourceHash(task,input.catalog);
+const body={...base,tasks};delete body.planHash;const plan={...body,planHash:await hashTaskPlan(body)};
+await saveTaskDraft(owner,{plan,baseRevision:0,dirty:false});
+const draft=createTaskPlanController({load:loadTaskDraft,save:saveTaskDraft,publish(){}});await draft.open(owner,plan.day);
+function Navigation(){
+ const [page,setPage]=useState('今日'),[busy,setBusy]=useState(false),[entry,setEntry]=useState(null),ticket=useRef(0),gate=useRef(deferred());
+ const rounds=useSubjectRoundSessions(owner,plan.day);
+ const source={ready:true,plan,catalog:input.catalog,libraryId,completedTaskIds:[],startedTaskIds:[],pendingItemByTask:{},context:{}};
+ const navigator=usePlanningNavigation({scope:{owner,libraryId,day:plan.day,mode:'native'},stamp:'facts',resetKey:'today',active:()=>true,busy,pending:()=>false,captureBoundary:()=>()=>true,
+  clock:{advance:()=>++ticket.current,matches:id=>ticket.current===id},loading:value=>{probe.busy=value;setBusy(value);},reset(){},ports:{
+   prepareLeave:()=>()=>true,loadNative:async()=>{if(scenario==='navigation-cancel'){probe.pending++;await gate.current.promise;}return source;},loadAccount:async()=>null,
+   groups:(source,ids)=>studyPracticeGroups(source.plan,source.catalog,()=> 'recall',ids),verify:()=>{},
+   persistStarted:(source,ids,current)=>draft.change(async previous=>({...previous,dirty:true,plan:await editTaskPlan(previous.plan,{type:'start-group',taskIds:ids},source.catalog)}),current),
+   groupItems:(_source,group)=>({keys:group.itemKeys,completedKeys:['word:0']}),getRound:rounds.getSubjectRound,activateRound:rounds.activateSubjectRound,
+   enter:value=>{probe.navigation.push(value.task.taskId);setEntry(value);setPage('题组');},returnToday:()=>setPage('今日'),openNote:()=>{},message:value=>probe.messages.push(value),
+  }});
+ probe.release=()=>gate.current.resolve();probe.read=()=>loadTaskDraft(owner,plan.day);probe.page=page;
+ return <main><h1>{page}</h1><p>{busy?'正在准备':'可以继续'}</p><button onClick={()=>void navigator.startNative('review-0')}>开始复习组</button>
+  <button onClick={()=>{ticket.current++;setBusy(false);probe.busy=false;setPage('学习进度');}}>查看学习进度</button>
+  {entry&&<section><h2>{entry.group.tasks.length} 项同类练习</h2><p>继续位置 {entry.index+1}</p>
+   <button onClick={()=>rounds.setSubjectRounds({vocab:{...emptySubjectRound(),reviewedKeys:entry.group.itemKeys}})}>完成本轮浏览</button>
+   <button onClick={()=>void navigator.continueToday()}>继续下一组</button></section>}</main>;
+}
+function Legacy(){
+ const [scope,setScope]=useState('A');const state=useLegacyPlanState(scope,useMemo(()=>({key:scope}),[scope]));
+ const transport=useMemo(()=>({getCurrentPlan:async()=>({revision:scope==='A'?12:1,candidate:null,history:[]}),applyPlan:async candidate=>{probe.writes.push(candidate.planHash);return {status:'ok',revision:{revision:2}};}}),[scope]);
+ const actions=useLegacyPlanning({frame:{scope,day:plan.day,sourceStamp:'facts',enabled:true,historyReady:true,storageReady:true,hasContent:true,candidate:state.candidate,authority:state.authority,mode:'deterministic',online:true,operator:'synthetic',transport},ports:{
+  isCurrent:()=>true,readInput:()=>{throw Error('No generation requested');},replaceCandidate:(before,after)=>state.setCandidate(value=>value===before?after:value),publishAuthority:state.publishAuthority,
+  message:value=>probe.messages.push(value),loading(){},resetSelection(){}}});
+ probe.legacy=state;
+ return <main><h1>旧版计划 · 空间 {scope}</h1><p>修订 <strong data-testid="revision">{state.authority.revision}</strong></p><p>{state.candidate?'有本页候选':'没有候选'}</p>
+  <button onClick={()=>void actions.refresh()}>读取主计划</button><button onClick={()=>state.setCandidate({...plan,planHash:'from-A'})}>准备合成候选</button>
+  <button onClick={()=>setScope('B')}>切换空间</button><button onClick={()=>void actions.approve()}>批准候选</button></main>;
+}
+const Component=scenario?.startsWith('automatic-')?Automatic:scenario?.startsWith('navigation-')?Navigation:scenario==='legacy-scope'?Legacy:LongTerm;
+createRoot(document.getElementById('root')).render(<Component/>);

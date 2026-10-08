@@ -1,0 +1,10 @@
+// @ts-expect-error TS5097: standalone Node contracts.
+export { D1LearningAttemptStore } from './d1-store.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+export { createLocalAttemptRepository } from './local-repository.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+export { createAccountAttemptClient } from './client.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+export { attemptFingerprint } from './fingerprint.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+export { evaluationFingerprint } from './fingerprint.ts';

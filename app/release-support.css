@@ -1,0 +1,40 @@
+.release-notice{position:relative;z-index:60;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 24px;background:#f4ead0;color:#42371b;border-bottom:1px solid #ddc995;font-size:14px}
+/* Standalone recall control: it must read as a real button wherever it is mounted, including the
+   study workspace settings, without relying on the .release-support or .support-page wrappers. */
+.release-recall-row{margin:12px 0}
+.release-reopen{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--c-border,#a5b1a4);border-radius:8px;background:var(--c-card-bg,#fff);color:var(--c-text-primary,#243729);font:inherit;font-size:13px}
+.release-reopen:hover{background:var(--c-accent-soft,#edf1f0)}
+.release-reopen:focus-visible{outline:2px solid var(--c-accent,#294c50);outline-offset:3px}
+.release-notice span{flex:1;min-width:220px}.release-notice a,.release-support a,.support-page a{text-decoration:underline;text-underline-offset:3px}
+.release-notice button,.release-support button,.support-page>button{cursor:pointer;border:1px solid var(--line,#a5b1a4);border-radius:6px;padding:8px 12px;background:var(--surface,#fff);color:var(--ink,#243729);font:inherit}.release-support button:disabled{opacity:.6;cursor:wait}
+.release-support{margin:24px 0;padding:20px;border-top:1px solid var(--line,#d9dfd6);color:inherit}.release-support h2{font-size:18px;margin:0 0 12px}.release-support p{font-size:14px;line-height:1.7;margin:12px 0}.release-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.release-support textarea{display:block;width:100%;box-sizing:border-box;margin:8px 0 12px;padding:12px;border:1px solid var(--line,#a5b1a4);border-radius:6px;background:var(--surface,#fff);color:var(--ink,#243729);font:14px/1.7 monospace;resize:vertical}
+.support-page{max-width:780px;margin:0 auto;padding:40px 24px 80px;color:var(--ink,#243729);background:var(--paper,#fff);min-height:100dvh;box-sizing:border-box}.support-page h1{font-size:30px;margin:28px 0 16px}.support-page h2{font-size:21px;margin:28px 0 12px}.support-page p,.support-page li{line-height:1.8}.support-page li{margin:10px 0}.support-page nav{display:flex;gap:20px;flex-wrap:wrap}.support-page .release-support{padding:20px 0}
+/* Release notes use the existing native modal, with a quiet editorial hierarchy. */
+.study-app dialog.study-panel.release-dialog{width:min(560px,calc(100vw - 32px));max-width:560px;max-height:min(760px,85vh,calc(100dvh - 48px));padding:0;border:1px solid var(--c-border);border-radius:14px;background:var(--c-card-bg);color:var(--c-text-primary);box-shadow:0 16px 48px rgb(15 23 42 / 16%)}
+.study-app .release-dialog::backdrop{background:rgb(11 17 32 / 42%);backdrop-filter:blur(5px)}
+.study-app .release-dialog .study-panel-heading{position:sticky;top:0;z-index:2;padding:16px 22px;border-bottom:1px solid var(--c-border-subtle);background:var(--c-card-bg)}
+.study-app .release-dialog .study-panel-heading h2{font-size:14px;font-weight:650;letter-spacing:.03em;color:var(--c-text-secondary)}
+.study-app .release-dialog .study-panel-body{padding:0;overflow:auto;overscroll-behavior:contain}
+.release-dialog-intro{padding:28px 32px 18px}
+.release-dialog-meta{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--c-text-secondary)}
+.release-dialog-meta>span{padding:4px 9px;border:1px solid var(--c-border);border-radius:5px;font-family:var(--font-geist-mono),monospace;color:var(--c-text-primary);background:var(--c-bg)}
+.release-dialog-intro h2{margin:18px 0 10px;font-size:28px;line-height:1.35;font-weight:750;letter-spacing:-.035em;color:var(--c-text-primary)}
+.release-dialog-intro>p{margin:0;font-size:14px;line-height:1.6;color:var(--c-text-secondary)}
+.release-dialog-changes{list-style:none;margin:0;padding:0 32px 24px}
+.release-dialog-changes li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:14px;padding:18px 0;border-bottom:1px solid var(--c-border-subtle)}
+.release-dialog-changes li:last-child{border-bottom:0;padding-bottom:0}
+.release-dialog-changes li>span{padding-top:3px;font-family:var(--font-geist-mono),monospace;font-size:12px;color:var(--c-text-secondary)}
+.release-dialog-changes p{margin:0;font-size:16px;line-height:1.75;color:var(--c-text-primary)}
+.release-dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 32px;border-top:1px solid var(--c-border);background:var(--c-bg)}
+.release-dialog-actions a{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:14px;color:var(--c-text-secondary);text-decoration:none}
+.release-dialog-actions button{display:inline-flex;align-items:center;justify-content:center;gap:22px;min-height:44px;padding:11px 20px;border:1px solid transparent;border-radius:7px;background:var(--c-text-primary);color:var(--c-card-bg);font:inherit;font-size:14px;font-weight:650;cursor:pointer}
+.release-dialog-actions button:hover{opacity:.9}.release-dialog-actions button:active{transform:translateY(1px)}
+.release-dialog-actions a:hover{color:var(--c-text-primary);text-decoration:underline;text-underline-offset:4px}
+.release-dialog-actions :is(button,a):focus-visible{outline:2px solid var(--c-accent);outline-offset:4px}
+.release-history-entry{padding:12px 0 24px;border-bottom:1px solid var(--line);scroll-margin-top:24px}
+.release-history-entry>p{color:var(--muted);font-size:14px}.release-history-entry ul{list-style:disc;padding-left:24px}
+@media(max-width:480px){.study-app dialog.study-panel.release-dialog{width:calc(100vw - 24px);max-height:min(85vh,calc(100dvh - 24px));border-radius:12px}.release-dialog-intro{padding:22px 22px 12px}.release-dialog-intro h2{font-size:25px}.release-dialog-changes{padding:0 22px 22px}.release-dialog-changes li{gap:10px;padding:14px 0}.release-dialog-actions{padding:16px 22px}.study-app .release-dialog .study-panel-heading{padding:12px 16px}}
+
+.release-support button:hover:not(:disabled),.support-page>button:hover{background:var(--surface-2)}
+.release-support :is(button,textarea,a):focus-visible,.support-page :is(button,a):focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}
+.release-support textarea{max-width:100%;overflow-wrap:anywhere}

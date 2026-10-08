@@ -1,0 +1,1 @@
+ALTER TABLE `account_study_ai_settings` ADD `unlimited_daily_usage` integer DEFAULT 0 NOT NULL;

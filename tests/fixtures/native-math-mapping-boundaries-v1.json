@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "nativeQuoteMaximum": 1000,
+  "nativePromptMaximum": 4000,
+  "cases": [
+    {"name":"canonical-quote-maximum","quoteLength":1000,"accepted":true},
+    {"name":"quote-over-limit","quoteLength":1001,"accepted":false},
+    {"name":"long-quote-rejected","quoteLength":4000,"accepted":false},
+    {"name":"longer-quote-rejected","quoteLength":4001,"accepted":false},
+    {"name":"native-prompt-maximum-with-canonical-quote","quoteLength":1000,"promptLength":4000,"accepted":true}
+  ]
+}

@@ -1,0 +1,463 @@
+{
+  "schemaVersion": 1,
+  "status": "qa-only-unmapped",
+  "course": "Synthetic requirements engineering",
+  "section": "Original booking-tool exercise",
+  "sourceFile": "requirements-original.md",
+  "sourceVersion": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+  "sourcePolicy": "Original educational scenario. Candidate and QA-only; not a personal course, learner record, or published result.",
+  "items": [
+    {
+      "id": "se-functional",
+      "prompt": "功能需求描述什么？请说明服务、输入反应和情境行为这三个方面。",
+      "learningSupport": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "services",
+            "text": "描述系统应提供的服务。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          },
+          {
+            "id": "inputs",
+            "text": "描述系统如何响应输入。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          },
+          {
+            "id": "situations",
+            "text": "描述系统在特定情境中的行为。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "se-functional",
+          "kind": "definition",
+          "prompt": "功能需求描述什么？请说明服务、输入反应和情境行为这三个方面。",
+          "scope": "只解释功能需求，不要求罗列全部非功能属性。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "se-ch3-p11",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p11",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: a booking tool must offer cancellation, react to a cancellation request, and state what happens when a booking is already closed. A separate quality constraint specifies a response-time limit under agreed test conditions."
+            }
+          ],
+          "reviewStatus": "candidate",
+          "remediations": [
+            {
+              "taskId": "se-functional-input",
+              "kind": "definition",
+              "prompt": "请补充或修正输入反应：功能需求如何描述系统收到输入后的行为？",
+              "scope": "只补充输入反应。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "reaction",
+                  "text": "说明收到特定输入后应如何反应。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "se-ch3-p11"
+                  ]
+                }
+              ],
+              "answer": "功能需求明确系统收到特定输入后应如何反应。",
+              "targetPointIds": [
+                "inputs"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "se-requirement-comparison",
+      "prompt": "“允许用户取消预约”与“预约查询在约定测试条件下1秒内返回”分别约束什么？各属于哪一类需求？",
+      "learningSupport": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "service",
+            "text": "前者约束系统提供的取消预约服务，属于功能需求。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          },
+          {
+            "id": "time",
+            "text": "后者约束查询服务的响应时间，属于非功能需求。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11",
+              "se-ch3-p15"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "se-requirement-comparison",
+          "kind": "comparison",
+          "prompt": "“允许用户取消预约”与“预约查询在约定测试条件下1秒内返回”分别约束什么？各属于哪一类需求？",
+          "scope": "只比较服务行为与响应时间约束，并给出功能或非功能分类。",
+          "conditions": [
+            "预约场景是本练习设定，不是真实教学来源",
+            "性能分类假设测试条件已另行约定"
+          ],
+          "sources": [
+            {
+              "sourceId": "se-ch3-p11",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p11",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: a booking tool must offer cancellation, react to a cancellation request, and state what happens when a booking is already closed. A separate quality constraint specifies a response-time limit under agreed test conditions."
+            },
+            {
+              "sourceId": "se-ch3-p15",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p15",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: the booking query must finish within one second under an explicitly agreed workload. This is a quality constraint. It is not a guarantee about every device, network, or workload."
+            }
+          ],
+          "reviewStatus": "candidate",
+          "remediations": [
+            {
+              "taskId": "se-comparison-time",
+              "kind": "comparison",
+              "prompt": "同样提到查询，为什么“1秒内返回”主要约束性能，而不是增加一个新服务？",
+              "scope": "解释响应时间约束与服务本身的区别。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "time-limit",
+                  "text": "约束已有查询服务的响应时间，不是在增加服务。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "se-ch3-p11",
+                    "se-ch3-p15"
+                  ]
+                }
+              ],
+              "answer": "它规定已有查询服务的响应时间，所以是非功能需求。",
+              "targetPointIds": [
+                "time"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "se-quiz-functional",
+      "prompt": "“系统允许用户取消预约”最直接属于哪一类？",
+      "learningSupport": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "selection": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "功能需求",
+            "explanation": "描述系统应提供取消预约这一服务。",
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "非功能需求",
+            "explanation": "这里没有对响应时间等服务属性提出约束。",
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "只有写出编程语言后才能判断",
+            "explanation": "这句明确要求提供取消预约服务，即使未指定实现语言也能按该服务分类。",
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a"
+        ],
+        "criteria": [
+          {
+            "id": "service",
+            "text": "系统行为或服务属于功能需求。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "se-quiz-functional",
+          "kind": "comparison",
+          "prompt": "“系统允许用户取消预约”最直接属于哪一类？",
+          "scope": "按要求描述的系统行为分类。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "se-ch3-p11",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p11",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: a booking tool must offer cancellation, react to a cancellation request, and state what happens when a booking is already closed. A separate quality constraint specifies a response-time limit under agreed test conditions."
+            }
+          ],
+          "reviewStatus": "candidate",
+          "remediations": [
+            {
+              "taskId": "se-quiz-functional-retry",
+              "kind": "definition",
+              "prompt": "这句需求要求系统提供哪个服务？",
+              "scope": "只说具体服务，不再猜类型标签。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "cancel",
+                  "text": "提供取消预约服务。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "se-ch3-p11"
+                  ]
+                }
+              ],
+              "answer": "提供取消预约服务。",
+              "targetPointIds": [],
+              "wrongOptionIds": [
+                "b",
+                "c"
+              ],
+              "missingOptionIds": [
+                "a"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "se-quiz-performance",
+      "prompt": "“在约定测试条件下，预约查询在1秒内返回”最直接属于哪一类？",
+      "learningSupport": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "selection": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "功能需求，因为提到了查询",
+            "explanation": "功能名称不改变响应时间约束的性质。",
+            "sourceIds": [
+              "se-ch3-p11",
+              "se-ch3-p15"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "非功能需求，因为限制响应时间",
+            "explanation": "原创教学材料把查询1秒内响应作为性能示例。",
+            "sourceIds": [
+              "se-ch3-p15"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "非需求，因为需求不能带数字",
+            "explanation": "可测量的性能约束可以有明确时间阈值。",
+            "sourceIds": [
+              "se-ch3-p15"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "b"
+        ],
+        "criteria": [
+          {
+            "id": "time",
+            "text": "主要约束已有服务的响应时间。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p11",
+              "se-ch3-p15"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "se-quiz-performance",
+          "kind": "comparison",
+          "prompt": "“在约定测试条件下，预约查询在1秒内返回”最直接属于哪一类？",
+          "scope": "分类时间约束，不验证性能实际已达成。",
+          "conditions": [
+            "测试负载与计时边界已另行约定，但本题不给定这些值",
+            "本题只判断需求分类"
+          ],
+          "sources": [
+            {
+              "sourceId": "se-ch3-p11",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p11",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: a booking tool must offer cancellation, react to a cancellation request, and state what happens when a booking is already closed. A separate quality constraint specifies a response-time limit under agreed test conditions."
+            },
+            {
+              "sourceId": "se-ch3-p15",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p15",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: the booking query must finish within one second under an explicitly agreed workload. This is a quality constraint. It is not a guarantee about every device, network, or workload."
+            }
+          ],
+          "reviewStatus": "candidate",
+          "remediations": [
+            {
+              "taskId": "se-quiz-performance-retry",
+              "kind": "comparison",
+              "prompt": "把“提供查询服务”与“查询在1秒内响应”分别解释：第二句多约束了什么？",
+              "scope": "只解释额外的时间约束。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "time",
+                  "text": "额外约束已有服务的响应时间。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "se-ch3-p11",
+                    "se-ch3-p15"
+                  ]
+                }
+              ],
+              "answer": "第二句额外限制查询服务的响应时间。",
+              "targetPointIds": [],
+              "wrongOptionIds": [
+                "a",
+                "c"
+              ],
+              "missingOptionIds": [
+                "b"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "se-quiz-consistency",
+      "prompt": "同一预约、用户、取消操作和时间点，其他适用条件也一致时，一条需求允许取消，另一条禁止取消，首要违反什么？",
+      "learningSupport": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "selection": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "完整性",
+            "explanation": "此处证据是相互冲突，并非缺少所需功能。",
+            "sourceIds": [
+              "se-ch3-p13"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "一致性",
+            "explanation": "相同条件下允许与禁止相互矛盾。",
+            "sourceIds": [
+              "se-ch3-p13"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "只违反可用性",
+            "explanation": "已有信息证明需求冲突，无法仅据此推断界面可用性。",
+            "sourceIds": [
+              "se-ch3-p13"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "b"
+        ],
+        "criteria": [
+          {
+            "id": "conflict",
+            "text": "相同条件下需求冲突违反一致性。",
+            "mandatory": true,
+            "sourceIds": [
+              "se-ch3-p13"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "se-quiz-consistency",
+          "kind": "comparison",
+          "prompt": "同一预约、用户、取消操作和时间点，其他适用条件也一致时，一条需求允许取消，另一条禁止取消，首要违反什么？",
+          "scope": "比较相同条件下的需求，不把不同状态的合理差异判成矛盾。",
+          "conditions": [
+            "两条需求针对同一预约、用户、取消操作和时间点，其他适用条件也一致"
+          ],
+          "sources": [
+            {
+              "sourceId": "se-ch3-p13",
+              "label": "Original Zhixue requirements exercise",
+              "locator": "Example section p13",
+              "version": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+              "excerpt": "Original teaching scenario: two rules govern the same booking, user, action, time, and conditions. If one requires allowing the action and the other forbids it, both cannot be satisfied. If their conditions differ, check the overlap before claiming a conflict."
+            }
+          ],
+          "reviewStatus": "candidate",
+          "remediations": [
+            {
+              "taskId": "se-quiz-consistency-retry",
+              "kind": "conditions",
+              "prompt": "判断允许取消与禁止取消的需求冲突时，为什么要检查两条需求是否同时适用于同一次取消操作？",
+              "scope": "解释冲突判断的成立条件。",
+              "conditions": [
+                "判断同一预约、用户、取消操作和时间点下，两条需求的适用条件是否有重叠"
+              ],
+              "criteria": [
+                {
+                  "id": "same-context",
+                  "text": "适用条件有重叠、两条需求同时适用于同一次取消操作时，允许与禁止相互矛盾。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "se-ch3-p13"
+                  ]
+                }
+              ],
+              "answer": "若两条需求同时适用于同一次取消操作，允许与禁止就矛盾。条件不重叠时可以合理要求不同行为；条件集合不必完全相同。",
+              "targetPointIds": [],
+              "wrongOptionIds": [
+                "a",
+                "c"
+              ],
+              "missingOptionIds": [
+                "b"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

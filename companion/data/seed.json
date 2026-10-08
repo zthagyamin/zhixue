@@ -1,0 +1,27 @@
+{
+  "source": {
+    "title": "ImageNet Classification with Deep Convolutional Neural Networks",
+    "scope": "Pass 1：摘要、引言、模型结构图与结论"
+  },
+  "words": [
+    {"word":"considerably","phonetic":"/kənˈsɪdərəbli/","meaning":"相当地；显著地","context":"论文用它强调结果相较此前水平有明显提升。","example":"The network performed considerably better than previous approaches.","source":"AlexNet · Abstract · p.1","level":"Academic","distractors":["偶然地","逐渐地","仅仅地"]},
+    {"word":"employ","phonetic":"/ɪmˈplɔɪ/","meaning":"采用；使用","context":"作者采用 dropout 来缓解全连接层的过拟合。","example":"The authors employ dropout to reduce overfitting.","source":"AlexNet · Abstract · p.1","level":"IELTS 6","distractors":["拒绝","比较","限制"]},
+    {"word":"variant","phonetic":"/ˈveəriənt/","meaning":"变体；不同版本","context":"作者还提交了该模型的一个变体参加比赛。","example":"A variant of the model was entered in the competition.","source":"AlexNet · Abstract · p.1","level":"Academic","distractors":["结论","缺陷","样本"]},
+    {"word":"exhibit","phonetic":"/ɪɡˈzɪbɪt/","meaning":"表现出；呈现","context":"现实场景中的物体会呈现很大的差异。","example":"Objects in realistic settings exhibit substantial variation.","source":"AlexNet · Introduction · p.1","level":"IELTS 6","distractors":["隐藏","消除","估计"]},
+    {"word":"variability","phonetic":"/ˌveəriəˈbɪləti/","meaning":"可变性；差异性","context":"它描述同一类别物体在现实图像中的多样变化。","example":"The dataset captures the natural variability within each class.","source":"AlexNet · Introduction · p.1","level":"Academic","distractors":["稳定性","可见度","精确度"]},
+    {"word":"augment","phonetic":"/ɔːɡˈment/","meaning":"扩充；增强","context":"标签保持变换可以扩充较小的训练数据集。","example":"Label-preserving transformations augment the training set.","source":"AlexNet · Introduction · p.1","level":"IELTS 7","distractors":["压缩","标注","替换"]},
+    {"word":"shortcoming","phonetic":"/ˈʃɔːtkʌmɪŋ/","meaning":"缺点；不足","context":"论文指出小型图像数据集存在明显不足。","example":"Limited diversity is a major shortcoming of small datasets.","source":"AlexNet · Introduction · p.1","level":"IELTS 6","distractors":["优势","来源","尺度"]},
+    {"word":"immense","phonetic":"/ɪˈmens/","meaning":"巨大的；极大的","context":"目标识别任务具有极高的复杂度。","example":"Recognizing objects in natural images is an immense challenge.","source":"AlexNet · Introduction · p.1","level":"IELTS 6","distractors":["有限的","隐含的","相似的"]},
+    {"word":"constitute","phonetic":"/ˈkɒnstɪtjuːt/","meaning":"构成；组成","context":"CNN 构成了适合图像识别的一类模型。","example":"Convolutional networks constitute a powerful class of models.","source":"AlexNet · Introduction · p.1","level":"IELTS 7","distractors":["预测","排除","简化"]},
+    {"word":"compensate","phonetic":"/ˈkɒmpenseɪt/","meaning":"弥补；补偿","context":"模型中的先验知识用来弥补有限数据未覆盖的信息。","example":"Prior knowledge can compensate for information absent from the data.","source":"AlexNet · Introduction · p.1","level":"IELTS 6","distractors":["重复","证实","分离"]},
+    {"word":"facilitate","phonetic":"/fəˈsɪlɪteɪt/","meaning":"促进；使便利","context":"高效 GPU 实现让大型 CNN 的训练成为可能。","example":"Efficient GPU code facilitates the training of large networks.","source":"AlexNet · Introduction · p.2","level":"IELTS 7","distractors":["阻碍","监督","测量"]},
+    {"word":"inferior","phonetic":"/ɪnˈfɪəriə/","meaning":"较差的；次等的","context":"移除任一卷积层都会导致较差的性能。","example":"Removing a convolutional layer produced inferior performance.","source":"AlexNet · Introduction · p.2","level":"IELTS 6","distractors":["相等的","新颖的","稳定的"]}
+  ],
+  "tomorrow": [
+    {"word":"residual","meaning":"残差的；剩余的","reason":"下一篇：ResNet"},
+    {"word":"reformulate","meaning":"重新表述；重新构造","reason":"ResNet Abstract"},
+    {"word":"empirical","meaning":"实证的；经验性的","reason":"ResNet Abstract"},
+    {"word":"degradation","meaning":"退化；性能下降","reason":"ResNet 核心问题"}
+  ],
+  "pythonTopics": ["NumPy 广播", "函数参数与返回值", "字典与排序", "f-string / zip / enumerate"]
+}

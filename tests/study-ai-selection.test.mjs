@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {studyAISelectedText} from '../app/ai/study-ai-selection.ts';
+function fixture(){let reads=0;const visible={nodeType:1,closest:()=>null},privateNode={nodeType:1,closest:()=>({})},root={contains:()=>true,querySelectorAll:()=>[privateNode]},selection={anchorNode:visible,focusNode:visible,rangeCount:1,isCollapsed:false,getRangeAt:()=>({intersectsNode:()=>false}),toString:()=>{reads++;return 'selected learning text';}};return{root,selection,privateNode,reads:()=>reads};}
+test('forward and backward selections touching private content are rejected before text is read',()=>{for(const endpoint of ['anchorNode','focusNode']){const f=fixture();f.selection[endpoint]=f.privateNode;assert.equal(studyAISelectedText(f.selection,f.root,'exercise'),'');assert.equal(f.reads(),0);}});
+test('a selection crossing a form is rejected even if both endpoints are learning text',()=>{const f=fixture();f.selection.getRangeAt=()=>({intersectsNode:()=>true});assert.equal(studyAISelectedText(f.selection,f.root,'today'),'');assert.equal(f.reads(),0);});
+test('plain learning selection is attached, settings selection is not',()=>{const f=fixture();assert.equal(studyAISelectedText(f.selection,f.root,'exercise'),'selected learning text');assert.equal(studyAISelectedText(f.selection,f.root,'sources'),'');});

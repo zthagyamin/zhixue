@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:; connect-src 'none'; img-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Python isolation bridge</title>
+<script>
+'use strict';
+// Trusted bridge only. Untrusted Python and JavaScript stay in the opaque Worker.
+addEventListener('message', function bootstrap(event) {
+  if (self.origin !== 'null' || event.source !== parent || event.data?.type !== 'sandbox-bootstrap' || event.ports.length !== 1) return;
+  removeEventListener('message', bootstrap);
+  const port = event.ports[0];
+  const bundle = event.data;
+  const urls = [];
+  const script = text => {
+    const url = URL.createObjectURL(new Blob([text], {type: 'text/javascript'}));
+    urls.push(url);
+    return url;
+  };
+  const loaderURL = script(bundle.loader);
+  const assemblyURL = script(bundle.assembly);
+  const prefix = `
+    const assetRequests = new Map();
+    let assetSequence = 0;
+    let sandboxBundle;
+    const sandboxReady = new Promise(resolve => {
+      addEventListener('message', function setup(event) {
+        if (event.data?.type !== 'sandbox-assets') return;
+        removeEventListener('message', setup);
+        sandboxBundle = event.data;
+        resolve();
+      });
+    });
+    addEventListener('message', event => {
+      const data = event.data;
+      if (data?.type !== 'asset-response') return;
+      const pending = assetRequests.get(data.id);
+      if (!pending) return;
+      assetRequests.delete(data.id);
+      data.error ? pending.reject(new Error('Runtime asset unavailable')) : pending.resolve(data.bytes);
+    });
+    // Fetch is a compatibility adapter, NOT the boundary. CSP also denies native
+    // fetch/XHR/WebSocket and imports in this Worker and its blob descendants.
+    globalThis.fetch = async input => {
+      await sandboxReady;
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input instanceof Request ? input.url : '';
+      const root = 'https://runtime.invalid/';
+      if (url === root + 'python_stdlib.zip') return new Response(sandboxBundle.stdlib);
+      if (url === root + 'pyodide.asm.wasm') return new Response(sandboxBundle.wasm, {headers: {'Content-Type': 'application/wasm'}});
+      if (typeof url !== 'string' || !url.startsWith(root)) throw new TypeError('Network access disabled');
+      const file = url.slice(root.length);
+      if (!/^[A-Za-z0-9_][A-Za-z0-9_.+-]*\\.whl$/.test(file)) throw new TypeError('Runtime asset denied');
+      const bytes = await new Promise((resolve, reject) => {
+        const id = ++assetSequence;
+        assetRequests.set(id, {resolve, reject});
+        postMessage({type: 'asset-request', id, file});
+      });
+      return new Response(bytes);
+    };
+    globalThis.__zhixueSandboxRuntime = async () => {
+      await sandboxReady;
+      if (self.location.origin !== 'null') throw new Error('Opaque origin required');
+      const {loadPyodide} = await import(${JSON.stringify(loaderURL)});
+      const {default: createModule} = await import(${JSON.stringify(assemblyURL)});
+      const python = await loadPyodide({indexURL: 'https://runtime.invalid/', packageBaseUrl: 'https://runtime.invalid/',
+        lockFileContents: sandboxBundle.lockfile,
+        createPyodideModule: createModule});
+      return {python, checker: sandboxBundle.checker};
+    };
+  `;
+  let worker;
+  try {
+    worker = new Worker(script(prefix + '\n' + bundle.runtime), {type: 'classic', credentials: 'omit'});
+    worker.onmessage = event => {
+      const data = event.data;
+      if (data && typeof data === 'object' && ['asset-request', 'ready', 'load-error', 'running', 'result', 'error', 'prepare-error'].includes(data.type)) port.postMessage(data);
+    };
+    worker.onerror = event => {event.preventDefault(); port.postMessage({type: 'load-error', error: '隔离 Python 环境意外停止：' + String(event.message || 'worker-error').slice(0, 500)}); worker.terminate();};
+    port.onmessage = event => {
+      const data = event.data;
+      if (data?.type === 'dispose') {worker.terminate(); urls.forEach(URL.revokeObjectURL); port.close(); return;}
+      if (['init', 'run', 'asset-response'].includes(data?.type)) worker.postMessage(data);
+    };
+    port.start();
+    worker.postMessage({type: 'sandbox-assets', wasm: bundle.wasm, stdlib: bundle.stdlib, checker: bundle.checker, lockfile: bundle.lockfile}, [bundle.wasm, bundle.stdlib]);
+    port.postMessage({type: 'sandbox-connected'});
+  } catch {
+    worker?.terminate();
+    urls.forEach(URL.revokeObjectURL);
+    port.postMessage({type: 'load-error', error: '浏览器无法建立隔离运行环境。'});
+  }
+});
+</script>
+</html>

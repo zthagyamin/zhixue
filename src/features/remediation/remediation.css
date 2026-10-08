@@ -1,0 +1,18 @@
+.study-remedy-entry { margin-block: 16px; }
+.study-temporary-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 16px; }
+.study-temporary-dialog { width: min(760px, calc(100vw - 24px)); max-height: calc(100svh - 24px); margin: auto; padding: 24px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); }
+.study-temporary-dialog::backdrop { background: #10202ba8; }
+.study-temporary-dialog header { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.study-temporary-dialog h2 { font-size: 24px; margin: 4px 0; }
+.study-temporary-dialog p { line-height: 1.7; }
+.study-temporary-dialog label { display: block; margin: 16px 0; }
+.study-temporary-dialog :is(textarea,input:not([type=checkbox]),select) { display: block; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: inherit; margin-top: 8px; }
+.study-temporary-dialog :is(textarea,input,button,select):focus-visible { outline: 2px solid var(--study-accent); outline-offset: 3px; }
+.study-temporary-dialog .study-temporary-check { display: flex; gap: 10px; align-items: start; }
+.study-temporary-reference { white-space: pre-wrap; padding: 14px; border-left: 3px solid var(--study-accent); background: var(--surface-2); }
+.study-temporary-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; background: var(--surface-2); }
+.study-temporary-dialog button:disabled { opacity: .5; cursor: not-allowed; }
+.study-temporary-dialog button:hover:enabled { filter: brightness(.97); }
+.study-candidate-row { border: 1px solid var(--line); padding: 16px; margin-block: 20px; border-radius: 8px; min-width: 0; }
+.study-candidate-row legend label { margin: 0; }
+@media (max-width: 600px) { .study-temporary-dialog { padding: 18px; } .study-temporary-dialog header { flex-wrap: wrap; } .study-temporary-dialog h2 { font-size: 21px; } }

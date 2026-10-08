@@ -1,0 +1,50 @@
+import React,{useMemo,useState,useSyncExternalStore} from 'react';
+import {createRoot} from 'react-dom/client';
+import {RecallPlugin} from '../../app/plugin-recall';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import {LearningDraftBoundary} from '../../app/learning-draft';
+import {advanceSubjectRound,emptySubjectRound,isSubjectPassComplete,practicedSubjectKeys,pendingSubjectKeys,skipSubjectRound} from '../../app/subject-round';
+import {waitForRecallResult} from '../../app/recall-flow-model';
+import {StudySessionShell} from '../../app/study-session-shell';
+import {PracticeSession} from '../../app/practice-session';
+import {ExtraPracticeSession} from '../../app/extra-practice-session';
+import '../../src/features/remediation/remediation.css';
+import '../../app/globals.css';import '../../app/c-study.css';import '../../app/study-guidance.css';
+const query=new URLSearchParams(location.search),mode=query.get('mode'),count=Number(query.get('count')||1);
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const probe={aiCalls:0,writeCalls:0,grades:[],gradeQuestions:[],done:[],resolveAI:null,resolveWrite:null};
+Object.assign(window,{__recallProbe:probe});
+const items=Array.from({length:count},(_,index)=>({itemId:'q'+index,id:'q'+index,fingerprint:'synthetic-'+index,questionType:'recall',prompt:count===1?'请解释这个概念及其适用条件。':'回忆题 '+(index+1),explanation:['missing','paper-missing'].includes(mode)?undefined:'原文要点：先给出概念定义，再说明成立条件与限制。'}));
+if(mode?.startsWith('paper-'))items.forEach(item=>Object.assign(item,{domain:'paper',sourceLabel:'论文核心观点'}));
+if(mode==='paper-method')items.forEach(item=>Object.assign(item,{domain:'paper',sourceLabel:'ResNet（2015） · §3.1 残差目标',prompt:'只看相加处：目标是 H(x)=x+0.1x，identity shortcut 传递 x，残差分支 F(x) 应输出什么？',answer:'F(x)=0.1x，因为 H(x)=F(x)+x。',explanation:'F(x)=0.1x，因为 H(x)=F(x)+x。'}));
+// Additional content cases are isolated from the original 32 flow scenarios.
+const echoPoint='区分模型的观察结果与单项贡献；组合效果不能直接给出单项贡献。';
+if(['legacy-echo','legacy-grade','echo-answer','echo-only','specific-grade'].includes(mode)){
+ for(const item of items){
+  if(mode.startsWith('legacy-'))Object.assign(item,{sourceLabel:'论文核心观点',prompt:'请闭卷解释：'+echoPoint,reviewPoint:echoPoint,answer:echoPoint,explanation:echoPoint});
+  else if(mode==='specific-grade')Object.assign(item,{sourceLabel:'对照实验 · 第1段',prompt:'只观察两个因素一起变化的结果，为什么不能直接判断其中一个因素的贡献？',answer:echoPoint,explanation:echoPoint});
+  else Object.assign(item,{prompt:'为什么要进行对照实验？',reviewPoint:'为什么要进行对照实验？',explanation:'为什么要进行对照实验？',answer:mode==='echo-answer'?'控制其他条件后，比较目标因素变化对应的结果。':'为什么要进行对照实验？'});
+  Object.freeze(item);
+ }
+ Object.assign(probe,{originalItems:items,originalJson:JSON.stringify(items)});
+}
+function TrialHost(){
+ const store=useMemo(()=>createLearningDraftStore('synthetic-recall'),[]),[round,setRound]=useState(emptySubjectRound),[index,setIndex]=useState(0);
+ useSyncExternalStore(store.subscribe,store.getSnapshot,()=>0);
+ const item=items[index],draft=store.adapter(item.itemId,'recall:1'),keys=items.map(i=>i.itemId);
+ const practiced=practicedSubjectKeys(round),next=pendingSubjectKeys(round,keys).some(k=>k!==item.itemId)?'下一题':'结束本轮';
+ if(isSubjectPassComplete(round,keys))return <section aria-label="本轮回顾"><h2>本轮练习结束</h2><p>已练 {practiced.length} / {count} · 待巩固 {(round.reviewedKeys??[]).filter(k=>!round.correctKeys.includes(k)).length} · 暂跳 {round.skippedKeys?.length??0}</p><button onClick={()=>location.reload()}>重新练习</button></section>;
+ const data={...item,...(mode==='support'?{learningSupport:{schemaVersion:1,type:'recall',criteria:[{id:'a',text:'定义与条件'}],hints:['提示方向','提示结构','原文完整参考']}}:{})};
+ return <StudySessionShell title="回忆练习" scope={'隔离测试 · 本组 '+count+' 题'} progress={'已练 '+practiced.length+' / '+count} mode="回忆问答" onExit={()=>{}} options={<p>设置测试</p>} source={<p>合成参考材料，不是生产笔记。</p>} queue={null} subjects={null}>
+ <LearningDraftBoundary store={store} interactiveWhileGrading><RecallPlugin.renderUI key={item.itemId} data={data} context={{draft,guidanceScope:'fixture',guidanceInOptions:true,recallPersistenceRequired:false,recallNavigation:{continueLabel:next,onSkip:()=>{const result=skipSubjectRound(round,keys,index);store.clearItem(item.itemId);setRound(result.round);setIndex(result.nextIndex);}},gradeRecall:(_q,_a,signal)=>store.grade(()=>waitForRecallResult(async()=>{probe.aiCalls++;probe.gradeQuestions.push(_q);if(mode==='cancel')return new Promise(resolve=>{probe.resolveAI=resolve;});if(['wrong','paper-wrong'].includes(mode))return {source:'ai',verdict:'incorrect',rating:'again',feedback:'本次尚未覆盖关键条件。'};if(mode==='paper-good')return {source:'ai',verdict:'correct',rating:'good',feedback:'已覆盖定义与适用条件。'};return {source:'ai',verdict:'partial',rating:'hard',feedback:'已回忆定义，尚缺适用条件。'};},signal))}} onGrade={(rating,options)=>{
+  const ticket=draft.begin();if(!ticket)return;probe.writeCalls++;
+  if(!options?.deferAdvance)throw new Error('Recall continuation requires receipt');
+  if(['save-fail','paper-save-fail'].includes(mode)&&probe.writeCalls===1){store.fail(ticket);return;}
+  const finish=()=>{if(store.commit(ticket,()=>{const result=advanceSubjectRound({round,itemKeys:keys,currentIndex:index,correct:rating==='good'||rating==='easy',completeAfterAttempt:true});setRound(result.round);setIndex(result.nextIndex);}))probe.grades.push(rating);};
+  if(mode==='delayed')probe.resolveWrite=finish;else finish();
+ }}/></LearningDraftBoundary><output aria-label="隔离测试记录">{JSON.stringify({aiCalls:probe.aiCalls,writeCalls:probe.writeCalls,grades:probe.grades})}</output></StudySessionShell>;
+}
+function Inline(){const [done,setDone]=useState(null);const store=useMemo(()=>createLearningDraftStore('inline-browser'),[]);return done?<section><h2>内联本轮结束</h2><p>{done.answered} / {done.correct} / {done.wrong}</p></section>:<PracticeSession items={items} drafts={store} onRecordAttempt={async({rating})=>{probe.grades.push(rating);}} onFinish={summary=>{probe.done.push(summary);setDone(summary);}}/>;}
+const snapshot={scopeKey:'extra-fixture',title:'独立回忆巩固',items,modes:items.map(()=> 'recall'),source:{title:'测试来源',scope:'合成数据'}};
+function App(){return <main className="study-app study-focus"><section className="workspace">{mode==='inline'?<Inline/>:mode==='extra'?<ExtraPracticeSession snapshot={snapshot} onExit={()=>{}} canOpenLocal={false} getObsidianUri={()=>''}/>:<TrialHost/>}</section></main>;}
+createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);

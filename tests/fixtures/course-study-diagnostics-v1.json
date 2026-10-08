@@ -1,0 +1,2015 @@
+{
+  "schemaVersion": 1,
+  "description": "Isolated synthetic contract cases; quote existence does not prove semantic evaluation quality. Each diagnostic overlays diagnosticBase. Each mutation overlays the named mutationTemplates entry and uses binding.",
+  "trace": {
+    "modelId": "synthetic",
+    "promptVersion": "course-v1",
+    "ruleVersion": "1",
+    "requestId": "request-1"
+  },
+  "supports": {
+    "definition": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "最后放入的元素最先取出。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-definition",
+        "kind": "definition",
+        "prompt": "什么是栈的后进先出？",
+        "scope": "解释操作次序与取出次序的关系。",
+        "conditions": [],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-definition",
+            "kind": "definition",
+            "prompt": "请重新回答：什么是栈的后进先出？",
+            "scope": "解释操作次序与取出次序的关系。",
+            "conditions": [],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "最后放入的元素最先取出。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "最后放入的元素最先取出。",
+            "targetPointIds": [
+              "key"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "steps": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "保留中点左侧的搜索区间。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-steps",
+        "kind": "steps",
+        "prompt": "二分查找一次比较后如何缩小搜索区间？",
+        "scope": "只解释目标小于中点元素的分支。",
+        "conditions": [
+          "数组按升序排列",
+          "目标小于中点元素"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "升序数组中，目标小于中点元素时，下一轮搜索中点左侧区间。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-steps",
+            "kind": "steps",
+            "prompt": "请重新回答：二分查找一次比较后如何缩小搜索区间？",
+            "scope": "只解释目标小于中点元素的分支。",
+            "conditions": [
+              "数组按升序排列",
+              "目标小于中点元素"
+            ],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "保留中点左侧的搜索区间。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "保留中点左侧的搜索区间。",
+            "targetPointIds": [
+              "key"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "进程地址空间独立；同进程线程共享地址空间。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-comparison",
+        "kind": "comparison",
+        "prompt": "进程与线程在资源共享方面有什么区别？",
+        "scope": "只比较进程地址空间与同进程线程。",
+        "conditions": [],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "不同进程各有独立地址空间；同一进程的线程共享该进程地址空间。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-comparison",
+            "kind": "comparison",
+            "prompt": "请重新回答：进程与线程在资源共享方面有什么区别？",
+            "scope": "只比较进程地址空间与同进程线程。",
+            "conditions": [],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "进程地址空间独立；同进程线程共享地址空间。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "进程地址空间独立；同进程线程共享地址空间。",
+            "targetPointIds": [
+              "key"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "conditions": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "有序性保证被排除的区间不包含目标。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-conditions",
+        "kind": "conditions",
+        "prompt": "二分查找为什么要求数组有序？",
+        "scope": "解释排除一半区间的依据。",
+        "conditions": [
+          "数组按升序排列"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "二分查找依靠有序性：目标小于中点时右侧元素更大，可以排除右侧。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-conditions",
+            "kind": "conditions",
+            "prompt": "请重新回答：二分查找为什么要求数组有序？",
+            "scope": "解释排除一半区间的依据。",
+            "conditions": [
+              "数组按升序排列"
+            ],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "有序性保证被排除的区间不包含目标。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "有序性保证被排除的区间不包含目标。",
+            "targetPointIds": [
+              "key"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "application": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "B最后压入，所以第一次弹出B。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-application",
+        "kind": "application",
+        "prompt": "空栈依次压入A和B后，第一次弹出的是什么？",
+        "scope": "只判断第一次弹出。",
+        "conditions": [
+          "初始栈为空",
+          "按A、B顺序压入",
+          "采用后进先出"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "栈最后压入的元素先弹出；先压A后压B，第一次弹出B。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-application",
+            "kind": "application",
+            "prompt": "请重新回答：空栈依次压入A和B后，第一次弹出的是什么？",
+            "scope": "只判断第一次弹出。",
+            "conditions": [
+              "初始栈为空",
+              "按A、B顺序压入",
+              "采用后进先出"
+            ],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "B最后压入，所以第一次弹出B。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "B最后压入，所以第一次弹出B。",
+            "targetPointIds": [
+              "key"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "partial": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "最后放入的元素最先取出。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "补充必答项",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "task-definition",
+        "kind": "definition",
+        "prompt": "什么是栈的后进先出？",
+        "scope": "解释操作次序与取出次序的关系。",
+        "conditions": [],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-definition",
+            "kind": "definition",
+            "prompt": "请重新回答：什么是栈的后进先出？",
+            "scope": "解释操作次序与取出次序的关系。",
+            "conditions": [],
+            "criteria": [
+              {
+                "id": "retry-key",
+                "text": "最后放入的元素最先取出。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "最后放入的元素最先取出。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "matrix-definition": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "压入和弹出都在栈顶进行。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "最后压入的元素最先弹出。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "matrix-definition",
+        "kind": "definition",
+        "prompt": "解释栈的操作位置和后进先出的含义。",
+        "scope": "回答题干明确要求的两个方面。",
+        "conditions": [],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "压入和弹出都在栈顶进行。 最后压入的元素最先弹出。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-matrix-definition",
+            "kind": "definition",
+            "prompt": "最后压入的元素会先弹出还是后弹出？",
+            "scope": "只补充遗漏的第二点。",
+            "conditions": [],
+            "criteria": [
+              {
+                "id": "retry-extra",
+                "text": "最后压入的元素最先弹出。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "最后压入的元素最先弹出。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "matrix-steps": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "保留中点左侧的搜索区间。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "matrix-steps",
+        "kind": "steps",
+        "prompt": "升序数组中目标小于中点时，如何缩小区间，并决定是否进行下一轮比较？",
+        "scope": "回答题干明确要求的两个方面。",
+        "conditions": [
+          "数组按升序排列",
+          "目标小于中点元素"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "保留中点左侧的搜索区间。 先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-matrix-steps",
+            "kind": "steps",
+            "prompt": "区间缩小后，如何判断结束查找还是更新中点继续？",
+            "scope": "只补充遗漏的第二点。",
+            "conditions": [
+              "数组按升序排列",
+              "目标小于中点元素"
+            ],
+            "criteria": [
+              {
+                "id": "retry-extra",
+                "text": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "matrix-comparison": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "不同进程各有独立的地址空间。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "同一进程的线程共享该进程地址空间。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "matrix-comparison",
+        "kind": "comparison",
+        "prompt": "比较不同进程与同一进程线程的地址空间。",
+        "scope": "回答题干明确要求的两个方面。",
+        "conditions": [],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "不同进程各有独立的地址空间。 同一进程的线程共享该进程地址空间。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-matrix-comparison",
+            "kind": "comparison",
+            "prompt": "同一进程中的线程是共享还是各自拥有独立地址空间？",
+            "scope": "只补充遗漏的第二点。",
+            "conditions": [],
+            "criteria": [
+              {
+                "id": "retry-extra",
+                "text": "同一进程的线程共享该进程地址空间。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "同一进程的线程共享该进程地址空间。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "matrix-conditions": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "升序保证右侧元素不小于中点元素。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "matrix-conditions",
+        "kind": "conditions",
+        "prompt": "在升序数组中已知目标小于中点：说明右侧元素关系，以及排除右侧的依据。",
+        "scope": "回答题干明确要求的两个方面。",
+        "conditions": [
+          "数组升序。",
+          "目标小于中点元素。"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "升序保证右侧元素不小于中点元素。 右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-matrix-conditions",
+            "kind": "conditions",
+            "prompt": "升序且目标小于中点时，为什么右侧不可能包含目标？",
+            "scope": "只补充遗漏的第二点。",
+            "conditions": [
+              "数组升序。",
+              "目标小于中点元素。"
+            ],
+            "criteria": [
+              {
+                "id": "retry-extra",
+                "text": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    },
+    "matrix-application": {
+      "schemaVersion": 2,
+      "type": "recall",
+      "criteria": [
+        {
+          "id": "key",
+          "text": "第一次弹出B。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        },
+        {
+          "id": "extra",
+          "text": "B最后压入，栈遵循后进先出。",
+          "mandatory": true,
+          "sourceIds": [
+            "section"
+          ]
+        }
+      ],
+      "task": {
+        "taskId": "matrix-application",
+        "kind": "application",
+        "prompt": "空栈先压A再压B：第一次弹出什么，并说明原因？",
+        "scope": "回答题干明确要求的两个方面。",
+        "conditions": [
+          "初始栈为空",
+          "按A、B顺序压入",
+          "采用后进先出"
+        ],
+        "sources": [
+          {
+            "sourceId": "section",
+            "label": "隔离合成课程示例",
+            "locator": "示例第1段",
+            "excerpt": "第一次弹出B。 B最后压入，栈遵循后进先出。",
+            "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "reviewStatus": "verified",
+        "remediations": [
+          {
+            "taskId": "retry-matrix-application",
+            "kind": "application",
+            "prompt": "先压A再压B时，为何B会先弹出？",
+            "scope": "只补充遗漏的第二点。",
+            "conditions": [
+              "初始栈为空",
+              "按A、B顺序压入",
+              "采用后进先出"
+            ],
+            "criteria": [
+              {
+                "id": "retry-extra",
+                "text": "B最后压入，栈遵循后进先出。",
+                "mandatory": true,
+                "sourceIds": [
+                  "section"
+                ]
+              }
+            ],
+            "answer": "B最后压入，栈遵循后进先出。",
+            "targetPointIds": [
+              "extra"
+            ],
+            "wrongOptionIds": [],
+            "missingOptionIds": []
+          }
+        ]
+      }
+    }
+  },
+  "diagnosticBase": {
+    "schemaVersion": 1,
+    "status": "correct",
+    "source": "model",
+    "feedback": "Synthetic contract fixture only.",
+    "matchedPointIds": [
+      "key"
+    ],
+    "missedPointIds": [],
+    "errorPointIds": [],
+    "wrongOptionIds": [],
+    "missingOptionIds": [],
+    "pointEvidence": [
+      {
+        "pointId": "key",
+        "sourceId": "section",
+        "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+        "answerQuote": "后放进去的先取出来。",
+        "reason": "Synthetic paraphrase alignment."
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "definition",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {}
+    },
+    {
+      "id": "steps",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "steps",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "升序数组中，目标小于中点元素时，下一轮搜索中点左侧区间。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "comparison",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "comparison",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "不同进程各有独立地址空间；同一进程的线程共享该进程地址空间。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "conditions",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "conditions",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "二分查找依靠有序性：目标小于中点时右侧元素更大，可以排除右侧。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "application",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "application",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈最后压入的元素先弹出；先压A后压B，第一次弹出B。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "invented-point",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "matchedPointIds": [
+          "key",
+          "fake"
+        ]
+      }
+    },
+    {
+      "id": "wrong-source-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "Absent source quote.",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "wrong-answer-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "别的答案",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-evidence",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": []
+      }
+    },
+    {
+      "id": "contradictory-status",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "status": "incorrect"
+      }
+    },
+    {
+      "id": "extra-model-rating",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "rating": "good"
+      }
+    },
+    {
+      "id": "duplicate-evidence",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          },
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "wrong-source-id",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "fake",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "oversize-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "partial",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "partial",
+      "diagnosticOverrides": {
+        "status": "partial",
+        "missedPointIds": [
+          "extra"
+        ]
+      }
+    },
+    {
+      "id": "incorrect",
+      "valid": true,
+      "answer": "最早进入的先取出。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "status": "incorrect",
+        "matchedPointIds": [],
+        "errorPointIds": [
+          "key"
+        ],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "最早进入的先取出。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown",
+      "valid": true,
+      "answer": "后放进去的先取出来。",
+      "supportId": "definition",
+      "diagnosticOverrides": {
+        "status": "undetermined",
+        "source": "none",
+        "matchedPointIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    },
+    {
+      "id": "steps-absent-source-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "steps",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "Absent quote for original source.",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "comparison-absent-source-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "comparison",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "Absent quote for original source.",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "conditions-absent-source-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "conditions",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "Absent quote for original source.",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "application-absent-source-quote",
+      "valid": false,
+      "answer": "后放进去的先取出来。",
+      "supportId": "application",
+      "diagnosticOverrides": {
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "Absent quote for original source.",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-definition-correct",
+      "valid": true,
+      "answer": "两种操作都在顶端进行，后放入的先取出。",
+      "supportId": "matrix-definition",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key",
+          "extra"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "压入和弹出都在栈顶进行。",
+            "answerQuote": "两种操作都在顶端进行，后放入的先取出。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "最后压入的元素最先弹出。",
+            "answerQuote": "两种操作都在顶端进行，后放入的先取出。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-definition-partial",
+      "valid": true,
+      "answer": "压入和弹出都在顶端进行。",
+      "supportId": "matrix-definition",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "partial",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [
+          "extra"
+        ],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "压入和弹出都在栈顶进行。",
+            "answerQuote": "压入和弹出都在顶端进行。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "最后压入的元素最先弹出。",
+            "answerQuote": "",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-definition-incorrect",
+      "valid": true,
+      "answer": "只能从栈底操作，而且先放入的先取出。",
+      "supportId": "matrix-definition",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "incorrect",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [
+          "key",
+          "extra"
+        ],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "压入和弹出都在栈顶进行。",
+            "answerQuote": "只能从栈底操作，而且先放入的先取出。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "最后压入的元素最先弹出。",
+            "answerQuote": "只能从栈底操作，而且先放入的先取出。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-definition-undetermined",
+      "valid": true,
+      "answer": "压入和弹出都在顶端进行。",
+      "supportId": "matrix-definition",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "undetermined",
+        "source": "none",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    },
+    {
+      "id": "matrix-steps-correct",
+      "valid": true,
+      "answer": "保留左侧后，先看区间是否为空；空就结束，否则在新区间算中点再比较。",
+      "supportId": "matrix-steps",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key",
+          "extra"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "保留中点左侧的搜索区间。",
+            "answerQuote": "保留左侧后，先看区间是否为空；空就结束，否则在新区间算中点再比较。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+            "answerQuote": "保留左侧后，先看区间是否为空；空就结束，否则在新区间算中点再比较。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-steps-partial",
+      "valid": true,
+      "answer": "目标更小时应保留中点左侧的区间。",
+      "supportId": "matrix-steps",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "partial",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [
+          "extra"
+        ],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "保留中点左侧的搜索区间。",
+            "answerQuote": "目标更小时应保留中点左侧的区间。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+            "answerQuote": "",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-steps-incorrect",
+      "valid": true,
+      "answer": "保留中点右侧，不论新区间是否为空都复用原中点。",
+      "supportId": "matrix-steps",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "incorrect",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [
+          "key",
+          "extra"
+        ],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "保留中点左侧的搜索区间。",
+            "answerQuote": "保留中点右侧，不论新区间是否为空都复用原中点。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "先检查新区间是否为空；为空则结束查找，非空则在新区间重新计算中点。",
+            "answerQuote": "保留中点右侧，不论新区间是否为空都复用原中点。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-steps-undetermined",
+      "valid": true,
+      "answer": "目标更小时应保留中点左侧的区间。",
+      "supportId": "matrix-steps",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "undetermined",
+        "source": "none",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    },
+    {
+      "id": "matrix-comparison-correct",
+      "valid": true,
+      "answer": "进程各用各的地址空间，同进程的线程共用一份。",
+      "supportId": "matrix-comparison",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key",
+          "extra"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "不同进程各有独立的地址空间。",
+            "answerQuote": "进程各用各的地址空间，同进程的线程共用一份。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "同一进程的线程共享该进程地址空间。",
+            "answerQuote": "进程各用各的地址空间，同进程的线程共用一份。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-comparison-partial",
+      "valid": true,
+      "answer": "不同进程各用独立地址空间。",
+      "supportId": "matrix-comparison",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "partial",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [
+          "extra"
+        ],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "不同进程各有独立的地址空间。",
+            "answerQuote": "不同进程各用独立地址空间。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "同一进程的线程共享该进程地址空间。",
+            "answerQuote": "",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-comparison-incorrect",
+      "valid": true,
+      "answer": "不同进程共用地址空间，同进程的线程反而各自独立。",
+      "supportId": "matrix-comparison",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "incorrect",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [
+          "key",
+          "extra"
+        ],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "不同进程各有独立的地址空间。",
+            "answerQuote": "不同进程共用地址空间，同进程的线程反而各自独立。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "同一进程的线程共享该进程地址空间。",
+            "answerQuote": "不同进程共用地址空间，同进程的线程反而各自独立。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-comparison-undetermined",
+      "valid": true,
+      "answer": "不同进程各用独立地址空间。",
+      "supportId": "matrix-comparison",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "undetermined",
+        "source": "none",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    },
+    {
+      "id": "matrix-conditions-correct",
+      "valid": true,
+      "answer": "右边都不会小于中点，而目标更小，所以右边都不可能是目标。",
+      "supportId": "matrix-conditions",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key",
+          "extra"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "升序保证右侧元素不小于中点元素。",
+            "answerQuote": "右边都不会小于中点，而目标更小，所以右边都不可能是目标。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+            "answerQuote": "右边都不会小于中点，而目标更小，所以右边都不可能是目标。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-conditions-partial",
+      "valid": true,
+      "answer": "升序时右边的元素不会小于中点。",
+      "supportId": "matrix-conditions",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "partial",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [
+          "extra"
+        ],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "升序保证右侧元素不小于中点元素。",
+            "answerQuote": "升序时右边的元素不会小于中点。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+            "answerQuote": "",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-conditions-incorrect",
+      "valid": true,
+      "answer": "右侧元素一定比中点小，目标较小时反而只能在右侧。",
+      "supportId": "matrix-conditions",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "incorrect",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [
+          "key",
+          "extra"
+        ],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "升序保证右侧元素不小于中点元素。",
+            "answerQuote": "右侧元素一定比中点小，目标较小时反而只能在右侧。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "右侧元素不小于中点，而中点大于目标，因此右侧所有元素都大于目标，可排除右侧。",
+            "answerQuote": "右侧元素一定比中点小，目标较小时反而只能在右侧。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-conditions-undetermined",
+      "valid": true,
+      "answer": "升序时右边的元素不会小于中点。",
+      "supportId": "matrix-conditions",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "undetermined",
+        "source": "none",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    },
+    {
+      "id": "matrix-application-correct",
+      "valid": true,
+      "answer": "先弹B，因为B是最后放进去的，栈先取后放入的元素。",
+      "supportId": "matrix-application",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key",
+          "extra"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "第一次弹出B。",
+            "answerQuote": "先弹B，因为B是最后放进去的，栈先取后放入的元素。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "B最后压入，栈遵循后进先出。",
+            "answerQuote": "先弹B，因为B是最后放进去的，栈先取后放入的元素。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-application-partial",
+      "valid": true,
+      "answer": "第一次弹出B。",
+      "supportId": "matrix-application",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "partial",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [
+          "extra"
+        ],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "第一次弹出B。",
+            "answerQuote": "第一次弹出B。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "B最后压入，栈遵循后进先出。",
+            "answerQuote": "",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-application-incorrect",
+      "valid": true,
+      "answer": "先弹A，因为栈先取最早放进去的元素。",
+      "supportId": "matrix-application",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "incorrect",
+        "source": "model",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [
+          "key",
+          "extra"
+        ],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "第一次弹出B。",
+            "answerQuote": "先弹A，因为栈先取最早放进去的元素。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          },
+          {
+            "pointId": "extra",
+            "sourceId": "section",
+            "sourceQuote": "B最后压入，栈遵循后进先出。",
+            "answerQuote": "先弹A，因为栈先取最早放进去的元素。",
+            "reason": "The supplied synthetic judgment is source-bound; semantic accuracy is not inferred."
+          }
+        ]
+      }
+    },
+    {
+      "id": "matrix-application-undetermined",
+      "valid": true,
+      "answer": "第一次弹出B。",
+      "supportId": "matrix-application",
+      "diagnosticOverrides": {
+        "schemaVersion": 1,
+        "status": "undetermined",
+        "source": "none",
+        "feedback": "Synthetic authored outcome; no live model or learner result.",
+        "matchedPointIds": [],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [],
+        "reason": "uncertain"
+      }
+    }
+  ],
+  "quizSupport": {
+    "schemaVersion": 2,
+    "type": "quiz",
+    "criteria": [
+      {
+        "id": "key",
+        "text": "最后放入的元素最先取出。",
+        "mandatory": true,
+        "sourceIds": [
+          "section"
+        ]
+      }
+    ],
+    "task": {
+      "taskId": "task-quiz",
+      "kind": "definition",
+      "prompt": "哪些描述符合栈的后进先出？",
+      "scope": "解释操作次序与取出次序的关系。",
+      "conditions": [],
+      "sources": [
+        {
+          "sourceId": "section",
+          "label": "隔离合成课程示例",
+          "locator": "示例第1段",
+          "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+          "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "reviewStatus": "verified",
+      "remediations": [
+        {
+          "taskId": "retry-definition",
+          "kind": "definition",
+          "prompt": "请重新回答：什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "criteria": [
+            {
+              "id": "retry-key",
+              "text": "最后放入的元素最先取出。",
+              "mandatory": true,
+              "sourceIds": [
+                "section"
+              ]
+            }
+          ],
+          "answer": "最后放入的元素最先取出。",
+          "targetPointIds": [
+            "key"
+          ],
+          "wrongOptionIds": [
+            "b"
+          ],
+          "missingOptionIds": []
+        }
+      ]
+    },
+    "selection": "multiple",
+    "options": [
+      {
+        "optionId": "a",
+        "text": "最后放入的最先取出",
+        "explanation": "符合后进先出的定义。",
+        "sourceIds": [
+          "section"
+        ]
+      },
+      {
+        "optionId": "b",
+        "text": "最先放入的最先取出",
+        "explanation": "这是先进先出的描述，区别在取出次序。",
+        "sourceIds": [
+          "section"
+        ]
+      },
+      {
+        "optionId": "c",
+        "text": "先压A再压B，先弹B",
+        "explanation": "B最后压入，因此应先弹出。",
+        "sourceIds": [
+          "section"
+        ]
+      }
+    ],
+    "correctOptionIds": [
+      "a",
+      "c"
+    ]
+  },
+  "quizCases": [
+    {
+      "answer": "[\"a\",\"c\"]",
+      "valid": true,
+      "status": "correct",
+      "wrongOptionIds": [],
+      "missingOptionIds": []
+    },
+    {
+      "answer": "[\"a\"]",
+      "valid": true,
+      "status": "partial",
+      "wrongOptionIds": [],
+      "missingOptionIds": [
+        "c"
+      ]
+    },
+    {
+      "answer": "[\"a\",\"b\"]",
+      "valid": true,
+      "status": "incorrect",
+      "wrongOptionIds": [
+        "b"
+      ],
+      "missingOptionIds": [
+        "c"
+      ]
+    },
+    {
+      "answer": "[]",
+      "valid": true,
+      "status": "incorrect",
+      "wrongOptionIds": [],
+      "missingOptionIds": [
+        "a",
+        "c"
+      ]
+    },
+    {
+      "answer": "[\"invented\"]",
+      "valid": false
+    },
+    {
+      "answer": "[\"a\",\"a\"]",
+      "valid": false
+    },
+    {
+      "answer": "{\"selection\":[\"a\"]}",
+      "valid": false
+    }
+  ],
+  "binding": {
+    "ownerId": "owner",
+    "libraryId": "library",
+    "snapshotId": "snapshot",
+    "itemKey": "item",
+    "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "groupId": "group",
+    "roundId": "round"
+  },
+  "mutationTemplates": {
+    "bind": {
+      "schemaVersion": 1,
+      "kind": "bind",
+      "attemptId": "attempt",
+      "operationId": "bind",
+      "expectedRevision": 0,
+      "updatedAt": "2026-10-06T00:00:00.000Z",
+      "taskId": "task-definition",
+      "taskHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "parentAttemptId": null,
+      "parentEvidenceHash": null
+    },
+    "diagnose": {
+      "schemaVersion": 1,
+      "kind": "diagnose",
+      "attemptId": "attempt",
+      "operationId": "diagnose",
+      "expectedRevision": 1,
+      "updatedAt": "2026-10-06T00:00:00.000Z",
+      "answerRevision": 2,
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "correct",
+        "source": "model",
+        "feedback": "Synthetic contract fixture only.",
+        "matchedPointIds": [
+          "key"
+        ],
+        "missedPointIds": [],
+        "errorPointIds": [],
+        "wrongOptionIds": [],
+        "missingOptionIds": [],
+        "pointEvidence": [
+          {
+            "pointId": "key",
+            "sourceId": "section",
+            "sourceQuote": "栈的后进先出表示最后放入的元素最先取出。",
+            "answerQuote": "后放进去的先取出来。",
+            "reason": "Synthetic paraphrase alignment."
+          }
+        ]
+      },
+      "trace": {
+        "modelId": "synthetic",
+        "promptVersion": "course-v1",
+        "ruleVersion": "1",
+        "requestId": "request-1"
+      },
+      "diagnosticHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "attemptEvaluationHash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  "mutationCases": [
+    {
+      "id": "valid-parent-bind",
+      "valid": true,
+      "template": "bind",
+      "overrides": {}
+    },
+    {
+      "id": "valid-child-bind",
+      "valid": true,
+      "template": "bind",
+      "overrides": {
+        "parentAttemptId": "parent",
+        "parentEvidenceHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    {
+      "id": "missing-parent-digest",
+      "valid": false,
+      "template": "bind",
+      "overrides": {
+        "parentAttemptId": "parent"
+      }
+    },
+    {
+      "id": "invalid-timestamp",
+      "valid": false,
+      "template": "bind",
+      "overrides": {
+        "updatedAt": "2026-02-30T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "operation-newline",
+      "valid": false,
+      "template": "bind",
+      "overrides": {
+        "operationId": "operation\n"
+      }
+    },
+    {
+      "id": "unknown-field",
+      "valid": false,
+      "template": "bind",
+      "overrides": {
+        "answer": "must-stay-in-original-attempt"
+      }
+    },
+    {
+      "id": "valid-model-diagnose-structure",
+      "valid": true,
+      "template": "diagnose",
+      "overrides": {}
+    },
+    {
+      "id": "model-without-trace",
+      "valid": false,
+      "template": "diagnose",
+      "overrides": {
+        "trace": null
+      }
+    },
+    {
+      "id": "resolved-without-evaluation-hash",
+      "valid": false,
+      "template": "diagnose",
+      "overrides": {
+        "attemptEvaluationHash": null
+      }
+    },
+    {
+      "id": "valid-pending-diagnose",
+      "valid": true,
+      "template": "diagnose",
+      "overrides": {
+        "diagnostic": {
+          "schemaVersion": 1,
+          "status": "undetermined",
+          "source": "none",
+          "feedback": "Synthetic contract fixture only.",
+          "matchedPointIds": [],
+          "missedPointIds": [],
+          "errorPointIds": [],
+          "wrongOptionIds": [],
+          "missingOptionIds": [],
+          "pointEvidence": [],
+          "reason": "uncertain"
+        },
+        "trace": null,
+        "attemptEvaluationHash": null
+      }
+    },
+    {
+      "id": "pending-with-formal-evaluation-hash",
+      "valid": false,
+      "template": "diagnose",
+      "overrides": {
+        "diagnostic": {
+          "schemaVersion": 1,
+          "status": "undetermined",
+          "source": "none",
+          "feedback": "Synthetic contract fixture only.",
+          "matchedPointIds": [],
+          "missedPointIds": [],
+          "errorPointIds": [],
+          "wrongOptionIds": [],
+          "missingOptionIds": [],
+          "pointEvidence": [],
+          "reason": "uncertain"
+        },
+        "trace": null
+      }
+    }
+  ]
+}

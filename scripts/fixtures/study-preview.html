@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>知学 · 隔离交互预览</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#dce3e1;color:#20292b;font:14px/1.5 system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;background:#fff;border-bottom:1px solid #b9c8c4}
+  strong{font-size:16px}span{color:#566765}button,select{min-height:44px;padding:8px 12px;background:white;border:1px solid #b9c8c4;border-radius:6px;font:inherit}
+  main{padding:12px;overflow:auto;height:calc(100dvh - 93px)}iframe{display:block;max-width:none;margin:0 auto;border:0;background:white}
+</style>
+<header><strong>知学 · 隔离预览</strong><span>合成资料，不连接真实学习库；作答仅留在临时环境。</span>
+  <label>画布 <select id="width"><option value="360">手机 360px</option><option value="390" selected>手机 390px</option><option value="768">平板 768px</option><option value="1440">桌面 1440px</option></select></label>
+  <label>放大 <select id="scale"><option value="1">100%</option><option value="2">200% 布局预览</option></select></label>
+  <span id="size" role="status"></span>
+</header>
+<main><iframe id="study" title="隔离学习页面" src="/study"></iframe></main>
+<script>
+  const frame=document.querySelector('#study'),width=document.querySelector('#width'),scale=document.querySelector('#scale'),status=document.querySelector('#size');
+  function resize(){const w=Number(width.value),s=Number(scale.value),h=w>=768?1000:844;frame.style.width=`${w/s}px`;frame.style.height=`${h/s}px`;frame.style.zoom=String(s);status.textContent=`${w} × ${h} · ${s===2?'2 倍 CSS 布局放大，非设备缩放':'原始大小'}`;}
+  width.addEventListener('change',resize);scale.addEventListener('change',resize);resize();
+</script>
+</html>

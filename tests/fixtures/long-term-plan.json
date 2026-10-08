@@ -1,0 +1,37 @@
+{
+  "invalidSnapshotCases": [
+    {"name": "subject cap zero", "path": ["spec", "subjectsConfig", 0, "dailyQuotaTarget"], "value": 0},
+    {"name": "missing assignment source", "path": ["schedule", 0, "newItemSourceHashes"], "value": {}},
+    {"name": "wrong active assignment source", "path": ["schedule", 0, "newItemSourceHashes", "a:0"], "value": "replacement"}
+  ],
+  "snapshot": {
+    "schemaVersion": 1,
+    "spec": {
+      "planId": "fixture-plan",
+      "startDate": "2026-09-07",
+      "targetDeadline": "2026-09-07",
+      "dailyMinutesBudget": {"workdayMin": 10, "workdayMax": 20, "weekendMax": 10, "minReviewRatio": 0.35},
+      "subjectsConfig": [{"subjectId": "a", "priority": 1, "completionCriteria": "fixed-rounds"}],
+      "bufferRatio": 0
+    },
+    "totalInventoryCount": 2,
+    "estimatedTotalDays": 1,
+    "schedule": [{
+      "dayIndex": 1, "date": "2026-09-07", "phase": "learning", "isBufferDay": false,
+      "expectedNewItems": {"a": 1}, "projectedReviews": {},
+      "newItemIds": ["a:0"], "newItemSourceHashes": {"a:0": "h1"}, "reviewItemIds": [], "budgetMinutes": 20,
+      "learningMinutes": 10, "reviewMinutes": 0, "reviewReserveMinutes": 7,
+      "unservedReviewMinutes": 0, "warnings": []
+    }],
+    "lastRebalancedAt": "2026-09-07T00:00:00.000Z",
+    "activeDriftDays": 0, "asOfDate": "2026-09-07",
+    "inventory": [
+      {"itemId": "a:0", "subjectId": "a", "sourceHash": "h1", "estimatedMinutes": 10},
+      {"itemId": "a:1", "subjectId": "a", "sourceHash": "h1", "estimatedMinutes": 10}
+    ],
+    "backlog": [{"itemId": "a:1", "subjectId": "a", "sourceHash": "h1", "estimatedMinutes": 10, "reason": "insufficient-learning-capacity"}],
+    "excludedItemIds": [], "learningCompletedItemIds": [], "remainingRequiredRounds": {"a:0": 1, "a:1": 1},
+    "warnings": ["unassigned-backlog"], "adjustmentProposals": [],
+    "forecastAssumptions": {"model": "ts-fsrs", "rating": "Good", "requestRetention": 0.9, "enableFuzz": false, "granularity": "daily", "projectionOnly": true}
+  }
+}

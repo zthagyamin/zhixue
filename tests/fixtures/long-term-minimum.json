@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "validSnapshots": [
+    {
+      "schemaVersion": 1,
+      "spec": {
+        "planId": "minimum-fixture",
+        "startDate": "2026-09-21",
+        "targetDeadline": "2026-09-21",
+        "timeBudgetMode": "advisory",
+        "dailyMinutesBudget": {
+          "workdayMin": 0,
+          "workdayMax": 1,
+          "weekendMax": 1,
+          "minReviewRatio": 0.35
+        },
+        "bufferRatio": 1,
+        "subjectsConfig": [
+          {
+            "subjectId": "academic",
+            "priority": 5,
+            "dailyMinimumTarget": 2,
+            "dailyQuotaTarget": 2,
+            "completionCriteria": "fixed-rounds"
+          },
+          {
+            "subjectId": "speaking",
+            "priority": 5,
+            "dailyMinimumTarget": 1,
+            "dailyQuotaTarget": 1,
+            "completionCriteria": "fixed-rounds"
+          }
+        ]
+      },
+      "totalInventoryCount": 3,
+      "estimatedTotalDays": 1,
+      "schedule": [
+        {
+          "dayIndex": 1,
+          "date": "2026-09-21",
+          "phase": "learning",
+          "expectedNewItems": {
+            "academic": 2,
+            "speaking": 1
+          },
+          "projectedReviews": {},
+          "isBufferDay": true,
+          "newItemIds": [
+            "word:0",
+            "word:1",
+            "word:2"
+          ],
+          "newItemSourceHashes": {
+            "word:0": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "word:1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "word:2": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reviewItemIds": [],
+          "budgetMinutes": 1,
+          "learningMinutes": 9,
+          "reviewMinutes": 0,
+          "reviewReserveMinutes": 0.35,
+          "unservedReviewMinutes": 0,
+          "warnings": [
+            "estimate-over-budget"
+          ],
+          "timeBudgetMode": "advisory"
+        }
+      ],
+      "lastRebalancedAt": "2026-09-21T00:00:00.000Z",
+      "activeDriftDays": 0,
+      "asOfDate": "2026-09-21",
+      "inventory": [
+        {
+          "itemId": "word:0",
+          "subjectId": "academic",
+          "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "estimatedMinutes": 3
+        },
+        {
+          "itemId": "word:1",
+          "subjectId": "academic",
+          "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "estimatedMinutes": 3
+        },
+        {
+          "itemId": "word:2",
+          "subjectId": "speaking",
+          "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "estimatedMinutes": 3
+        }
+      ],
+      "backlog": [],
+      "excludedItemIds": [],
+      "learningCompletedItemIds": [],
+      "remainingRequiredRounds": {
+        "word:0": 1,
+        "word:1": 1,
+        "word:2": 1
+      },
+      "warnings": [],
+      "adjustmentProposals": [],
+      "forecastAssumptions": {
+        "model": "ts-fsrs",
+        "rating": "Good",
+        "requestRetention": 0.9,
+        "enableFuzz": false,
+        "granularity": "daily",
+        "projectionOnly": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "spec": {
+        "planId": "minimum-fixture",
+        "startDate": "2026-09-21",
+        "targetDeadline": "2026-09-21",
+        "timeBudgetMode": "advisory",
+        "dailyMinutesBudget": {
+          "workdayMin": 0,
+          "workdayMax": 1,
+          "weekendMax": 1,
+          "minReviewRatio": 0.35
+        },
+        "bufferRatio": 1,
+        "subjectsConfig": [
+          {
+            "subjectId": "academic",
+            "priority": 5,
+            "dailyMinimumTarget": 2,
+            "dailyQuotaTarget": 2,
+            "completionCriteria": "fixed-rounds"
+          },
+          {
+            "subjectId": "speaking",
+            "priority": 5,
+            "dailyMinimumTarget": 1,
+            "dailyQuotaTarget": 1,
+            "completionCriteria": "fixed-rounds"
+          }
+        ]
+      },
+      "totalInventoryCount": 1,
+      "estimatedTotalDays": 1,
+      "schedule": [
+        {
+          "dayIndex": 1,
+          "date": "2026-09-21",
+          "phase": "learning",
+          "expectedNewItems": {
+            "academic": 1
+          },
+          "projectedReviews": {},
+          "isBufferDay": true,
+          "newItemIds": [
+            "word:0"
+          ],
+          "newItemSourceHashes": {
+            "word:0": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reviewItemIds": [],
+          "budgetMinutes": 1,
+          "learningMinutes": 3,
+          "reviewMinutes": 0,
+          "reviewReserveMinutes": 0.35,
+          "unservedReviewMinutes": 0,
+          "warnings": [
+            "minimum-shortfall:academic",
+            "minimum-shortfall:speaking",
+            "estimate-over-budget"
+          ],
+          "timeBudgetMode": "advisory"
+        }
+      ],
+      "lastRebalancedAt": "2026-09-21T00:00:00.000Z",
+      "activeDriftDays": 0,
+      "asOfDate": "2026-09-21",
+      "inventory": [
+        {
+          "itemId": "word:0",
+          "subjectId": "academic",
+          "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "estimatedMinutes": 3
+        }
+      ],
+      "backlog": [],
+      "excludedItemIds": [],
+      "learningCompletedItemIds": [],
+      "remainingRequiredRounds": {
+        "word:0": 1
+      },
+      "warnings": [],
+      "adjustmentProposals": [],
+      "forecastAssumptions": {
+        "model": "ts-fsrs",
+        "rating": "Good",
+        "requestRetention": 0.9,
+        "enableFuzz": false,
+        "granularity": "daily",
+        "projectionOnly": true
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "name": "negative minimum",
+      "base": 0,
+      "path": [
+        "spec",
+        "subjectsConfig",
+        0,
+        "dailyMinimumTarget"
+      ],
+      "value": -1
+    },
+    {
+      "name": "minimum above cap",
+      "base": 0,
+      "path": [
+        "spec",
+        "subjectsConfig",
+        0,
+        "dailyMinimumTarget"
+      ],
+      "value": 3
+    },
+    {
+      "name": "unknown time mode",
+      "base": 0,
+      "path": [
+        "spec",
+        "timeBudgetMode"
+      ],
+      "value": "unknown"
+    },
+    {
+      "name": "slot policy mismatch",
+      "base": 0,
+      "path": [
+        "schedule",
+        0,
+        "timeBudgetMode"
+      ],
+      "value": "limit"
+    },
+    {
+      "name": "shortfall hidden",
+      "base": 1,
+      "path": [
+        "schedule",
+        0,
+        "warnings"
+      ],
+      "value": []
+    }
+  ]
+}

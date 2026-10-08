@@ -1,0 +1,17 @@
+{
+  "port": 43121,
+  "auto_sync_seconds": 86400,
+  "deepseek_model": "deepseek-v4-flash",
+  "current_title": "我的当前学习资料",
+  "reading_scope": "当前学习材料",
+  "learning_vault_root": "",
+  "local_notes_root": "",
+  "knowledge_base_root": "",
+  "study_loop_integration_root": "_System/Integrations/Study Loop",
+  "current_source": "",
+  "next_source": "",
+  "pdf_pages": [],
+  "allowed_origins": [
+    "https://zhixue-daily.zthagyamin.chatgpt.site"
+  ]
+}

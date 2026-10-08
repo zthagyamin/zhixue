@@ -1,0 +1,1 @@
+ALTER TABLE `account_study_ai_requests` ADD `provider_id` text DEFAULT 'deepseek' NOT NULL;

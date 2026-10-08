@@ -1,0 +1,579 @@
+/* White operation surfaces, gray supporting sections, and restrained blue selection.
+   Settings use a quiet directory; progress uses one summary area and a record table. */
+.study-app .study-settings .settings-page-heading {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--study-rule);
+}
+
+.study-app .study-settings .settings-page-heading h2 {
+  color: var(--study-ink);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.study-app .study-settings .settings-layout-container {
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.study-app .study-settings nav.settings-nav {
+  margin-top: 0;
+  padding: 8px;
+  gap: 3px;
+  flex-wrap: nowrap;
+  background: var(--study-surface-2);
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.study-app .study-settings nav.settings-nav .settings-nav-item {
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  color: var(--study-ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.study-app .study-settings nav.settings-nav .settings-nav-item:hover {
+  background: var(--study-surface);
+}
+
+.study-app .study-settings nav.settings-nav .settings-nav-item:is(.active, [aria-current="page"]) {
+  background: var(--study-accent-soft);
+  border-left-color: var(--study-accent);
+  color: var(--study-accent-text);
+}
+
+.study-app .study-settings .settings-nav-item.active::before {
+  display: none;
+}
+
+.study-app .study-settings .settings-nav-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--study-muted);
+  opacity: 1;
+}
+
+.study-app .study-settings .settings-nav-label {
+  color: var(--study-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.study-app .study-settings .settings-nav-desc {
+  /* Keep the existing descriptions in each button's accessible name. The main
+     pane provides visible explanations without repeating them in the directory. */
+  display: block;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.study-app .study-settings .settings-nav-item:is(.active, [aria-current="page"]) :is(.settings-nav-icon, .settings-nav-label, .settings-nav-desc) {
+  color: var(--study-accent-text);
+  opacity: 1;
+}
+
+.study-app .study-settings .settings-nav-item:is(.active, [aria-current="page"]) .settings-nav-label {
+  font-weight: 650;
+}
+
+.study-app .study-settings .settings-content-pane {
+  gap: 0;
+  background: var(--study-surface);
+}
+
+.study-app .study-settings .settings-section-header {
+  padding: 4px 0 20px;
+  border-bottom: 1px solid var(--study-rule);
+}
+
+.study-app .study-settings .settings-section-header h3 {
+  color: var(--study-ink);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.study-app .study-settings .settings-section-header p {
+  margin-top: 7px;
+  color: var(--study-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.study-app .study-settings :is(.settings-card:not(.settings-card-danger), .companion-settings-card) {
+  padding: 24px 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.study-app .study-settings .settings-card:not(.settings-card-danger) {
+  background: var(--study-surface);
+}
+
+.study-app .study-settings .settings-card-danger {
+  margin-block: 24px;
+  border-color: var(--study-danger);
+  background: color-mix(in srgb, var(--study-danger) 5%, var(--study-surface));
+}
+
+.study-app .study-settings .settings-card h4 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Explain settings with a readable secondary color, rather than fading the ink. */
+.study-app .study-settings :is(p, span, em, label, summary):is([class~="opacity-60"], [class~="opacity-65"], [class~="opacity-70"]) {
+  color: var(--study-muted);
+  opacity: 1;
+}
+
+.study-app .study-settings .c-settings-connection-row {
+  background: var(--study-surface-2);
+  border-color: transparent;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.study-app .study-settings .c-settings-connection-row:hover {
+  background: var(--study-accent-soft);
+  border-color: var(--study-accent-text);
+}
+
+.study-app .study-settings :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  background: var(--study-surface);
+  border-color: color-mix(in srgb, var(--study-muted) 75%, var(--study-rule));
+  color: var(--study-ink);
+  font-size: 16px;
+}
+
+.study-app .study-settings :is(input, textarea)::placeholder {
+  color: var(--study-muted);
+  opacity: 1;
+}
+
+.study-app .study-settings .theme-option-card {
+  background: var(--study-surface);
+  border-color: var(--study-rule);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.study-app .study-settings .theme-option-card:is(.active, [aria-pressed="true"]) {
+  background: var(--study-accent-soft);
+  border-color: var(--study-accent-text);
+  box-shadow: none;
+}
+
+.study-app .study-settings .theme-active-dot {
+  background: var(--study-accent);
+  color: var(--study-on-accent);
+}
+
+.study-app .study-settings :is(.companion-help, .settings-secondary-tools) {
+  padding: 14px;
+  background: var(--study-surface-2);
+  border: 0;
+  border-radius: 4px;
+}
+
+.study-app .study-settings .companion-update {
+  color: var(--study-on-accent);
+}
+
+/* Current scope leads; forecasts remain visibly qualified and subordinate. */
+.study-app[data-page="progress"] .c-progress-heading h1 {
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.study-app[data-page="progress"] .c-progress-heading p {
+  color: var(--study-muted);
+}
+
+.study-app[data-page="progress"] .c-progress-tabs {
+  gap: 6px;
+  padding: 5px;
+  background: var(--study-surface-2);
+  border: 0;
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--study-muted) var(--study-surface-2);
+}
+
+.study-app[data-page="progress"] .c-progress-tabs button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--study-muted);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.study-app[data-page="progress"] .c-progress-tabs button[aria-selected="true"] {
+  background: var(--study-accent-soft);
+  border-color: transparent;
+  color: var(--study-accent-text);
+  font-weight: 700;
+}
+
+.study-app[data-page="progress"] .c-progress-tabs button[aria-selected="true"]::after {
+  display: block;
+  height: 2px;
+}
+
+.study-app[data-page="progress"] .c-progress-card-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0;
+  border-block: 1px solid var(--study-rule);
+}
+
+.study-app[data-page="progress"] .c-progress-card {
+  border: 0;
+  border-radius: 0;
+  padding: 24px;
+  box-shadow: none;
+}
+
+.study-app[data-page="progress"] .c-progress-current {
+  padding-left: 0;
+  background: var(--study-surface);
+}
+
+.study-app[data-page="progress"] .c-progress-current h2 {
+  color: var(--study-ink);
+  font-size: 18px;
+}
+
+.study-app[data-page="progress"] .c-current-body {
+  padding-top: 10px;
+}
+
+.study-app[data-page="progress"] .c-current-description h3 {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.study-app[data-page="progress"] .c-progress-ring strong {
+  color: var(--study-ink);
+  font-weight: 650;
+}
+
+/* A rounded stroke or end dot must not suggest progress when the real value is zero. */
+.study-app[data-page="progress"] .c-progress-ring-value {
+  stroke-linecap: butt;
+}
+
+.study-app[data-page="progress"] .c-progress-track span::after {
+  display: none;
+}
+
+.study-app[data-page="progress"] .c-current-description .c-progress-counts {
+  color: var(--study-ink);
+  line-height: 1.7;
+  white-space: normal;
+}
+
+.study-app[data-page="progress"] .c-progress-forecast {
+  background: var(--study-surface-2);
+  border-left: 1px solid var(--study-rule);
+}
+
+.study-app[data-page="progress"] .c-progress-forecast h2 small {
+  color: var(--study-muted);
+}
+
+.study-app[data-page="progress"] .c-forecast-pillar i {
+  background: color-mix(in srgb, var(--study-muted) 38%, var(--study-surface-2));
+  border-color: var(--study-muted);
+  box-shadow: none;
+}
+
+.study-app[data-page="progress"] .c-forecast-pillar i[data-empty] {
+  background: transparent;
+  border: 0;
+  min-height: 0;
+}
+
+.study-app[data-page="progress"] .c-forecast-caption {
+  display: block;
+  margin-top: 14px;
+  color: var(--study-muted);
+  line-height: 1.7;
+}
+
+.study-app[data-page="progress"] .c-forecast-caption[data-overdue] {
+  color: var(--study-warning);
+  font-weight: 600;
+}
+
+/* The record body is the reading surface; headings and receipts frame it. */
+.study-app[data-page="progress"] .c-recent-records {
+  margin-top: 26px;
+  background: var(--study-surface);
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.study-app[data-page="progress"] .c-recent-records > h2 {
+  padding: 0 0 18px;
+  background: var(--study-surface);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.study-app[data-page="progress"] .c-record-table th {
+  background: var(--study-surface-2);
+  color: var(--study-muted);
+  padding-block: 10px;
+  font-weight: 600;
+}
+
+.study-app[data-page="progress"] .c-record-table td {
+  padding-block: 12px;
+  font-size: 14px;
+}
+
+.study-app[data-page="progress"] .c-record-title {
+  color: var(--study-ink);
+  font-weight: 600;
+}
+
+.study-app[data-page="progress"] .c-record-date span {
+  color: var(--study-muted);
+}
+
+.study-app[data-page="progress"] .c-record-result [data-result="correct"] i {
+  color: var(--study-success);
+}
+
+.study-app[data-page="progress"] .c-record-result [data-result="retry"] i {
+  color: var(--study-warning);
+}
+
+.study-app[data-page="progress"] .c-record-toggle[aria-expanded="true"] {
+  background: var(--study-accent-soft);
+  color: var(--study-accent-text);
+  border-radius: 6px;
+}
+
+.study-app[data-page="progress"] .c-recent-records > footer {
+  padding: 10px 15px;
+  background: var(--study-surface-2);
+}
+
+.study-app[data-page="progress"] .c-record-phase {
+  padding: 12px 20px;
+  background: var(--study-surface-2);
+  border-top: 1px solid var(--study-rule);
+}
+
+.study-app[data-page="progress"] .c-progress-more {
+  margin-top: 24px;
+}
+
+.study-app[data-page="progress"] .c-progress-more > summary {
+  padding: 10px 0;
+  font-weight: 600;
+}
+
+.study-app[data-page="progress"] .c-progress-empty {
+  background: var(--study-surface);
+  border: 0;
+  border-block: 1px solid var(--study-rule);
+  border-radius: 0;
+}
+
+.study-app[data-page="progress"] :is(.c-progress-empty, .c-record-empty) svg {
+  color: var(--study-muted);
+}
+
+.study-app .study-settings :focus-visible,
+.study-app[data-page="progress"] :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--study-accent-text);
+  outline-offset: 3px;
+}
+
+.study-app[data-page="progress"] .c-progress-tabs::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+
+.study-app[data-page="progress"] .c-progress-tabs::-webkit-scrollbar-thumb {
+  background: var(--study-muted);
+  border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+  .study-app .study-settings .settings-layout-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .study-app .study-settings nav.settings-nav {
+    flex-direction: row;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 6px 6px 10px;
+    gap: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--study-muted) var(--study-surface-2);
+  }
+
+  .study-app .study-settings nav.settings-nav::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+
+  .study-app .study-settings nav.settings-nav::-webkit-scrollbar-thumb {
+    background: var(--study-muted);
+    border-radius: 3px;
+  }
+
+  .study-app .study-settings .settings-sidebar {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .study-app .study-settings nav.settings-nav .settings-nav-item {
+    flex: none;
+    width: auto;
+    min-height: 46px;
+    padding: 9px 12px;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .study-app .study-settings nav.settings-nav .settings-nav-item:is(.active, [aria-current="page"]) {
+    border-bottom-color: var(--study-accent);
+  }
+}
+
+@media (max-width: 900px) {
+  .study-app[data-page="progress"] .c-progress-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .study-app[data-page="progress"] .c-progress-forecast {
+    border-left: 0;
+    border-top: 1px solid var(--study-rule);
+  }
+
+  .study-app[data-page="progress"] .c-forecast-columns {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 640px) {
+  .study-app .study-settings .settings-sidebar::after {
+    content: "左右滑动查看全部设置 →";
+    display: block;
+    margin-top: 8px;
+    color: var(--study-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .study-app .study-settings .settings-page-heading h2 {
+    font-size: 24px;
+  }
+
+  .study-app .study-settings .settings-section-header h3 {
+    font-size: 21px;
+  }
+
+  .study-app[data-page="progress"] .c-progress-heading h1 {
+    font-size: 21px;
+  }
+
+  .study-app[data-page="progress"] .c-progress-card {
+    padding: 20px 15px;
+  }
+
+  .study-app[data-page="progress"] .c-progress-current {
+    padding-inline: 0;
+  }
+
+  .study-app[data-page="progress"] .c-progress-current h2,
+  .study-app[data-page="progress"] .c-recent-records > h2 {
+    font-size: 16px;
+  }
+
+  .study-app[data-page="progress"] .c-progress-card h2 {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .study-app[data-page="progress"] .c-current-description h3 {
+    font-size: 15px;
+  }
+
+  .study-app[data-page="progress"] .c-current-description p,
+  .study-app[data-page="progress"] .c-current-description .c-progress-counts,
+  .study-app[data-page="progress"] .c-progress-track-row > strong {
+    font-size: 14px;
+  }
+
+  .study-app[data-page="progress"] .c-current-body {
+    gap: 12px;
+  }
+
+  .study-app[data-page="progress"] .c-recent-records > h2 {
+    padding: 0 0 16px;
+  }
+
+  .study-app[data-page="progress"] .c-record-table .c-record-row td {
+    padding: 0;
+    font-size: 14px;
+  }
+
+  .study-app[data-page="progress"] .c-record-row {
+    padding-block: 15px;
+    row-gap: 7px;
+  }
+
+  .study-app[data-page="progress"] .c-record-title {
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 380px) {
+  .study-app[data-page="progress"] .c-current-body {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .study-app[data-page="progress"] .c-current-description {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-app .study-settings :is(.settings-nav-item, .theme-option-card) {
+    transition: none;
+  }
+
+  .study-app .study-settings .theme-option-card:hover {
+    transform: none;
+  }
+}

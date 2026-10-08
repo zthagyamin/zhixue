@@ -1,0 +1,28 @@
+import React,{useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {LongTermPlanPanel} from '../../app/long-term-plan-panel';
+import {generateLongTermSchedule} from '../../app/long-term-pacing';
+import {withMinimumWordTargets,applyLongTermPlan,reconcileDailyMinimums,generateTaskPlan} from '../../src/domain/planning';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+import '../../app/long-term-plan.css';
+const day='2026-09-21',hash='a'.repeat(64),query=new URLSearchParams(location.search);
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const subjects=[{subjectId:'academic',name:'学术英语词库',priority:5},{subjectId:'speaking',name:'口语词库',priority:5},...Array.from({length:4},(_,i)=>({subjectId:`course${i}`,name:`课程${i+1}`,priority:4}))];
+const words=subjects.slice(0,2).flatMap(s=>Array.from({length:30},(_,i)=>({itemKey:`${s.subjectId}:${i}`,subjectId:s.subjectId,word:`${s.subjectId}${i}`,language:'en',sourceHash:hash,completionRule:'three-stage'})));
+const inventory=[...words.map(w=>({itemId:w.itemKey,subjectId:w.subjectId,sourceHash:hash,estimatedMinutes:3})),...subjects.slice(2).map((s,i)=>({itemId:s.subjectId,subjectId:s.subjectId,sourceHash:hash,estimatedMinutes:i===3?6:20}))];
+const bindings=inventory.map(i=>({itemId:i.itemId,subjectId:i.subjectId,title:i.itemId,kind:i.subjectId.startsWith('course')?'material':'vocabulary',itemKeys:i.subjectId.startsWith('course')?[]:[i.itemId],unitIds:i.subjectId.startsWith('course')?[i.itemId]:[],...(i.subjectId.startsWith('course')?{}:{lexemeKey:`en:${i.itemId.replace(':','')}`})}));
+const source={subjects,inventory,bindings,fsrsMap:{},history:[],diagnostics:[],assumptions:['隔离合成资料；无真实账号、作答或付费模型。'],stamp:'synthetic'};
+const spec={planId:'fixture-minimum',startDate:day,targetDeadline:'2026-10-20',dailyMinutesBudget:{workdayMin:30,workdayMax:120,weekendMax:120,minReviewRatio:.35},dailyReviewTarget:20,bufferRatio:.15,subjectsConfig:subjects.map(s=>({subjectId:s.subjectId,priority:s.priority,dailyQuotaTarget:s.subjectId==='academic'?20:s.subjectId==='speaking'?5:1,completionCriteria:'fixed-rounds'}))};
+const original=generateLongTermSchedule(inventory,spec,{}, {asOfDate:day,generatedAt:`${day}T00:00:00.000Z`});
+const input={day,catalog:{schemaVersion:1,sourceHash:hash,diagnostics:[],subjects:subjects.slice(0,2).map(s=>({...s,words:words.filter(w=>w.subjectId===s.subjectId),units:[],goals:[],planningStatus:'none'}))},words:words.map(w=>({lexemeKey:`en:${w.word}`,itemKeys:[w.itemKey],status:'unseen'})),reviews:[],completions:[],previous:null};
+function App(){const [state,setState]=useState({revision:1,enabled:true,snapshot:original}),[daily,setDaily]=useState(null),[error,setError]=useState('');
+ const model={state,error:null,refresh:async()=>state,save:async m=>{const next={revision:state.revision+1,enabled:m.enabled,snapshot:m.snapshot};setState(next);return {status:'accepted',state:next};}};
+ return <main style={{padding:24}}><h1>最低词量隔离验收</h1><p>仅合成资料。保存只发生在当前测试页面，不写生产。</p>
+ <LongTermPlanPanel scopeKey="synthetic" today={day} model={model} loadSource={async()=>source} currentSourceStamp={()=>'synthetic'}/>
+ <p role="status">保存次数：{state.revision-1}；最低量：{state.snapshot.spec.subjectsConfig.map(s=>s.dailyMinimumTarget??'旧上限').join(' / ')}</p>
+ <button className="study-secondary-action" onClick={async()=>{try{const a={schemaVersion:1,planId:spec.planId,day,vocabularyTarget:4,items:bindings.filter(b=>b.kind==='vocabulary'&&['academic:0','academic:1','speaking:0','speaking:1'].includes(b.itemId)).map(({title,...b})=>({...b,sourceHash:hash}))};const next=reconcileDailyMinimums({...input,longTermAllocation:a},state.snapshot);setDaily(await generateTaskPlan(next));setError('');}catch(e){setError(e.message);}}}>按长线最低量补齐今日草稿</button>
+ <p role="alert">{error}</p>{daily&&<section aria-label="今日草稿"><h2>新词共 {daily.vocabulary.target} 个 · 尚未批准</h2>{daily.tasks.map(t=><p key={t.taskId}>{t.title}</p>)}</section>}
+ </main>;
+}
+createRoot(document.getElementById('root')).render(<App/>);

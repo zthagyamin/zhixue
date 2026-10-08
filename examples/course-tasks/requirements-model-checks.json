@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "status": "qa-only-unmapped",
+  "purpose": "Optional synthetic model diagnostics. No real learner answers or grades.",
+  "sourceTaskFile": "examples/course-tasks/requirements-original.json",
+  "sourceVersion": "bef52b3e3ab80da19f4b3da63f0e45b66ba99f24dcc0fd2023079ca650b0f20d",
+  "frozenProvider": "deepseek",
+  "frozenModelId": "deepseek-v4-flash",
+  "promptVersion": "course-task-json-v1",
+  "ruleVersion": "course-diagnostic-v1",
+  "maxOutputTokens": 2000,
+  "maximumOutboundAttempts": 6,
+  "orderReason": "Prioritize correct/partial plus the audited applicability-overlap edge within unchanged conservative native budget; stop on normal budget denial.",
+  "cases": [
+    {
+      "id": "functional-short-correct",
+      "itemId": "se-functional",
+      "taskId": "se-functional",
+      "answer": "功能需求规定系统提供哪些服务、对收到的输入怎么反应，以及在不同情境下如何行动。",
+      "expectedStatus": "correct",
+      "expectedMatched": [
+        "services",
+        "inputs",
+        "situations"
+      ],
+      "expectedMissed": [],
+      "expectedErrors": [],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    },
+    {
+      "id": "functional-partial",
+      "itemId": "se-functional",
+      "taskId": "se-functional",
+      "answer": "功能需求说清系统应该提供什么服务，以及在指定情境下应采取什么行为。",
+      "expectedStatus": "partial",
+      "expectedMatched": [
+        "services",
+        "situations"
+      ],
+      "expectedMissed": [
+        "inputs"
+      ],
+      "expectedErrors": [],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    },
+    {
+      "id": "condition-child-correct-overlap",
+      "itemId": "se-quiz-consistency",
+      "taskId": "se-quiz-consistency-retry",
+      "answer": "如果两条需求会同时管到同一次取消操作，一条允许而另一条禁止，就无法同时满足，所以构成冲突。要先检查它们的适用条件是否重叠；若互斥，规定不同结果可以是合理的。",
+      "expectedStatus": "correct",
+      "expectedMatched": [
+        "same-context"
+      ],
+      "expectedMissed": [],
+      "expectedErrors": [],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    },
+    {
+      "id": "comparison-correct-paraphrase",
+      "itemId": "se-requirement-comparison",
+      "taskId": "se-requirement-comparison",
+      "answer": "前一句要求系统能为用户执行取消预约，是功能需求：它说明一个具体服务。后一句没有增添新服务，而是要求已有查询在约定条件下足够快，限制响应时间，因此是非功能的性能需求。",
+      "expectedStatus": "correct",
+      "expectedMatched": [
+        "service",
+        "time"
+      ],
+      "expectedMissed": [],
+      "expectedErrors": [],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    },
+    {
+      "id": "functional-long-wrong",
+      "itemId": "se-functional",
+      "taskId": "se-functional",
+      "answer": "功能需求不是系统应提供的服务清单，也不规定收到输入后应如何反应，更不会规定特定情境下的行为。它只规定响应速度、可靠性、开发团队必须使用的语言和IDE。只要指标足够好，系统实现了哪些服务、遇到请求时如何处理、不同状态下会做什么，都应留给程序员临时决定，因此这些内容不应写进功能需求。举例来说，系统允许取消预约仅是一个质量偏好，不属于功能需求；查询一秒内返回才是真正的功能定义。把服务行为、输入反应和情境规则写在需求里会限制开发自由，属于规范错误。我坚持功能需求只描述性能及开发约束，系统做什么并不重要。",
+      "expectedStatus": "incorrect",
+      "expectedMatched": [],
+      "expectedMissed": [],
+      "expectedErrors": [
+        "services",
+        "inputs",
+        "situations"
+      ],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    },
+    {
+      "id": "functional-uncertain-offtopic-boundary",
+      "itemId": "se-functional",
+      "taskId": "se-functional",
+      "answer": "它应该把那个东西处理好，然后按情况作出相应反应。我说的东西和情况没有明确指代，也没有说明它们是不是系统服务、输入或业务情境；我目前无法把这段话对应到题目。",
+      "expectedStatuses": [
+        "undetermined",
+        "incorrect"
+      ],
+      "mustNotStatuses": [
+        "correct",
+        "partial"
+      ],
+      "humanBasis": "Expected outcome based on the original example, task scope, and required criteria; not a measured model result."
+    }
+  ]
+}

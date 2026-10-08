@@ -1,0 +1,61 @@
+/* Canonical palette and geometry. Legacy page variables only alias these tokens. */
+:root {
+  /* Native controls must follow the explicit website theme, not the OS preference. */
+  color-scheme: light;
+  --study-paper: #f5f6f8;
+  --study-surface: #fff;
+  --study-surface-2: #f3f4f6;
+  --study-ink: #202736;
+  --study-muted: #596374;
+  --study-rule: #d8dde6;
+  --study-control-border: #8791a1;
+  --study-accent: #245bce;
+  --study-accent-hover: #194bb6;
+  --study-accent-text: #214faf;
+  --study-accent-soft: #edf3ff;
+  --study-hero-bg: #fff;
+  --study-hero-ink: #202736;
+  --study-hero-muted: #596374;
+  --study-code-keyword: #8b3b74;
+  --study-code-function: #1b63ab;
+  --study-code-literal: #825327;
+  --study-on-accent: #fff;
+  --study-success: #38674e;
+  --study-success-soft: #dfede5;
+  --study-warning: #946323;
+  --study-danger: #a1433e;
+  --study-card-radius: 16px;
+  --study-control-radius: 8px;
+}
+.dark {
+  color-scheme: dark;
+  --study-paper: #12161e;
+  --study-surface: #1b212c;
+  --study-surface-2: #242c39;
+  --study-ink: #edf0f6;
+  --study-muted: #b3bdce;
+  --study-rule: #455164;
+  --study-control-border: #7c8ba3;
+  --study-accent: #376ddd;
+  --study-accent-hover: #2b5dc6;
+  --study-accent-text: #a8c4ff;
+  --study-accent-soft: #283954;
+  --study-hero-bg: #1b212c;
+  --study-hero-ink: #edf0f6;
+  --study-hero-muted: #b3bdce;
+  --study-code-keyword: #f1afbd;
+  --study-code-function: #a4d8f3;
+  --study-code-literal: #f4d18b;
+  --study-success: #a3d0b5;
+  --study-success-soft: #294b3c;
+  --study-warning: #e6ba77;
+  --study-danger: #efa4a0;
+}
+
+@theme {
+  --font-weight-black: 700;
+  --font-weight-extrabold: 700;
+  --radius-xl: 8px;
+  --radius-3xl: 16px;
+  --radius-4xl: 16px;
+}

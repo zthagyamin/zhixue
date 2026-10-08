@@ -1,0 +1,13 @@
+.paper-recall-practice{display:grid;gap:20px;line-height:1.7}
+.paper-recall-practice p,.paper-recall-practice .study-question{margin:0}
+.paper-recall-caption,.paper-recall-answer>span,.paper-recall-reference>span{font-size:14px;color:var(--muted)}
+.paper-recall-practice textarea{box-sizing:border-box;width:100%;min-width:0;resize:vertical;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:14px;font:inherit;font-size:16px;line-height:1.7}
+.paper-recall-answer,.paper-recall-reference{display:grid;gap:6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.paper-recall-reference{padding:16px 18px;border-left:3px solid var(--study-accent-text);background:var(--surface-2)}
+.paper-recall-actions{display:flex;flex-wrap:wrap;gap:12px}
+.paper-recall-actions button{min-height:48px;flex:1 1 180px}
+.paper-recall-practice :is(button,textarea):focus-visible{outline:2px solid var(--study-accent-text);outline-offset:3px}
+.paper-recall-practice .study-question:focus{outline:none}
+@media(max-width:600px){.paper-recall-practice{gap:16px}.paper-recall-actions button{flex:1 1 120px}.paper-recall-reference{padding:12px 14px}}
+
+.recall-flow .recall-continue:has(.paper-retry-action) button{flex:1 1 120px}

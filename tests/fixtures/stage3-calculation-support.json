@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "synthetic-engineering-only",
+  "supportCases": [
+    {"name": "old numeric V1", "valid": true, "support": {"schemaVersion": 1, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real"}},
+    {"name": "V2 numeric step", "valid": true, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "units": "米", "conditions": ["长度为非负实数"], "step": {"stepId": "subtract", "prompt": "写出减去初始值后的数值。", "reference": "10", "mode": "numeric"}, "variantMappingId": "source-map-1"}},
+    {"name": "V2 symbolic exploration", "valid": true, "support": {"schemaVersion": 2, "type": "calculation", "mode": "symbolic", "variables": ["x"], "domain": "real", "step": {"stepId": "expand", "prompt": "写出左侧展开后的表达式。", "reference": "x^2-2*x", "mode": "symbolic"}, "exploration": {"expression": "x*x", "parameters": [{"id": "x", "label": "x", "min": "-2", "max": "2", "step": "0.5", "defaultValue": "0"}]}}},
+    {"name": "V2 semantic step", "valid": true, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "step": {"stepId": "justify", "prompt": "说明为什么能除以系数。", "reference": "系数已声明非零。", "mode": "semantic"}}},
+    {"name": "V1 rejects new fields", "valid": false, "support": {"schemaVersion": 1, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "conditions": []}},
+    {"name": "unknown support version", "valid": false, "support": {"schemaVersion": 3, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real"}},
+    {"name": "duplicate conditions", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "conditions": ["x > 0", " x > 0 "]}},
+    {"name": "prompt echo is not a reference", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "step": {"stepId": "bad", "prompt": "写出数值。", "reference": " 写出数值。 ", "mode": "numeric"}}},
+    {"name": "explicit step mode required", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "step": {"stepId": "bad", "prompt": "写出数值。", "reference": "2"}}},
+    {"name": "unknown step field", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "step": {"stepId": "bad", "prompt": "写出数值。", "reference": "2", "mode": "numeric", "rating": "good"}}},
+    {"name": "closed V2 base", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "numeric", "variables": [], "domain": "real", "answer": "pretend"}},
+    {"name": "unsupported domain", "valid": false, "support": {"schemaVersion": 2, "type": "calculation", "mode": "symbolic", "variables": ["x"], "domain": "complex"}}
+  ],
+  "stepCases": [
+    {"name": "numeric correct", "mode": "numeric", "reference": "0.75", "answer": "0.7500001", "status": "correct"},
+    {"name": "numeric incorrect", "mode": "numeric", "reference": "0.75", "answer": "0.7", "status": "incorrect"},
+    {"name": "numeric unsupported", "mode": "numeric", "reference": "0.75", "answer": "3/4", "status": "undetermined"},
+    {"name": "exact large decimal", "mode": "numeric", "reference": "9007199254740993", "answer": "9007199254740992", "tolerance": "0", "status": "incorrect"},
+    {"name": "symbolic correct", "mode": "symbolic", "reference": "x^2-2*x", "answer": "x*(x-2)", "status": "correct"},
+    {"name": "symbolic incorrect", "mode": "symbolic", "reference": "x^2-2*x", "answer": "x^2+2*x", "status": "incorrect"},
+    {"name": "variable division unsupported", "mode": "symbolic", "reference": "1", "answer": "x/x", "status": "undetermined"},
+    {"name": "subset domain unsupported", "mode": "symbolic", "reference": "0", "answer": "x", "conditions": ["x = 0"], "status": "undetermined"},
+    {"name": "semantic needs controlled service", "mode": "semantic", "reference": "系数已声明非零。", "answer": "非零", "status": "undetermined"},
+    {"name": "blank is unattempted", "mode": "numeric", "reference": "2", "answer": "  ", "status": "undetermined"}
+  ]
+}

@@ -1,0 +1,3367 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "2816a225-6e7b-4779-bd13-cdd6c848f912",
+  "prevId": "995d2805-0c42-4307-89c1-31de19dbdef3",
+  "tables": {
+    "account_long_term_plan_operations": {
+      "name": "account_long_term_plan_operations",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_revision": {
+          "name": "state_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "before_json": {
+          "name": "before_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "after_json": {
+          "name": "after_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_long_term_operation_uq": {
+          "name": "account_long_term_operation_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "isUnique": true
+        },
+        "account_long_term_operation_cursor_idx": {
+          "name": "account_long_term_operation_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_long_term_plan_operations_user_id_library_id_account_long_term_plan_states_user_id_library_id_fk": {
+          "name": "account_long_term_plan_operations_user_id_library_id_account_long_term_plan_states_user_id_library_id_fk",
+          "tableFrom": "account_long_term_plan_operations",
+          "tableTo": "account_long_term_plan_states",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_long_term_plan_states": {
+      "name": "account_long_term_plan_states",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "state_json": {
+          "name": "state_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_operation_id": {
+          "name": "last_operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_long_term_plan_states_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_long_term_plan_states_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_long_term_plan_states",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_long_term_plan_states_user_id_library_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id"
+          ],
+          "name": "account_long_term_plan_states_user_id_library_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_ai_requests": {
+      "name": "account_study_ai_requests",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "input_hash": {
+          "name": "input_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_kind": {
+          "name": "operation_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'legacy-unknown'"
+        },
+        "model_id": {
+          "name": "model_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'legacy-unknown'"
+        },
+        "prompt_version": {
+          "name": "prompt_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'legacy-unknown'"
+        },
+        "rule_version": {
+          "name": "rule_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'legacy-unknown'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reserved_tokens": {
+          "name": "reserved_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "result_json": {
+          "name": "result_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "usage_tokens": {
+          "name": "usage_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_ai_request_day_idx": {
+          "name": "account_study_ai_request_day_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "day",
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_ai_requests_user_id_library_id_account_study_ai_settings_user_id_library_id_fk": {
+          "name": "account_study_ai_requests_user_id_library_id_account_study_ai_settings_user_id_library_id_fk",
+          "tableFrom": "account_study_ai_requests",
+          "tableTo": "account_study_ai_settings",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_ai_requests_user_id_library_id_request_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "request_id"
+          ],
+          "name": "account_study_ai_requests_user_id_library_id_request_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_ai_settings": {
+      "name": "account_study_ai_settings",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "daily_request_limit": {
+          "name": "daily_request_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 3
+        },
+        "daily_token_limit": {
+          "name": "daily_token_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 3000
+        },
+        "concurrent_limit": {
+          "name": "concurrent_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "max_output_tokens": {
+          "name": "max_output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 500
+        },
+        "credential_ciphertext": {
+          "name": "credential_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "credential_nonce": {
+          "name": "credential_nonce",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_ai_settings_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_ai_settings_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_ai_settings",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_ai_settings_user_id_library_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id"
+          ],
+          "name": "account_study_ai_settings_user_id_library_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_assistance": {
+      "name": "account_study_assistance",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "summary_id": {
+          "name": "summary_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "summary_hash": {
+          "name": "summary_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "association_hash": {
+          "name": "association_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "record_json": {
+          "name": "record_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_assistance_id_uq": {
+          "name": "account_study_assistance_id_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "summary_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_assistance_event_uq": {
+          "name": "account_study_assistance_event_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_assistance_cursor_idx": {
+          "name": "account_study_assistance_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_assistance_user_id_library_id_event_id_account_study_records_user_id_library_id_event_id_fk": {
+          "name": "account_study_assistance_user_id_library_id_event_id_account_study_records_user_id_library_id_event_id_fk",
+          "tableFrom": "account_study_assistance",
+          "tableTo": "account_study_records",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_assistance_receipts": {
+      "name": "account_study_assistance_receipts",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receipt_id": {
+          "name": "receipt_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "summary_id": {
+          "name": "summary_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "writer_grant_id": {
+          "name": "writer_grant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_assistance_receipt_id_uq": {
+          "name": "account_study_assistance_receipt_id_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "receipt_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_assistance_receipt_cursor_idx": {
+          "name": "account_study_assistance_receipt_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        },
+        "account_study_assistance_receipt_summary_idx": {
+          "name": "account_study_assistance_receipt_summary_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "summary_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_assistance_receipts_writer_grant_id_account_study_grants_grant_id_fk": {
+          "name": "account_study_assistance_receipts_writer_grant_id_account_study_grants_grant_id_fk",
+          "tableFrom": "account_study_assistance_receipts",
+          "tableTo": "account_study_grants",
+          "columnsFrom": [
+            "writer_grant_id"
+          ],
+          "columnsTo": [
+            "grant_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "account_study_assistance_receipts_user_id_library_id_summary_id_account_study_assistance_user_id_library_id_summary_id_fk": {
+          "name": "account_study_assistance_receipts_user_id_library_id_summary_id_account_study_assistance_user_id_library_id_summary_id_fk",
+          "tableFrom": "account_study_assistance_receipts",
+          "tableTo": "account_study_assistance",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "summary_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "summary_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_content_decision_finals": {
+      "name": "account_study_content_decision_finals",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "candidate_id": {
+          "name": "candidate_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_content_decision_finals_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_content_decision_finals_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_content_decision_finals",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_content_decision_finals_user_id_library_id_candidate_id_content_hash_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "candidate_id",
+            "content_hash"
+          ],
+          "name": "account_study_content_decision_finals_user_id_library_id_candidate_id_content_hash_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_content_decision_receipts": {
+      "name": "account_study_content_decision_receipts",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receipt_id": {
+          "name": "receipt_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "writer_grant_id": {
+          "name": "writer_grant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_content_decision_receipt_uq": {
+          "name": "account_study_content_decision_receipt_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "receipt_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_content_decision_operation_receipt_uq": {
+          "name": "account_study_content_decision_operation_receipt_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_content_decision_receipt_cursor_idx": {
+          "name": "account_study_content_decision_receipt_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_content_decision_receipts_writer_grant_id_account_study_grants_grant_id_fk": {
+          "name": "account_study_content_decision_receipts_writer_grant_id_account_study_grants_grant_id_fk",
+          "tableFrom": "account_study_content_decision_receipts",
+          "tableTo": "account_study_grants",
+          "columnsFrom": [
+            "writer_grant_id"
+          ],
+          "columnsTo": [
+            "grant_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "account_study_content_decision_receipts_user_id_library_id_operation_id_account_study_content_decisions_user_id_library_id_operation_id_fk": {
+          "name": "account_study_content_decision_receipts_user_id_library_id_operation_id_account_study_content_decisions_user_id_library_id_operation_id_fk",
+          "tableFrom": "account_study_content_decision_receipts",
+          "tableTo": "account_study_content_decisions",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_content_decisions": {
+      "name": "account_study_content_decisions",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "facts_hash": {
+          "name": "facts_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "candidate_id": {
+          "name": "candidate_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_content_decision_operation_uq": {
+          "name": "account_study_content_decision_operation_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_content_decision_cursor_idx": {
+          "name": "account_study_content_decision_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_content_decisions_user_id_library_id_facts_hash_account_study_planning_facts_user_id_library_id_facts_hash_fk": {
+          "name": "account_study_content_decisions_user_id_library_id_facts_hash_account_study_planning_facts_user_id_library_id_facts_hash_fk",
+          "tableFrom": "account_study_content_decisions",
+          "tableTo": "account_study_planning_facts",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "facts_hash"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "facts_hash"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_grants": {
+      "name": "account_study_grants",
+      "columns": {
+        "grant_id": {
+          "name": "grant_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expected_profile_revision": {
+          "name": "expected_profile_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "replace_library": {
+          "name": "replace_library",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_grant_token_uq": {
+          "name": "account_study_grant_token_uq",
+          "columns": [
+            "token_hash"
+          ],
+          "isUnique": true
+        },
+        "account_study_grant_user_state_idx": {
+          "name": "account_study_grant_user_state_idx",
+          "columns": [
+            "user_id",
+            "state",
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_grants_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_grants_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_grants",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_heads": {
+      "name": "account_study_heads",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_heads_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_heads_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_heads",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "account_study_heads_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_heads_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_heads",
+          "tableTo": "account_study_snapshots",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_heads_user_id_library_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id"
+          ],
+          "name": "account_study_heads_user_id_library_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_item_versions": {
+      "name": "account_study_item_versions",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_json": {
+          "name": "item_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_item_versions_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_item_versions_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_item_versions",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_item_versions_user_id_library_id_item_key_content_hash_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "item_key",
+            "content_hash"
+          ],
+          "name": "account_study_item_versions_user_id_library_id_item_key_content_hash_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_libraries": {
+      "name": "account_study_libraries",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_libraries_user_id_learning_accounts_user_id_fk": {
+          "name": "account_study_libraries_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "account_study_libraries",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_libraries_user_id_library_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id"
+          ],
+          "name": "account_study_libraries_user_id_library_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_manifest_pages": {
+      "name": "account_study_manifest_pages",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "page": {
+          "name": "page",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "page_hash": {
+          "name": "page_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "page_json": {
+          "name": "page_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_manifest_pages_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_manifest_pages_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_manifest_pages",
+          "tableTo": "account_study_snapshots",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_manifest_pages_user_id_library_id_snapshot_id_page_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id",
+            "page"
+          ],
+          "name": "account_study_manifest_pages_user_id_library_id_snapshot_id_page_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_plan_claims": {
+      "name": "account_study_plan_claims",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "writer_grant_id": {
+          "name": "writer_grant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_plan_claim_lease_idx": {
+          "name": "account_study_plan_claim_lease_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "state",
+            "lease_until"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_plan_claims_writer_grant_id_account_study_grants_grant_id_fk": {
+          "name": "account_study_plan_claims_writer_grant_id_account_study_grants_grant_id_fk",
+          "tableFrom": "account_study_plan_claims",
+          "tableTo": "account_study_grants",
+          "columnsFrom": [
+            "writer_grant_id"
+          ],
+          "columnsTo": [
+            "grant_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "account_study_plan_claims_user_id_library_id_operation_id_account_study_plan_operations_user_id_library_id_operation_id_fk": {
+          "name": "account_study_plan_claims_user_id_library_id_operation_id_account_study_plan_operations_user_id_library_id_operation_id_fk",
+          "tableFrom": "account_study_plan_claims",
+          "tableTo": "account_study_plan_operations",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_plan_claims_user_id_library_id_operation_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "name": "account_study_plan_claims_user_id_library_id_operation_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_plan_execution_receipts": {
+      "name": "account_study_plan_execution_receipts",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receipt_id": {
+          "name": "receipt_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cloud_plan_hash": {
+          "name": "cloud_plan_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "writer_grant_id": {
+          "name": "writer_grant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_plan_execution_receipt_uq": {
+          "name": "account_study_plan_execution_receipt_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "receipt_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_plan_execution_cursor_idx": {
+          "name": "account_study_plan_execution_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        },
+        "account_study_plan_execution_operation_idx": {
+          "name": "account_study_plan_execution_operation_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_plan_execution_receipts_writer_grant_id_account_study_grants_grant_id_fk": {
+          "name": "account_study_plan_execution_receipts_writer_grant_id_account_study_grants_grant_id_fk",
+          "tableFrom": "account_study_plan_execution_receipts",
+          "tableTo": "account_study_grants",
+          "columnsFrom": [
+            "writer_grant_id"
+          ],
+          "columnsTo": [
+            "grant_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "account_study_plan_execution_receipts_user_id_library_id_operation_id_account_study_plan_operations_user_id_library_id_operation_id_fk": {
+          "name": "account_study_plan_execution_receipts_user_id_library_id_operation_id_account_study_plan_operations_user_id_library_id_operation_id_fk",
+          "tableFrom": "account_study_plan_execution_receipts",
+          "tableTo": "account_study_plan_operations",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_plan_operations": {
+      "name": "account_study_plan_operations",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_hash": {
+          "name": "plan_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan_json": {
+          "name": "plan_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "predecessor_operation_id": {
+          "name": "predecessor_operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "state_revision": {
+          "name": "state_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "account_study_plan_operation_uq": {
+          "name": "account_study_plan_operation_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "operation_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_plan_operation_cursor_idx": {
+          "name": "account_study_plan_operation_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_plan_operations_user_id_library_id_day_account_study_plan_states_user_id_library_id_day_fk": {
+          "name": "account_study_plan_operations_user_id_library_id_day_account_study_plan_states_user_id_library_id_day_fk",
+          "tableFrom": "account_study_plan_operations",
+          "tableTo": "account_study_plan_states",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "day"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "day"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_plan_states": {
+      "name": "account_study_plan_states",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "plan_hash": {
+          "name": "plan_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan_json": {
+          "name": "plan_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "approved_plan_hash": {
+          "name": "approved_plan_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "approved_plan_json": {
+          "name": "approved_plan_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "approved_revision": {
+          "name": "approved_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "approved_operation_id": {
+          "name": "approved_operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'none'"
+        },
+        "last_operation_id": {
+          "name": "last_operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_plan_approved_idx": {
+          "name": "account_study_plan_approved_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "approved_revision"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_plan_states_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_plan_states_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_plan_states",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_plan_states_user_id_library_id_day_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "day"
+          ],
+          "name": "account_study_plan_states_user_id_library_id_day_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_planning_catalogs": {
+      "name": "account_study_planning_catalogs",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_hash": {
+          "name": "source_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "catalog_hash": {
+          "name": "catalog_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "catalog_json": {
+          "name": "catalog_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_catalog_source_idx": {
+          "name": "account_study_catalog_source_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "source_hash"
+          ],
+          "isUnique": false
+        },
+        "account_study_catalog_hash_uq": {
+          "name": "account_study_catalog_hash_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "catalog_hash"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "account_study_planning_catalogs_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_planning_catalogs_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_planning_catalogs",
+          "tableTo": "account_study_snapshots",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_planning_catalogs_user_id_library_id_snapshot_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "name": "account_study_planning_catalogs_user_id_library_id_snapshot_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_planning_facts": {
+      "name": "account_study_planning_facts",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "catalog_hash": {
+          "name": "catalog_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "facts_hash": {
+          "name": "facts_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "facts_json": {
+          "name": "facts_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_facts_hash_uq": {
+          "name": "account_study_facts_hash_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "facts_hash"
+          ],
+          "isUnique": true
+        },
+        "account_study_facts_snapshot_idx": {
+          "name": "account_study_facts_snapshot_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_planning_facts_user_id_library_id_snapshot_id_account_study_planning_catalogs_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_planning_facts_user_id_library_id_snapshot_id_account_study_planning_catalogs_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_planning_facts",
+          "tableTo": "account_study_planning_catalogs",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_profiles": {
+      "name": "account_study_profiles",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_profiles_user_id_learning_accounts_user_id_fk": {
+          "name": "account_study_profiles_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "account_study_profiles",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "account_study_profiles_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_profiles_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_profiles",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_records": {
+      "name": "account_study_records",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "core_hash": {
+          "name": "core_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "envelope_hash": {
+          "name": "envelope_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "record_json": {
+          "name": "record_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_record_event_uq": {
+          "name": "account_study_record_event_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_record_cursor_idx": {
+          "name": "account_study_record_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_records_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_records_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_records",
+          "tableTo": "account_study_snapshots",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_snapshot_members": {
+      "name": "account_study_snapshot_members",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_member_item_uq": {
+          "name": "account_study_member_item_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id",
+            "item_key"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "account_study_snapshot_members_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk": {
+          "name": "account_study_snapshot_members_user_id_library_id_snapshot_id_account_study_snapshots_user_id_library_id_snapshot_id_fk",
+          "tableFrom": "account_study_snapshot_members",
+          "tableTo": "account_study_snapshots",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "account_study_snapshot_members_user_id_library_id_item_key_content_hash_account_study_item_versions_user_id_library_id_item_key_content_hash_fk": {
+          "name": "account_study_snapshot_members_user_id_library_id_item_key_content_hash_account_study_item_versions_user_id_library_id_item_key_content_hash_fk",
+          "tableFrom": "account_study_snapshot_members",
+          "tableTo": "account_study_item_versions",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "item_key",
+            "content_hash"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "item_key",
+            "content_hash"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_snapshot_members_user_id_library_id_snapshot_id_position_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id",
+            "position"
+          ],
+          "name": "account_study_snapshot_members_user_id_library_id_snapshot_id_position_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_snapshots": {
+      "name": "account_study_snapshots",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot_hash": {
+          "name": "snapshot_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "header_json": {
+          "name": "header_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "member_count": {
+          "name": "member_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "published": {
+          "name": "published",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_study_snapshots_user_id_library_id_account_study_libraries_user_id_library_id_fk": {
+          "name": "account_study_snapshots_user_id_library_id_account_study_libraries_user_id_library_id_fk",
+          "tableFrom": "account_study_snapshots",
+          "tableTo": "account_study_libraries",
+          "columnsFrom": [
+            "user_id",
+            "library_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_study_snapshots_user_id_library_id_snapshot_id_pk": {
+          "columns": [
+            "user_id",
+            "library_id",
+            "snapshot_id"
+          ],
+          "name": "account_study_snapshots_user_id_library_id_snapshot_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "account_study_writeback_receipts": {
+      "name": "account_study_writeback_receipts",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "library_id": {
+          "name": "library_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "receipt_id": {
+          "name": "receipt_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "envelope_hash": {
+          "name": "envelope_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "writer_grant_id": {
+          "name": "writer_grant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_study_receipt_id_uq": {
+          "name": "account_study_receipt_id_uq",
+          "columns": [
+            "user_id",
+            "library_id",
+            "receipt_id"
+          ],
+          "isUnique": true
+        },
+        "account_study_receipt_cursor_idx": {
+          "name": "account_study_receipt_cursor_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "sequence"
+          ],
+          "isUnique": false
+        },
+        "account_study_receipt_event_idx": {
+          "name": "account_study_receipt_event_idx",
+          "columns": [
+            "user_id",
+            "library_id",
+            "event_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_study_writeback_receipts_writer_grant_id_account_study_grants_grant_id_fk": {
+          "name": "account_study_writeback_receipts_writer_grant_id_account_study_grants_grant_id_fk",
+          "tableFrom": "account_study_writeback_receipts",
+          "tableTo": "account_study_grants",
+          "columnsFrom": [
+            "writer_grant_id"
+          ],
+          "columnsTo": [
+            "grant_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "account_study_writeback_receipts_user_id_library_id_event_id_account_study_records_user_id_library_id_event_id_fk": {
+          "name": "account_study_writeback_receipts_user_id_library_id_event_id_account_study_records_user_id_library_id_event_id_fk",
+          "tableFrom": "account_study_writeback_receipts",
+          "tableTo": "account_study_records",
+          "columnsFrom": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "columnsTo": [
+            "user_id",
+            "library_id",
+            "event_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "learning_accounts": {
+      "name": "learning_accounts",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'Asia/Shanghai'"
+        },
+        "sync_mode": {
+          "name": "sync_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'balanced'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "learning_events": {
+      "name": "learning_events",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_kind": {
+          "name": "item_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numeric_value": {
+          "name": "numeric_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "answered_delta": {
+          "name": "answered_delta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "correct_delta": {
+          "name": "correct_delta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "uidx_learning_events_user_event": {
+          "name": "uidx_learning_events_user_event",
+          "columns": [
+            "user_id",
+            "event_id"
+          ],
+          "isUnique": true
+        },
+        "idx_learning_events_user_sequence": {
+          "name": "idx_learning_events_user_sequence",
+          "columns": [
+            "user_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "learning_events_user_id_learning_accounts_user_id_fk": {
+          "name": "learning_events_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "learning_events",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "learning_item_states": {
+      "name": "learning_item_states",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_kind": {
+          "name": "item_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numeric_value": {
+          "name": "numeric_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "last_event_sequence": {
+          "name": "last_event_sequence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_learning_item_states_user_kind": {
+          "name": "idx_learning_item_states_user_kind",
+          "columns": [
+            "user_id",
+            "item_kind"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "learning_item_states_user_id_learning_accounts_user_id_fk": {
+          "name": "learning_item_states_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "learning_item_states",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "learning_item_states_user_id_item_kind_item_key_pk": {
+          "columns": [
+            "user_id",
+            "item_kind",
+            "item_key"
+          ],
+          "name": "learning_item_states_user_id_item_kind_item_key_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "learning_progress_migrations": {
+      "name": "learning_progress_migrations",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "migration_event_id": {
+          "name": "migration_event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "progress_json": {
+          "name": "progress_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "migrated_at": {
+          "name": "migrated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "learning_progress_migrations_migration_event_id_unique": {
+          "name": "learning_progress_migrations_migration_event_id_unique",
+          "columns": [
+            "migration_event_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "learning_progress_migrations_user_id_learning_accounts_user_id_fk": {
+          "name": "learning_progress_migrations_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "learning_progress_migrations",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "review_projections": {
+      "name": "review_projections",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_kind": {
+          "name": "item_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fsrs_json": {
+          "name": "fsrs_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "scheduler_version": {
+          "name": "scheduler_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "applied_event_count": {
+          "name": "applied_event_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_set_hash": {
+          "name": "event_set_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_reviewed_at": {
+          "name": "last_reviewed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "review_projections_due_idx": {
+          "name": "review_projections_due_idx",
+          "columns": [
+            "user_id",
+            "due_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "review_projections_user_id_learning_accounts_user_id_fk": {
+          "name": "review_projections_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "review_projections",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "review_projections_user_id_item_kind_item_key_pk": {
+          "columns": [
+            "user_id",
+            "item_kind",
+            "item_key"
+          ],
+          "name": "review_projections_user_id_item_kind_item_key_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "study_events_v3": {
+      "name": "study_events_v3",
+      "columns": {
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "core_hash": {
+          "name": "core_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_kind": {
+          "name": "item_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_key": {
+          "name": "item_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_handle": {
+          "name": "state_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "correct": {
+          "name": "correct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stage_before": {
+          "name": "stage_before",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stage_after": {
+          "name": "stage_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "scheduler_version": {
+          "name": "scheduler_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "client_projection_json": {
+          "name": "client_projection_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "baseline_json": {
+          "name": "baseline_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "study_events_v3_user_event_uq": {
+          "name": "study_events_v3_user_event_uq",
+          "columns": [
+            "user_id",
+            "event_id"
+          ],
+          "isUnique": true
+        },
+        "study_events_v3_replay_idx": {
+          "name": "study_events_v3_replay_idx",
+          "columns": [
+            "user_id",
+            "item_kind",
+            "item_key",
+            "reviewed_at",
+            "event_id"
+          ],
+          "isUnique": false
+        },
+        "study_events_v3_cursor_idx": {
+          "name": "study_events_v3_cursor_idx",
+          "columns": [
+            "user_id",
+            "sequence"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "study_events_v3_user_id_learning_accounts_user_id_fk": {
+          "name": "study_events_v3_user_id_learning_accounts_user_id_fk",
+          "tableFrom": "study_events_v3",
+          "tableTo": "learning_accounts",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

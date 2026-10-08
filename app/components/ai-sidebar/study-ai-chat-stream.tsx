@@ -1,0 +1,19 @@
+'use client';
+import {useState,type ReactNode} from 'react';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-javascript';
+import {copyTextSafely} from '../../clipboard';
+import './study-ai-copy.css';
+import {MathText} from '../../math-text';
+import type {StudyAIMessage} from '../../ai/study-ai-types';
+function Inline({text}:{text:string}){const pattern=/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g;const children:ReactNode[]=[];let offset=0,match:RegExpExecArray|null;while((match=pattern.exec(text))){if(match.index>offset)children.push(<MathText key={`t${offset}`} text={text.slice(offset,match.index)}/>);const value=match[0];if(value.startsWith('`'))children.push(<code key={match.index}>{value.slice(1,-1)}</code>);else if(value.startsWith('**'))children.push(<strong key={match.index}><MathText text={value.slice(2,-2)}/></strong>);else{const link=/^\[([^\]]+)\]\((.+)\)$/.exec(value)!;children.push(<a key={match.index} href={link[2]} target="_blank" rel="noopener noreferrer">{link[1]}</a>);}offset=match.index+value.length;}if(offset<text.length)children.push(<MathText key={`t${offset}`} text={text.slice(offset)}/>);return <>{children}</>;}
+function Copy({text}:{text:string}){
+ const [result,setResult]=useState<{text:string;copied:boolean}|null>(null);
+ async function copy(){const copied=await copyTextSafely(text);setResult({text,copied});}
+ const current=result?.text===text?result:null;
+ return <span className="study-ai-copy-control"><button type="button" onClick={()=>void copy()}>{current?.copied?'已复制':'复制'}</button><span role="status">{current&&!current.copied?'复制不可用，请选中原文手动复制。':current?.copied?'复制成功。':''}</span></span>;
+}
+function CodeBlock({language,code}:{language:string;code:string}){const grammar=Prism.languages[language];return <div className="study-ai-code"><div><span>{language||'代码'}</span><Copy text={code}/></div><pre><code>{grammar?<span dangerouslySetInnerHTML={{__html:Prism.highlight(code,grammar,language)}}/>:code}</code></pre></div>;}
+export function StudyAIMarkdown({text}:{text:string}){const blocks=text.split(/(```[^\n]*\n[\s\S]*?(?:```|$))/g);return <div className="study-ai-markdown">{blocks.map((block,i)=>{if(block.startsWith('```')){const line=block.indexOf('\n');return <CodeBlock key={i} language={block.slice(3,line).trim().toLowerCase()} code={block.slice(line+1).replace(/```$/,'')}/>;}return block.split(/\n\s*\n/).filter(Boolean).map((paragraph,j)=>{if(/^#{1,6} /.test(paragraph))return <h3 key={`${i}-${j}`}><Inline text={paragraph.replace(/^#{1,6} /,'')}/></h3>;if(paragraph.split('\n').every(line=>/^\s*[-*] /.test(line)))return <ul key={`${i}-${j}`}>{paragraph.split('\n').map((line,k)=><li key={k}><Inline text={line.replace(/^\s*[-*] /,'')}/></li>)}</ul>;if(paragraph.startsWith('> '))return <blockquote key={`${i}-${j}`}><Inline text={paragraph.replace(/^> /gm,'')}/></blockquote>;return <p key={`${i}-${j}`}><Inline text={paragraph}/></p>;});})}</div>;}
+export function StudyAIChatStream({messages,busy}:{messages:StudyAIMessage[];busy:boolean}){return <div className="study-ai-transcript" role="log" aria-live="polite" aria-relevant="additions text">{messages.length===0&&<div className="study-ai-empty"><h3>从当前问题继续思考</h3><p>说说你卡在哪里，或先写下自己的尝试。</p></div>}{messages.map(message=><article key={message.id} className={`study-ai-message study-ai-${message.role}`}><div className="study-ai-message-label"><span>{message.role==='user'?'你':message.provider==='chatgpt'?'OpenAI':'DeepSeek'}</span>{message.role==='assistant'&&message.content&&<Copy text={message.content}/>}</div><p className="study-ai-message-context">{message.contextTitle??'旧对话 · 页面来源未记录'}</p><StudyAIMarkdown text={message.content}/>{message.model&&<small>{message.model}</small>}</article>)}{busy&&<p className="study-ai-status" role="status">正在思考与回答…</p>}</div>;}

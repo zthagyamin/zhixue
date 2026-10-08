@@ -1,0 +1,40 @@
+import React,{useMemo,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {registry} from '../../app/plugins';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import {LearningDraftBoundary} from '../../app/learning-draft';
+import {prepareStudyNavigation} from '../../app/study-navigation-guard';
+import {StudySessionShell} from '../../app/study-session-shell';
+import {ExtraPracticeSession} from '../../app/extra-practice-session';
+import {PracticeSession} from '../../app/practice-session';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+import '../../app/study-guidance.css';
+
+const query=new URLSearchParams(location.search),mode=query.get('mode');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const probe={events:[],grades:0,summary:null};window.__math=probe;
+const original={id:'synthetic-calc',itemId:'synthetic-calc',fingerprint:'v1',questionType:'calculation',prompt:'计算 2 + 2。',answer:'4',explanation:'两个二相加为四。'};
+const quiz={...original,itemId:'synthetic-quiz',questionType:'quiz',prompt:'比较一个因素的作用时，应怎样处理其他条件？',options:['忽略其他条件','控制其他条件'],answer:1,explanation:'比较时需要控制其他条件。'};
+const grade=async()=>{probe.grades++;return {correct:false,verdict:'incorrect',rating:'again',explanation:'本题参考值为 4。'};};
+const client={gradePractice:grade,variantPractice:async source=>({item:mode==='old-companion'?{...source,answer:'8',prompt:source.prompt+'（数值 ×2）'}:{...source,options:[...source.options].reverse(),answer:0}})};
+const extra={scopeKey:'synthetic-extra',title:'数学验收',items:[original],modes:['calculation'],sourceModes:['calculation'],source:{title:'合成材料',scope:'隔离验证'}};
+function App(){
+ const store=useMemo(()=>createLearningDraftStore('math-fixture'),[]),[version,setVersion]=useState(1),[done,setDone]=useState(false);
+ const item={...original,prompt:version===1?original.prompt:'计算 3 + 3。',answer:version===1?'4':'6'},draft=store.adapter('original','calculation');
+ probe.changeSource=()=>setVersion(value=>value+1);probe.draft=draft;
+ probe.prepare=()=>{probe.leave=prepareStudyNavigation();return !!probe.leave;};probe.commitLeave=()=>probe.leave?.();
+ if(done)return <h2>原题本轮结束</h2>;
+ if(mode==='extra')return <ExtraPracticeSession snapshot={extra} onExit={()=>setDone(true)} canOpenLocal={false} getObsidianUri={()=>''}/>;
+ if(mode==='repeat'||mode==='old-companion')return <PracticeSession items={mode==='repeat'?[quiz]:[original]} companionClient={client} context={{gradeCalculation:grade}} onRecordAttempt={async row=>{probe.events.push(row.rating);}} onFinish={summary=>{probe.summary=summary;setDone(true);}}/>;
+ const Plugin=registry.get('@zhixue/plugin-calculation');
+ return <StudySessionShell title="迁移与数学" scope="合成原题 · 隔离验收" progress="0 / 1" mode="规则模板" onExit={()=>setDone(true)} options={<p>验收设置</p>} source={<p>合成材料</p>} queue={null} subjects={null}>
+  <LearningDraftBoundary store={store}>
+   <Plugin.renderUI data={item} context={{draft,guidanceScope:'math-fixture',guidanceInOptions:true,gradeCalculation:grade,contentSource:{mode:'calculation',data:item}}} onGrade={(rating,options)=>{
+    const ticket=draft.begin();if(!ticket)return;
+    if(store.commit(ticket,options?.deferAdvance?()=>setDone(true):undefined)){probe.events.push(rating);if(!options?.deferAdvance)setDone(true);}
+   }}/>
+  </LearningDraftBoundary>
+ </StudySessionShell>;
+}
+createRoot(document.getElementById('root')).render(<React.StrictMode><main className="study-app study-focus"><section className="workspace"><App/></section></main></React.StrictMode>);

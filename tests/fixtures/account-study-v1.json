@@ -1,0 +1,232 @@
+{
+  "bundle": {
+    "snapshot": {
+      "schemaVersion": 1,
+      "libraryId": "library-a",
+      "snapshotId": "snapshot-a",
+      "revision": 1,
+      "generatedAt": "2026-09-01T00:00:00.000Z",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "eventCursor": 0,
+      "taskCursor": 0,
+      "items": [
+        {
+          "itemKey": "word:tree",
+          "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075"
+        },
+        {
+          "itemKey": "practice:小数",
+          "contentHash": "3dbe724b36f38586aa721d69792868dd5ce92242f17627b216e8a6e3a7c91fa9"
+        }
+      ],
+      "snapshotHash": "2e7230c9bc44784de3aa13510e4dd4b5b93bc1e11bdc5afa3b0091166d3a98b8"
+    },
+    "items": [
+      {
+        "schemaVersion": 1,
+        "kind": "word",
+        "itemKey": "word:tree",
+        "eventKind": "word",
+        "subjectId": "vocab",
+        "title": "Tree 🌳",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "three-stage",
+        "recommendedPlugin": "three-stage",
+        "language": "en",
+        "word": {
+          "word": "Tree",
+          "phonetic": "/triː/",
+          "meaning": "树",
+          "context": "植物",
+          "example": "A tree grows here.",
+          "source": "词库",
+          "level": "A1",
+          "distractors": [
+            "草",
+            "花"
+          ]
+        },
+        "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075"
+      },
+      {
+        "schemaVersion": 1,
+        "kind": "practice",
+        "itemKey": "practice:小数",
+        "eventKind": "due",
+        "subjectId": "reading",
+        "title": "数值 · Decimal",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "completionRule": "graded-practice",
+        "practice": {
+          "itemId": "小数",
+          "abilityId": "math-decimals",
+          "domain": "course",
+          "questionType": "calculation",
+          "prompt": "5 ÷ 4 = ?",
+          "answer": "1.25",
+          "sourceLabel": "合成练习"
+        },
+        "contentHash": "3dbe724b36f38586aa721d69792868dd5ce92242f17627b216e8a6e3a7c91fa9"
+      }
+    ]
+  },
+  "records": [
+    {
+      "schemaVersion": 1,
+      "libraryId": "library-a",
+      "snapshotId": "snapshot-a",
+      "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075",
+      "originDeviceId": "device-a",
+      "provenanceMode": "verified-round",
+      "practiceMode": "three-stage",
+      "roundId": "round-one",
+      "attemptId": "attempt-one",
+      "parentEventId": null,
+      "event": {
+        "schemaVersion": 3,
+        "eventId": "event-one",
+        "coreHash": "9320891f0125ecb17ec472e482d44c0bc7b2ee84e0c8df1f9f3e6002974c21f1",
+        "occurredAt": "2026-09-01T00:01:00.000Z",
+        "domain": "ielts",
+        "eventType": "practice-attempt",
+        "item": {
+          "kind": "word",
+          "key": "word:tree"
+        },
+        "attempt": {
+          "rating": "good",
+          "correct": true,
+          "stageBefore": 0,
+          "stageAfter": 1
+        }
+      },
+      "envelopeHash": "340ae078b52938af60931a7023c42b0df6d2fcd2bf756d4b98ef957acf992039"
+    },
+    {
+      "schemaVersion": 1,
+      "libraryId": "library-a",
+      "snapshotId": "snapshot-a",
+      "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075",
+      "originDeviceId": "device-a",
+      "provenanceMode": "verified-round",
+      "practiceMode": "three-stage",
+      "roundId": "round-one",
+      "attemptId": "attempt-two",
+      "parentEventId": "event-one",
+      "event": {
+        "schemaVersion": 3,
+        "eventId": "event-two",
+        "coreHash": "7df31a1529c4edd09e2f85b03db66c23ea1474215763186fd80bc2adc1bf8b12",
+        "occurredAt": "2026-09-01T00:02:00.000Z",
+        "domain": "ielts",
+        "eventType": "practice-attempt",
+        "item": {
+          "kind": "word",
+          "key": "word:tree"
+        },
+        "attempt": {
+          "rating": "good",
+          "correct": true,
+          "stageBefore": 1,
+          "stageAfter": 2
+        }
+      },
+      "envelopeHash": "1de7481ad4101419a248348db46683d88ad9b640dbddbe8009e58de4385ca237"
+    },
+    {
+      "schemaVersion": 1,
+      "libraryId": "library-a",
+      "snapshotId": "snapshot-a",
+      "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075",
+      "originDeviceId": "device-a",
+      "provenanceMode": "verified-round",
+      "practiceMode": "three-stage",
+      "roundId": "round-one",
+      "attemptId": "attempt-three",
+      "parentEventId": "event-two",
+      "event": {
+        "schemaVersion": 3,
+        "eventId": "event-three",
+        "coreHash": "4f5bc0ddc3edc9a84e98760c00680d40c4dc2c457b4693158323bb31d3097251",
+        "occurredAt": "2026-09-01T00:03:00.000Z",
+        "domain": "ielts",
+        "eventType": "practice-attempt",
+        "item": {
+          "kind": "word",
+          "key": "word:tree"
+        },
+        "attempt": {
+          "rating": "good",
+          "correct": true,
+          "stageBefore": 2,
+          "stageAfter": 3
+        },
+        "scheduling": {
+          "reviewedAt": "2026-09-01T00:03:00.000Z",
+          "schedulerVersion": "ts-fsrs-5.4.1-default-v1"
+        }
+      },
+      "envelopeHash": "1d0edb6797d5e09aba95c60537b15fc45ded71ca762dabc297efcd13cf33001d"
+    }
+  ],
+  "legacy": {
+    "schemaVersion": 1,
+    "libraryId": "library-a",
+    "snapshotId": "snapshot-a",
+    "contentHash": "44b2a1a5772e870e7d554d75b83fe82f0c814e5100e55c603cffee8d23856075",
+    "originDeviceId": "device-a",
+    "provenanceMode": "legacy-continuation",
+    "practiceMode": "three-stage",
+    "attemptId": "attempt-one",
+    "parentEventId": null,
+    "event": {
+      "schemaVersion": 3,
+      "eventId": "legacy-next",
+      "coreHash": "06e4765e25ba458d79b932d7b907a5fb9a57043ea16c56b1ab67915c5af7bba6",
+      "occurredAt": "2026-09-01T00:01:00.000Z",
+      "domain": "ielts",
+      "eventType": "practice-attempt",
+      "item": {
+        "kind": "word",
+        "key": "word:tree"
+      },
+      "attempt": {
+        "rating": "good",
+        "correct": true,
+        "stageBefore": 1,
+        "stageAfter": 2
+      }
+    },
+    "resumeId": "resume-one",
+    "resumeStateHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "legacyStage": 1,
+    "legacyAnchorEventId": null,
+    "envelopeHash": "7bc582e00dc40c9d4065414299cea44a2f26e51e279178dfe8150815f5d5a5ab"
+  },
+  "task": {
+    "schemaVersion": 1,
+    "libraryId": "library-a",
+    "snapshotId": "snapshot-a",
+    "originDeviceId": "device-a",
+    "provenanceMode": "task",
+    "planHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "assignmentId": "assignment-one",
+    "completionKey": "completion-one",
+    "event": {
+      "schemaVersion": 1,
+      "eventType": "task-completed",
+      "eventId": "task-event-001",
+      "taskId": "manual-orbit",
+      "subjectId": "astronomy",
+      "day": "2026-08-31",
+      "occurredAt": "2026-08-31T02:00:00.000Z",
+      "unitIds": [
+        "astronomy:orbit"
+      ],
+      "source": "self-report",
+      "evidenceRefs": [],
+      "coreHash": "9fa735df5c32136f06396a5c9a31f74d997691a4ac4ae92f88290a868231ee66"
+    },
+    "envelopeHash": "dc30ffdbdc2f76c5fa6324139fc5dc7447471d31ddcc7fc424c894a77fc0d387"
+  }
+}

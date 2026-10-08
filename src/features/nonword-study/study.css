@@ -1,0 +1,16 @@
+.nonword-study { min-width: 0; }
+.nonword-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.nonword-text .katex-display { overflow-x: auto; overflow-y: hidden; padding: .35rem 0; }
+.nonword-code { white-space: pre; overflow-x: auto; max-width: 100%; padding: 1rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface-2); font-size: .95rem; }
+.nonword-option { display: flex; gap: .75rem; align-items: start; width: 100%; padding: 1rem; margin: .6rem 0; text-align: left; }
+.nonword-feedback { margin-top: 1rem; padding-block: 1rem; border-top: 1px solid var(--line); }
+.nonword-feedback h3 { margin: 0 0 .6rem; }
+.nonword-feedback button { margin: .6rem .6rem 0 0; }
+.nonword-entry { display: flex; gap: .5rem; flex-wrap: wrap; margin-block: .75rem; }
+.nonword-status { color: var(--muted); font-size: .9rem; margin: .5rem 0; }
+.nonword-course-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; margin-block: .5rem; color: var(--muted); }
+.nonword-course-meta .nonword-status { margin: 0; }
+.nonword-course-meta details { font-size: .9rem; }
+.nonword-course-meta summary { cursor: pointer; }
+.nonword-course-meta details p { margin-block: .4rem; }
+.nonword-pending-workspace { max-width: 72rem; margin: 1.5rem auto; padding-inline: 1rem; min-width: 0; color: var(--ink); }

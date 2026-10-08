@@ -1,0 +1,2 @@
+import assert from 'node:assert/strict';import test from 'node:test';import {readFile} from 'node:fs/promises';import {accountPlanningVectors} from './fixtures/account-planning-vectors.mjs';
+test('Python plan execution uses exact TypeScript-sealed vectors',async()=>assert.deepEqual(await accountPlanningVectors(),JSON.parse(await readFile(new URL('./fixtures/account-planning-v1.json',import.meta.url),'utf8'))));

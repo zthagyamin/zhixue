@@ -1,0 +1,11 @@
+.vault-mapping { color:var(--c-text-primary); text-align:left; }
+.vault-mapping p { color:var(--c-text-secondary); line-height:1.65; }
+.vault-mapping fieldset,.vault-mapping article { border:1px solid var(--c-border); border-radius:8px; padding:16px; margin:16px 0; background:var(--c-card-bg); }
+.vault-mapping label { display:grid; gap:6px; margin:12px 0; font-size:14px; }
+.vault-mapping input,.vault-mapping select { width:100%; min-height:44px; padding:8px; background:var(--c-card-bg); color:var(--c-text-primary); border:1px solid var(--c-border); border-radius:6px; }
+.vault-mapping button { min-height:44px; margin:6px 8px 6px 0; padding:8px 14px; border:1px solid var(--c-border); border-radius:6px; background:var(--c-card-bg); color:var(--c-text-primary); cursor:pointer; transition:background 150ms; }
+.vault-mapping button:hover { background:var(--c-accent-soft); }
+.vault-mapping button:active { transform:translateY(1px); }
+.vault-mapping button:focus-visible,.vault-mapping input:focus-visible,.vault-mapping select:focus-visible { outline:2px solid var(--c-accent); outline-offset:3px; }
+.vault-mapping button:disabled { opacity:.5; cursor:wait; }
+.vault-mapping small { overflow-wrap:anywhere; }

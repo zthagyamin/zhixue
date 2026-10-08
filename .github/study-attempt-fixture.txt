@@ -1,0 +1,128 @@
+// Actual SubjectView and PracticeSession, real IndexedDB writers, synthetic owners and grader.
+// The inline persistence adapter is injected; its production callback has separate Node coverage.
+import React,{useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {SubjectView} from '../../app/study-dashboard/subject-view';
+import {PracticeSession} from '../../app/practice-session';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import {useSubjectRoundSessions} from '../../app/use-subject-round-sessions';
+import {emptySubjectRound} from '../../app/subject-round';
+import {recordStudyAttempt} from '../../app/study-event-controller';
+import {createSubmissionJournal,persistStudySubmission} from '../../app/study-submission-journal';
+import {prepareStudySubmission,persistOriginalSubmission} from '../../app/study-submission';
+import {listWorkspaceStudyEvents} from '../../app/local-study-events';
+import {createLocalAttemptRepository} from '../../src/infrastructure/learning-attempt';
+import {numericEquivalent} from '../../src/domain/math';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+import '../../app/study-guidance.css';
+
+const query=new URLSearchParams(location.search),scenario=query.get('case'),host=query.get('host');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const workspaceId='guest:local',sourceScope='m2-synthetic';
+const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
+const write=deferred(),network=deferred(),ai=deferred(),journal=createSubmissionJournal();
+const probe={writes:0,networkCalls:0,aiCalls:0,projected:0,finished:0,records:[],messages:[],summary:null};
+window.__attempt=probe;
+Object.assign(probe,{
+ releaseWrite:()=>write.resolve(),releaseNetwork:()=>network.resolve(),
+ releaseAI:()=>ai.resolve({source:'ai',correct:true,verdict:'correct',rating:'good',feedback:'LATE RESPONSE'}),
+ read:async()=>({events:await listWorkspaceStudyEvents(workspaceId),journal:await journal.list(workspaceId),other:await listWorkspaceStudyEvents('guest:other'),attempts:await createLocalAttemptRepository({userId:workspaceId,libraryId:'synthetic-library'}).list()}),
+});
+const calculation=['round-return','queue-scope'].includes(scenario);
+const items=Array.from({length:calculation?3:scenario==='next-once'?2:1},(_,index)=>({
+ id:'q'+index,itemId:'q'+index,abilityId:'q'+index,contentHash:String(index+1).repeat(64),localBindingHash:String(index+1).repeat(64),fingerprint:'m2-'+index,
+ questionType:'recall',pluginType:'recall',eventKind:'python',
+ prompt:`回忆题 ${index+1}：为什么需要控制其他条件？`,
+ answer:'只改变目标因素，才能把观测到的差异与目标因素联系起来；仍需考虑测量误差。',
+ explanation:'比较时保持其他条件一致，再改变目标因素；测量误差仍然可能影响结果。',
+ ...(calculation?{questionType:'calculation',pluginType:'calculation',prompt:`计算题 ${index+1}：计算 2 + 2。`,answer:'4',explanation:'两个二相加为四。'}:{}),
+}));
+const subject={id:'python',name:'M2 学科验收',pluginType:calculation?'calculation':'recall',domain:'python',sourceMode:'local',items};
+const subjects=[subject],empty={itemStages:{},fsrsData:{},answered:0,correct:0};
+const frame=(item=items[0])=>({kind:'local',practiceMode:calculation?'calculation':'recall',contentHash:item.contentHash,localBindingHash:item.localBindingHash});
+async function persist(record,binding,observation){
+ const call=++probe.writes;
+ if(scenario==='delayed'||scenario==='owner-switch')await write.promise;
+ if(scenario==='prewrite-failure'&&call===1)throw Error('synthetic write unavailable');
+ const payload=await prepareStudySubmission(record,binding,observation,journal);
+ await persistStudySubmission(payload,{journal,persistCore:persistOriginalSubmission});
+ probe.records.push(structuredClone(record));
+ if(scenario==='lost-reply'&&call===1)throw Error('synthetic reply lost after commit');
+ return payload;
+}
+function send(){probe.networkCalls++;return network.promise;}
+async function grade(item,answer){
+ if(calculation){
+  const original=items.find(value=>value.itemId===item.itemId);
+  const correct=original?numericEquivalent(answer,String(original.answer),'0'):null;
+  return {source:'numeric',correct,verdict:correct===null?'unknown':correct?'correct':'wrong',rating:correct===null?undefined:correct?'good':'again',feedback:'合成原题使用精确数值比较，只核对最终结果。'};
+ }
+ probe.aiCalls++;
+ return scenario==='cancel'?ai.promise:{source:'ai',correct:true,verdict:'correct',rating:'good',feedback:'合成核对：已说明控制条件与结论边界。'};
+}
+const noop=()=>{};
+function App(){
+ const store=useMemo(()=>createLearningDraftStore('m2-synthetic-owner'),[]);
+ const taskWorkspaceRef=useRef(workspaceId),accountModeEpoch=useRef(0),activeLearningDraftsRef=useRef(store);
+ const visibleLearningRef=useRef(null),practiceRequest=useRef(0),eventMutation=useRef(0);
+ const [progress,setProgress]=useState(empty),[indices,setIndices]=useState({});
+ const {subjectRounds:rounds,setSubjectRounds:setRounds,getVisibleSubjectRound,activateSubjectRound}=useSubjectRoundSessions(workspaceId,'2026-09-17');
+ const [tab,setTab]=useState('python'),[expanded,setExpanded]=useState(false);
+ const currentSubjects=expanded?[{...subject,items:[{...items[0],itemId:'X',abilityId:'X',id:'X',prompt:'额外计算题'},...items]}]:subjects;
+ const [events,setEvents]=useState([]),[bump,setBump]=useState(0),[message,setMessage]=useState('');
+ const [done,setDone]=useState(false),[switched,setSwitched]=useState(false);
+ const [projection,setProjection]=useState({workspaceId,sourceScope,events:[],itemStages:{},fsrsData:{},excludedKeys:[]});
+ const setPlanMessage=value=>{probe.messages.push(value);setMessage(value);};
+ probe.pending=()=>store.isPending();probe.progress=progress;probe.rounds=rounds;probe.indices=indices;
+ probe.switchOwner=()=>{taskWorkspaceRef.current='guest:other';accountModeEpoch.current++;store.dispose();setSwitched(true);};
+ probe.leaveSubject=()=>setTab('today');probe.returnSubject=()=>setTab('python');
+ probe.select=index=>{practiceRequest.current++;setIndices({python:index});};
+ probe.range=value=>{activateSubjectRound('python',value?'expanded':'original',emptySubjectRound());setExpanded(value);probe.select(value?1:0);};
+ if(switched)return <h2>新学习空间</h2>;
+ if(done)return <h2>内联本轮结束</h2>;
+ const recordInline=(attempt,receipt)=>{
+  const command=receipt.request.capture('browser-inline',()=>({
+   identity:receipt.request.identity,workspaceId,domain:'python',item:{kind:'python',key:`practice:${attempt.item.itemId}`},
+   rating:attempt.rating,correct:attempt.correct,stageBefore:0,stageAfter:attempt.correct?3:0,
+   reviewedAt:receipt.request.identity.reviewedAt,isThreeStage:false,
+   delivery:{cloud:'not-required',companion:'pending'},
+   localContext:{title:'合成回忆题',activityType:'website-practice',durationMin:2,weakPoints:[]},
+  }));
+  return recordStudyAttempt(command,{
+   persistEvent:record=>persist(record,frame(attempt.item),attempt.assistance),
+   persistProgress:async()=>{
+    if(taskWorkspaceRef.current!==workspaceId)return;
+    probe.projected++;receipt.durable();
+   },
+   sendCloud:send,sendCompanion:()=>taskWorkspaceRef.current===workspaceId?send():Promise.reject(Error('owner changed')),
+   updateDelivery:async()=>{},
+  });
+ };
+ const nonWordScopeFor=item=>({workspaceId,ownerId:workspaceId,libraryId:'synthetic-library',snapshotId:'synthetic-snapshot',itemKey:`practice:${item.itemId}`,contentHash:item.contentHash,groupId:'inline-group',roundId:'inline-round',cloud:false});
+ if(host==='inline')return <PracticeSession items={items} drafts={store} nonWordScopeFor={nonWordScopeFor} context={{gradeRecall:grade}}
+  onRecordAttempt={recordInline} onFinish={summary=>{probe.summary=summary;probe.finished++;setDone(true);}}/>;
+ const model={
+  workspaceId,accountModeEpoch,taskWorkspaceRef,activeLearningDraftsRef,visibleLearningRef,practiceRequest,eventMutation,
+  learningDrafts:store,accountLoaded:null,accountLibraryId:null,accountModuleSource:null,
+  accountDailyPlan:{ready:true},activeTaskScope:null,freeStudySubject:null,selectedPlanVocabKey:null,
+  currentDay:'2026-09-17',isDemoMode:false,taskPlanningEnabled:false,taskLearning:{state:null},effectivePlan:null,
+  tab,subjects:currentSubjects,moduleSubjects:currentSubjects,moduleNavigationSubjects:currentSubjects,normalizedSubjects:currentSubjects,
+  data:{source:{title:'合成资料',scope:'隔离浏览器验收',path:'synthetic.md'},localLibraryId:'synthetic-library',dashboard:{}},
+  uiProgress:progress,itemIndices:indices,subjectRounds:rounds,getVisibleSubjectRound,stageRoundBump:bump,progressEvents:events,
+  nativeView:{ready:true,unresolvedKeys:[]},nativeScope:sourceScope,nativeHistoryError:null,
+  subjectPacing:{schemaVersion:1,subjects:{}},pluginOverrides:{item:{},subject:{}},vocabPacingWorkspace:workspaceId,
+  sessionUser:null,cloudSyncMetadata:{decision:'disabled'},companionSession:null,companionPlanClient:{gradePractice:grade},
+  assistanceHistory:{entries:[]},auxiliaryDelivery:null,visibleAccountStatus:{phase:'ready'},syncState:'disconnected',
+  captureAttemptFrame:frame,persistSubmittedEvent:persist,sendSubmittedCloud:send,sendSubmittedCompanion:send,
+  noteEventsChanged:noop,setProgress:fn=>{probe.projected++;setProgress(fn);},setProgressEvents:setEvents,setNativeProjection:setProjection,
+  setItemIndices:setIndices,setSubjectRounds:setRounds,setStageRoundBump:setBump,setPlanMessage,planMessage:message,
+  setItemIndex:(id,index)=>{practiceRequest.current++;setIndices(current=>({...current,[id]:index}));},
+  setDemoProgress:noop,setAccountProgress:noop,setActiveTaskScope:noop,setFreeStudySubject:noop,
+  setSelectedPlanVocabKey:noop,choosePlanVocabEntry:noop,setItemPluginOverride:noop,setSubjectPluginOverride:noop,
+  setAiEntryOpen:noop,persistVocabPacing:noop,restartSubjectRound:noop,getObsidianUri:()=>'',openSources:noop,
+  navigateToStudyTab:noop,inputPoolPractice:noop,gradeAccountCalculation:grade,runAccountQuestionAi:grade,
+ };
+ return <>{tab==='today'&&<p>今日占位</p>}<SubjectView model={model}/></>;
+}
+createRoot(document.getElementById('root')).render(<React.StrictMode><main className="study-app study-focus"><section className="workspace"><App/></section></main></React.StrictMode>);

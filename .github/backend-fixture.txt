@@ -1,0 +1,25 @@
+// Real production stream decoder; only identity, persistence and provider ports are synthetic.
+import {decodeStudyAIStream} from '../../app/ai/study-ai-service';
+import '../../app/globals.css';
+const query=new URLSearchParams(location.search),scenario=query.get('case'),fixture=query.get('fixture');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const probe={events:[],status:null,headers:{},finished:false,controller:null};
+window.__backend=probe;
+const output=document.querySelector('output'),status=document.querySelector('[role="status"]');
+document.querySelector('[data-action="cancel"]').addEventListener('click',()=>probe.controller?.abort());
+document.querySelector('[data-action="run"]').addEventListener('click',async()=>{
+  probe.events=[];probe.finished=false;probe.controller=new AbortController();output.textContent='';status.textContent='等待回复';
+  try{
+    const response=await fetch(`/api/account-study?fixture=${fixture}`,{
+      method:'POST',headers:{'Content-Type':'application/json',...(scenario==='invalid-bearer'?{Authorization:'Bearer invalid'}:{})},signal:probe.controller.signal,
+      body:JSON.stringify({action:'ai-chat',libraryId:scenario==='wrong-library'?'other':'library',request:{requestId:'browser-chat',provider:'deepseek',model:'synthetic-chat',settingsRevision:1,context:{id:'synthetic',title:'合成学习问题'},messages:[{role:'user',content:'Synthetic question'}]}}),
+    });
+    probe.status=response.status;probe.headers=Object.fromEntries(response.headers);
+    for await(const event of decodeStudyAIStream(response,probe.controller.signal)){
+      probe.events.push(event);
+      if(event.type==='delta')output.textContent+=event.text;
+    }
+    status.textContent='已完成';
+  }catch(error){status.textContent=probe.controller.signal.aborted?'已取消':`请求失败：${error.message}`;}
+  finally{probe.finished=true;}
+});

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "day": "2026-08-31",
+  "planHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "inputHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "draftVersion": 1,
+  "vocabulary": {"target": 20, "assignedLexemeKeys": []},
+  "manual": {"lockedTaskIds": ["manual-one"], "excludedUnitIds": ["reading:excluded"]},
+  "tasks": [
+    {
+      "taskId": "review-one", "subjectId": "reading", "title": "复习一道题",
+      "category": "review", "origin": "fixed", "required": true,
+      "unitIds": [], "quantity": 1,
+      "action": {"kind": "practice", "itemKeys": ["practice:one"]},
+      "completionRule": "graded-practice",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reviewRoundId": "round-one"
+    },
+    {
+      "taskId": "manual-one", "subjectId": "reading", "title": "阅读一个小节",
+      "category": "subject", "origin": "manual", "required": false,
+      "unitIds": ["reading:section-one"], "quantity": 1,
+      "action": {"kind": "open-note", "contentRef": "[[subjects/reading/section-one]]"},
+      "completionRule": "self-report",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}

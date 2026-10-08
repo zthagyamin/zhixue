@@ -1,0 +1,186 @@
+{
+  "catalog": {
+    "schemaVersion": 1,
+    "libraryId": "library-a",
+    "snapshotId": "snapshot-a",
+    "sourceHash": "6287b95f89097e6539221b81bf4864dc1e8707c100ecea070f0c98dd025997bc",
+    "subjects": [
+      {
+        "subjectId": "vocab",
+        "name": "Words",
+        "priority": 3,
+        "planningStatus": "none",
+        "words": [],
+        "units": [],
+        "goals": []
+      },
+      {
+        "subjectId": "course",
+        "name": "Course",
+        "priority": 3,
+        "planningStatus": "ready",
+        "words": [],
+        "units": [
+          {
+            "unitId": "course:u0",
+            "subjectId": "course",
+            "title": "Lesson 0",
+            "order": 0,
+            "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "prerequisites": [],
+            "action": {
+              "kind": "open-material",
+              "materialId": "material:f2a0abf12b4f11bf003bc8147dba73725b91f02a907656e5afd3728c4bbe533d"
+            },
+            "completionRule": "self-report",
+            "formalComplete": false
+          }
+        ],
+        "goals": [
+          {
+            "goalId": "course:daily",
+            "subjectId": "course",
+            "title": "Read lessons",
+            "kind": "daily",
+            "targetCount": 1,
+            "unitIds": [
+              "course:u0"
+            ],
+            "startOn": "2026-08-31",
+            "priority": 3,
+            "required": true,
+            "completionBasis": "self-report"
+          }
+        ]
+      }
+    ],
+    "practiceSources": [],
+    "diagnostics": [],
+    "contentRefs": {},
+    "catalogHash": "d81b12a87be18a23a2064be08f876931863b79c96df54b2dec3caccd884c3b36"
+  },
+  "materials": {
+    "material:f2a0abf12b4f11bf003bc8147dba73725b91f02a907656e5afd3728c4bbe533d": {
+      "materialId": "material:f2a0abf12b4f11bf003bc8147dba73725b91f02a907656e5afd3728c4bbe533d",
+      "subjectId": "course",
+      "unitId": "course:u0",
+      "contentRef": "[[subjects/course/u0]]",
+      "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  "facts": {
+    "schemaVersion": 1,
+    "libraryId": "library-a",
+    "snapshotId": "snapshot-a",
+    "catalogHash": "d81b12a87be18a23a2064be08f876931863b79c96df54b2dec3caccd884c3b36",
+    "observedAt": "2026-09-01T00:00:00.000Z",
+    "nativePlanRevision": 0,
+    "sourceReviews": [],
+    "captureReviews": [],
+    "legacyEvents": [],
+    "legacyTaskEvents": [],
+    "contentCandidates": [],
+    "historyComplete": true,
+    "factsHash": "6d82f195e6d9bae164eb847b3ca8a03de6a2b84fd3810c9a469c065aa43a8688"
+  },
+  "cloudPlan": {
+    "schemaVersion": 1,
+    "day": "2026-09-01",
+    "catalogHash": "d81b12a87be18a23a2064be08f876931863b79c96df54b2dec3caccd884c3b36",
+    "factsHash": "6d82f195e6d9bae164eb847b3ca8a03de6a2b84fd3810c9a469c065aa43a8688",
+    "eventThrough": 0,
+    "taskThrough": 0,
+    "nativeBaseRevision": 0,
+    "enginePlanHash": "0071c137583eff39483486f5ba321301d477abd560f8b3450d8fb9049fc1acf7",
+    "inputHash": "48b3863190485dd6fa9c20c28c77fe8d91fa334fecc13ec317e8becc2cc428f0",
+    "sourceHash": "6287b95f89097e6539221b81bf4864dc1e8707c100ecea070f0c98dd025997bc",
+    "draftVersion": 1,
+    "tasks": [
+      {
+        "taskId": "goal:2026-09-01:course:daily:course:u0",
+        "subjectId": "course",
+        "title": "Lesson 0",
+        "category": "subject",
+        "origin": "goal",
+        "required": true,
+        "goalId": "course:daily",
+        "unitIds": [
+          "course:u0"
+        ],
+        "quantity": 1,
+        "action": {
+          "kind": "open-material",
+          "materialId": "material:f2a0abf12b4f11bf003bc8147dba73725b91f02a907656e5afd3728c4bbe533d"
+        },
+        "completionRule": "self-report",
+        "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "vocabulary": {
+      "target": 20,
+      "assignedLexemeKeys": [],
+      "snapshot": []
+    },
+    "manual": {
+      "lockedTaskIds": [],
+      "excludedUnitIds": []
+    },
+    "baseRevision": 0,
+    "cloudPlanHash": "3c515e8eb9c1808c7063893154cb865c3979afc9a2a0cfc9a35a9692bf99ff8f"
+  },
+  "nativeCatalog": {
+    "schemaVersion": 1,
+    "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "diagnostics": [],
+    "subjects": [
+      {
+        "subjectId": "vocab",
+        "name": "Words",
+        "priority": 3,
+        "planningStatus": "none",
+        "words": [],
+        "units": [],
+        "goals": []
+      },
+      {
+        "subjectId": "course",
+        "name": "Course",
+        "priority": 3,
+        "planningStatus": "ready",
+        "words": [],
+        "units": [
+          {
+            "unitId": "course:u0",
+            "subjectId": "course",
+            "title": "Lesson 0",
+            "order": 0,
+            "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "prerequisites": [],
+            "action": {
+              "kind": "open-note",
+              "contentRef": "[[subjects/course/u0]]"
+            },
+            "completionRule": "self-report",
+            "formalComplete": false
+          }
+        ],
+        "goals": [
+          {
+            "goalId": "course:daily",
+            "subjectId": "course",
+            "title": "Read lessons",
+            "kind": "daily",
+            "targetCount": 1,
+            "unitIds": [
+              "course:u0"
+            ],
+            "startOn": "2026-08-31",
+            "priority": 3,
+            "required": true,
+            "completionBasis": "self-report"
+          }
+        ]
+      }
+    ]
+  }
+}

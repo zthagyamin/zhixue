@@ -1,0 +1,11 @@
+.guided-math-setup { border: 0; padding: 0; min-width: 0; }
+.guided-math-source, .guided-math-identity, .guided-math-question { overflow-wrap: anywhere; }
+.guided-math-question { font-size: 1.25rem; line-height: 1.65; margin-block: 20px 12px; }
+.guided-math-domain { border-left: 3px solid var(--study-accent); padding: 10px 14px; background: var(--surface-2); }
+.guided-math-disclosure, .guided-math-identity { border-top: 1px solid var(--line); padding-block: 16px; margin-top: 20px; }
+.guided-math-disclosure summary, .guided-math-identity summary { cursor: pointer; min-height: 36px; }
+.guided-math-steps { padding-block: 8px; }
+.guided-math-result { margin-block: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.guided-math-result [data-math-verdict=wrong] { color: var(--orange); }
+.guided-math-result button { margin-top: 16px; }
+.guided-math-disclosure summary:focus-visible, .guided-math-identity summary:focus-visible { outline: 2px solid var(--study-accent); outline-offset: 3px; }

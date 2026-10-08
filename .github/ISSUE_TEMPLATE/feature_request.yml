@@ -1,0 +1,24 @@
+name: Feature request / 功能建议
+description: Explain the learning problem and desired outcome / 描述学习问题与目标
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Learning problem / 学习问题
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome and example / 目标与例子
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround and alternatives / 当前替代办法
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How to verify it helps / 如何验收

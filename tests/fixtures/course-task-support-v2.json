@@ -1,0 +1,2473 @@
+{
+  "note": "Synthetic contract examples, not real course or semantic model acceptance.",
+  "cases": [
+    {
+      "id": "definition",
+      "mode": "recall",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "steps",
+      "mode": "recall",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "保留中点左侧的搜索区间。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-steps",
+          "kind": "steps",
+          "prompt": "二分查找一次比较后如何缩小搜索区间？",
+          "scope": "只解释目标小于中点元素的分支。",
+          "conditions": [
+            "数组按升序排列",
+            "目标小于中点元素"
+          ],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "升序数组中，目标小于中点元素时，下一轮搜索中点左侧区间。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-steps",
+              "kind": "steps",
+              "prompt": "请重新回答：二分查找一次比较后如何缩小搜索区间？",
+              "scope": "只解释目标小于中点元素的分支。",
+              "conditions": [
+                "数组按升序排列",
+                "目标小于中点元素"
+              ],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "保留中点左侧的搜索区间。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "保留中点左侧的搜索区间。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "comparison",
+      "mode": "recall",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "进程地址空间独立；同进程线程共享地址空间。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-comparison",
+          "kind": "comparison",
+          "prompt": "进程与线程在资源共享方面有什么区别？",
+          "scope": "只比较进程地址空间与同进程线程。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "不同进程各有独立地址空间；同一进程的线程共享该进程地址空间。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-comparison",
+              "kind": "comparison",
+              "prompt": "请重新回答：进程与线程在资源共享方面有什么区别？",
+              "scope": "只比较进程地址空间与同进程线程。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "进程地址空间独立；同进程线程共享地址空间。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "进程地址空间独立；同进程线程共享地址空间。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "conditions",
+      "mode": "recall",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "有序性保证被排除的区间不包含目标。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-conditions",
+          "kind": "conditions",
+          "prompt": "二分查找为什么要求数组有序？",
+          "scope": "解释排除一半区间的依据。",
+          "conditions": [
+            "数组按升序排列"
+          ],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "二分查找依靠有序性：目标小于中点时右侧元素更大，可以排除右侧。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-conditions",
+              "kind": "conditions",
+              "prompt": "请重新回答：二分查找为什么要求数组有序？",
+              "scope": "解释排除一半区间的依据。",
+              "conditions": [
+                "数组按升序排列"
+              ],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "有序性保证被排除的区间不包含目标。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "有序性保证被排除的区间不包含目标。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "application",
+      "mode": "recall",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "B最后压入，所以第一次弹出B。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-application",
+          "kind": "application",
+          "prompt": "空栈依次压入A和B后，第一次弹出的是什么？",
+          "scope": "只判断第一次弹出。",
+          "conditions": [
+            "初始栈为空",
+            "按A、B顺序压入",
+            "采用后进先出"
+          ],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈最后压入的元素先弹出；先压A后压B，第一次弹出B。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-application",
+              "kind": "application",
+              "prompt": "请重新回答：空栈依次压入A和B后，第一次弹出的是什么？",
+              "scope": "只判断第一次弹出。",
+              "conditions": [
+                "初始栈为空",
+                "按A、B顺序压入",
+                "采用后进先出"
+              ],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "B最后压入，所以第一次弹出B。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "B最后压入，所以第一次弹出B。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "quiz",
+      "mode": "quiz",
+      "valid": true,
+      "support": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-quiz",
+          "kind": "definition",
+          "prompt": "哪些描述符合栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "b"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        },
+        "selection": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "最后放入的最先取出",
+            "explanation": "符合后进先出的定义。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "最先放入的最先取出",
+            "explanation": "这是先进先出的描述，区别在取出次序。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "先压A再压B，先弹B",
+            "explanation": "B最后压入，因此应先弹出。",
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "unknown-version",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 3,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "v1-cannot-carry-task",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 1,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-field",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ],
+          "admin": true
+        }
+      }
+    },
+    {
+      "id": "missing-source",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-source",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-point-source",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "unknown"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-point-source",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": []
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-point",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-reference",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section",
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section",
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "no-remediation-trigger",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-trigger-point",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "unknown"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-child-source",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "unknown"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "parent-id-as-child",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "task-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-child",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            },
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "recall-option-trigger",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "a"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "recursive-child",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": [],
+              "remediations": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "absolute-source-path",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "C:\\Users\\private\\lecture.pdf",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-review-state",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "approved",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-kind",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "keywords",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-scope",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": " ",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "missing-quiz-explanation",
+      "mode": "quiz",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-quiz",
+          "kind": "definition",
+          "prompt": "哪些描述符合栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "b"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        },
+        "selection": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "最后放入的最先取出",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "最先放入的最先取出",
+            "explanation": "这是先进先出的描述，区别在取出次序。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "先压A再压B，先弹B",
+            "explanation": "B最后压入，因此应先弹出。",
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "unknown-quiz-source",
+      "mode": "quiz",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-quiz",
+          "kind": "definition",
+          "prompt": "哪些描述符合栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "b"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        },
+        "selection": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "最后放入的最先取出",
+            "explanation": "符合后进先出的定义。",
+            "sourceIds": [
+              "unknown"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "最先放入的最先取出",
+            "explanation": "这是先进先出的描述，区别在取出次序。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "先压A再压B，先弹B",
+            "explanation": "B最后压入，因此应先弹出。",
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "duplicate-quiz-text",
+      "mode": "quiz",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-quiz",
+          "kind": "definition",
+          "prompt": "哪些描述符合栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "b"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        },
+        "selection": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "最后放入的最先取出",
+            "explanation": "符合后进先出的定义。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": " 最后放入的最先取出 ",
+            "explanation": "这是先进先出的描述，区别在取出次序。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "先压A再压B，先弹B",
+            "explanation": "B最后压入，因此应先弹出。",
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "unknown-option-trigger",
+      "mode": "quiz",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "quiz",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-quiz",
+          "kind": "definition",
+          "prompt": "哪些描述符合栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [
+                "unknown"
+              ],
+              "missingOptionIds": []
+            }
+          ]
+        },
+        "selection": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "最后放入的最先取出",
+            "explanation": "符合后进先出的定义。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "b",
+            "text": "最先放入的最先取出",
+            "explanation": "这是先进先出的描述，区别在取出次序。",
+            "sourceIds": [
+              "section"
+            ]
+          },
+          {
+            "optionId": "c",
+            "text": "先压A再压B，先弹B",
+            "explanation": "B最后压入，因此应先弹出。",
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "correctOptionIds": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "bad-source-version",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fractional-weight",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ],
+            "weight": 0.5
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bool-weight",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ],
+            "weight": true
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-criteria",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "oversized-condition",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          ],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "newline-id",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "bad\n",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": "verified",
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "coercible-review-state",
+      "mode": "recall",
+      "valid": false,
+      "support": {
+        "schemaVersion": 2,
+        "type": "recall",
+        "criteria": [
+          {
+            "id": "key",
+            "text": "最后放入的元素最先取出。",
+            "mandatory": true,
+            "sourceIds": [
+              "section"
+            ]
+          }
+        ],
+        "task": {
+          "taskId": "task-definition",
+          "kind": "definition",
+          "prompt": "什么是栈的后进先出？",
+          "scope": "解释操作次序与取出次序的关系。",
+          "conditions": [],
+          "sources": [
+            {
+              "sourceId": "section",
+              "label": "隔离合成课程示例",
+              "locator": "示例第1段",
+              "excerpt": "栈的后进先出表示最后放入的元素最先取出。",
+              "version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "reviewStatus": [
+            "verified"
+          ],
+          "remediations": [
+            {
+              "taskId": "retry-definition",
+              "kind": "definition",
+              "prompt": "请重新回答：什么是栈的后进先出？",
+              "scope": "解释操作次序与取出次序的关系。",
+              "conditions": [],
+              "criteria": [
+                {
+                  "id": "retry-key",
+                  "text": "最后放入的元素最先取出。",
+                  "mandatory": true,
+                  "sourceIds": [
+                    "section"
+                  ]
+                }
+              ],
+              "answer": "最后放入的元素最先取出。",
+              "targetPointIds": [
+                "key"
+              ],
+              "wrongOptionIds": [],
+              "missingOptionIds": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

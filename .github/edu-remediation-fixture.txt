@@ -1,0 +1,53 @@
+import React,{useMemo,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {registry} from '../../app/plugins';
+import {createLearningDraftStore} from '../../app/learning-draft-store';
+import {LearningDraftBoundary} from '../../app/learning-draft';
+import {prepareStudyNavigation} from '../../app/study-navigation-guard';
+import {StudySessionShell} from '../../app/study-session-shell';
+import {PaperWorkshop} from '../../app/plugins/plugin-paper';
+import {parsePaperStudyData} from '../../app/paper-study';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+import '../../app/study-guidance.css';
+import '../../src/features/remediation/remediation.css';
+
+const query=new URLSearchParams(location.search),mode=query.get('mode');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const probe={grades:[],saves:0,speech:[],pythonCalls:[],pythonKind:'error',cancels:0,current:true};
+window.__remedy=probe;
+Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(value){probe.speech.push(value.text);}}});
+window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
+let pluginMode=mode,item={id:'synthetic-q1',fingerprint:'v1',prompt:'怎样区分相关与因果？',answer:'比较时控制其他条件。',explanation:'比较时控制其他条件。'};
+if(mode==='calculation')Object.assign(item,{prompt:'两个相同数相减等于多少？',answer:0,explanation:'相同数相减为零。'});
+if(mode==='quiz')Object.assign(item,{options:['改变全部条件','控制其他条件'],answer:'控制其他条件'});
+if(mode==='multiple'){
+ pluginMode='quiz';item.learningSupport={schemaVersion:1,type:'quiz',selection:'multiple',options:[{optionId:'A',text:'确定问题'},{optionId:'B',text:'控制变量'},{optionId:'C',text:'忽略条件',trapExplanation:'不能忽略比较条件。'}],correctOptionIds:['A','B']};
+}
+if(mode==='code')Object.assign(item,{prompt:'返回零。',initialCode:'def answer():\n    return -1',testCode:'assert answer() == 0',solutionCode:'def answer():\n    return 0',explanation:'合成参考：零是目标返回值。'});
+if(mode.startsWith('spelling')){pluginMode='spelling';item={word:'tree',meaning:'树',example:'A tree grows here.'};}
+if(mode==='flashcard')Object.assign(item,{front:'说明比较的两个条件',back:'A | B\nUse x < 1 & y > 0\n\nKeep the other conditions fixed.'});
+const original=JSON.stringify(item);probe.unchanged=()=>original===JSON.stringify(item);
+const paper=parsePaperStudyData({paperId:'synthetic-remedy-paper',title:'合成论文验收材料',sections:[{id:'s1',title:'条件与结论',paragraphs:[{id:'p1',rawEn:'The experiment compares x < 1 & y > 0 under fixed conditions.',pageNumber:2}]}]});
+
+function App(){
+ const store=useMemo(()=>createLearningDraftStore('remedy-browser'),[]),[done,setDone]=useState(false),[sourceVersion,setSourceVersion]=useState(1);
+ const displayed=mode==='flashcard'?{...item,fingerprint:`v${sourceVersion}`} : item;
+ probe.changeSource=()=>setSourceVersion(value=>value+1);
+ const draft=store.adapter('q1',pluginMode);probe.draft=draft;probe.store=store;
+ probe.prepare=()=>{probe.leave=prepareStudyNavigation();return !!probe.leave;};
+ probe.commitLeave=()=>probe.leave?.();
+ probe.invalidate=()=>{probe.current=false;store.clearItem('q1');};
+ if(mode==='paper')return <PaperWorkshop services={{owner:'synthetic',library:'remedy-paper',isCurrent:()=>probe.current}} initialPaper={paper} restoreLast={false}/>;
+ if(done)return <h2>本轮练习结束</h2>;
+ const Plugin=registry.get('@zhixue/plugin-'+pluginMode);
+ return <StudySessionShell title="错后可练" scope="隔离验收 · 合成材料" progress="已练 0 / 1" mode="第二阶段交互" onExit={()=>setDone(true)} source={<p>合成材料</p>} options={<p>隔离测试设置</p>} queue={null} subjects={null}>
+  <LearningDraftBoundary store={store} interactiveWhileGrading>
+   <Plugin.renderUI data={displayed} context={{draft,contentSource:{mode:pluginMode,data:displayed},guidanceScope:'remedy',guidanceInOptions:true,recallPersistenceRequired:false,recallNavigation:{continueLabel:'结束本轮'},gradeRecall:async()=>({source:'ai',verdict:'incorrect',rating:'again',feedback:'请核对比较条件。'}),gradeCalculation:async()=>({verdict:'incorrect',explanation:'应为零。'})}} onGrade={(rating,options)=>{
+    const ticket=draft.begin();if(!ticket)return;probe.saves++;
+    if(store.commit(ticket,options?.deferAdvance?()=>setDone(true):undefined)){probe.grades.push(rating);if(!options?.deferAdvance)setDone(true);}
+   }}/>
+  </LearningDraftBoundary>
+ </StudySessionShell>;
+}
+createRoot(document.getElementById('root')).render(<React.StrictMode><main className="study-app study-focus"><section className="workspace"><App/></section></main></React.StrictMode>);

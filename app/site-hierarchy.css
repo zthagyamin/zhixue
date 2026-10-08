@@ -1,0 +1,396 @@
+/* Shared brand roles; page density remains specific to its task. */
+.study-app.app-shell {
+  background: var(--study-paper);
+  font-family: var(--font-geist-sans), "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.study-app.app-shell > .study-workspace-nav {
+  background: var(--study-surface);
+  border-color: var(--study-rule);
+  height: 68px;
+  padding-inline: 28px;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+}
+
+.study-app.app-shell .c-workspace-brand {
+  font-size: 28px;
+  letter-spacing: -.5px;
+}
+
+.study-app.app-shell .c-workspace-tab {
+  font-size: 16px;
+}
+
+.study-app .c-workspace-tab {
+  color: var(--study-muted);
+}
+
+.study-app .c-workspace-tab[aria-current="page"] {
+  color: var(--study-accent-text);
+  background: var(--study-accent-soft);
+  border-bottom-color: var(--study-accent);
+}
+
+.study-app:not(.study-focus) > .workspace {
+  background: var(--study-surface-2);
+  border-color: var(--study-rule);
+}
+
+.study-app .study-first-visit {
+  background: var(--study-surface-2);
+  border-color: var(--study-rule);
+  border-inline-start: 3px solid var(--study-control-border);
+  box-shadow: none;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+}
+
+.study-app .study-first-visit-explanation {
+  flex: 1;
+  min-width: 0;
+}
+
+.study-app .study-first-visit-explanation > summary {
+  min-height: 44px;
+  padding-block: 10px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.study-app .study-first-visit-explanation > summary:focus-visible {
+  outline: 2px solid var(--study-accent);
+  outline-offset: 3px;
+}
+
+.study-app .study-first-visit-explanation[open] p {
+  max-width: 720px;
+  margin: 4px 0 12px;
+}
+
+.study-app .study-first-visit:has(.study-first-visit-explanation[open]) {
+  align-items: flex-start;
+}
+
+/* The task owns the hierarchy; colour is reserved for its action. */
+.study-app .dashboard-focus-hero {
+  background: var(--study-hero-bg);
+  color: var(--study-hero-ink);
+  border-color: var(--study-rule);
+  border-inline-start: 3px solid var(--study-accent);
+  border-radius: 10px;
+  padding: 22px 26px;
+  gap: 24px;
+  box-shadow: none;
+  align-items: flex-start;
+  margin-block: 12px 16px;
+}
+
+.study-app .dashboard-focus-hero h2,
+.study-app .dashboard-focus-hero h2 strong {
+  color: var(--study-hero-ink);
+  line-height: 1.4;
+}
+
+.study-app .dashboard-focus-hero h2 {
+  margin: 8px 0 12px;
+  font-size: clamp(23px, 2.2vw, 30px);
+}
+
+.study-app .dashboard-focus-hero :is(p,p.study-meta) {
+  color: var(--study-hero-muted);
+}
+
+.study-app .dashboard-focus-hero p.study-meta {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.study-app .dashboard-focus-hero h2 strong {
+  font-size: 1.15em;
+  color: var(--study-accent-text);
+}
+
+.study-app .dashboard-focus-hero .study-focus-description {
+  color: var(--study-ink);
+  font-size: 17px;
+}
+
+.study-app .dashboard-focus-actions {
+  padding-block-start: 22px;
+}
+
+.study-app .dashboard-focus-actions .study-primary-action {
+  background: var(--study-accent);
+  color: var(--study-on-accent);
+  border-color: var(--study-accent);
+  font-weight: 650;
+}
+
+.study-app .dashboard-focus-actions .study-primary-action:hover:not(:disabled) {
+  background: var(--study-accent-hover);
+  border-color: var(--study-accent-hover);
+}
+
+.study-app .dashboard-focus-actions .study-secondary-action {
+  background: transparent;
+  color: var(--study-ink);
+  border-color: var(--study-rule);
+}
+
+.study-app .dashboard-focus-actions .study-secondary-action:hover {
+  background: var(--study-surface-2);
+}
+
+.study-app .dashboard-focus-hero button:focus-visible {
+  outline-color: var(--study-accent);
+}
+
+.study-app .study-plan-details {
+  background: var(--study-surface);
+  border: 1px solid var(--study-rule);
+  border-radius: var(--study-control-radius);
+  padding: 12px 16px;
+}
+
+.study-app .study-library {
+  margin-top: 28px;
+}
+
+.study-app .study-library > header {
+  border-bottom: 2px solid var(--study-rule);
+  padding-bottom: 14px;
+}
+
+.study-app .study-library > header h2 {
+  font-size: 22px;
+  color: var(--study-ink);
+}
+
+.study-app .learning-research-entry {
+  background: var(--study-surface-2);
+  border-color: var(--study-rule);
+  border-inline-start: 3px solid var(--study-accent);
+}
+
+.study-app .learning-library-toolbar {
+  background: var(--study-surface);
+  padding: 16px;
+  border: 1px solid var(--study-rule);
+  border-radius: var(--study-control-radius);
+}
+
+.study-app .learning-discipline {
+  border-top: 0;
+  padding-top: 8px;
+}
+
+.study-app .learning-discipline > header {
+  border-inline-start: 3px solid var(--study-accent);
+  padding-inline-start: 12px;
+}
+
+.study-app .learning-discipline article {
+  border-color: var(--study-rule);
+  background: var(--study-surface);
+}
+
+.study-app .learning-subject-open {
+  min-height: 88px;
+}
+
+.study-app .learning-subject-open:hover {
+  background: var(--study-accent-soft);
+}
+
+.study-app .learning-subject-open strong {
+  font-size: 18px;
+}
+
+.study-app :is(.study-context,.saved-trial-materials,.study-saved-trial-materials) {
+  background: var(--study-surface);
+  border-color: var(--study-rule);
+}
+
+/* The practice frame helps orientation without competing with the question. */
+.study-app .study-primary-session {
+  border-color: var(--study-rule);
+  box-shadow: 0 2px 8px rgba(24, 33, 51, .04);
+}
+
+.study-app .study-primary-session .study-session-topbar {
+  background: var(--study-surface);
+  border-bottom-color: var(--study-rule);
+  border-radius: 12px 12px 0 0;
+}
+
+.study-app .study-primary-session .study-session-meta {
+  background: var(--study-surface-2);
+}
+
+.study-app .study-primary-session .study-session-status {
+  background: transparent;
+  border-radius: 0;
+}
+
+.study-app .study-primary-session .study-session-content {
+  background: var(--study-surface);
+}
+
+.study-app .study-primary-session .study-session-content:has(.study-calculation,.study-quiz,.study-recall,.study-code) {
+  justify-content: flex-start;
+}
+
+.study-app .study-primary-session .study-activity p.study-question.study-reading-material {
+  font-weight: 400;
+  line-height: 1.85;
+}
+
+.study-app .study-primary-session .katex-display {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  padding-block: 8px;
+}
+
+.study-app .study-primary-session .katex-display > .katex {
+  min-inline-size: max-content;
+}
+
+.study-app .study-primary-session .study-session-context > button {
+  color: var(--study-ink);
+}
+
+.study-app .study-primary-session .study-session-queue {
+  background: var(--study-surface-2);
+}
+
+.study-app .study-primary-session :is(.recall-reference,.study-feedback) {
+  background: var(--study-surface-2);
+  border-color: var(--study-rule);
+  border-inline-start: 3px solid var(--study-accent);
+}
+
+.study-app :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  border-color: var(--study-control-border);
+}
+
+.study-app :is(input,textarea)::placeholder {
+  color: var(--study-muted);
+  opacity: 1;
+}
+
+.study-app :is(.study-primary-action,.study-secondary-action) {
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.study-app .study-primary-action:hover:not(:disabled) {
+  background: var(--study-accent-hover);
+}
+
+.study-app .study-secondary-action:hover:not(:disabled) {
+  background: var(--study-accent-soft);
+}
+
+@media (max-width: 900px) {
+  .study-app.app-shell > .study-workspace-nav {
+    padding-inline: 20px;
+    grid-template-columns: 100px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .study-app .dashboard-focus-hero {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .study-app .dashboard-focus-hero h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .study-app .dashboard-focus-actions {
+    padding-block-start: 0;
+    width: 100%;
+  }
+
+  .study-app .dashboard-focus-actions .study-secondary-action {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .study-app .study-primary-session .study-session-status {
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .study-app .study-primary-session .study-session-status .study-ai-nav-trigger {
+    flex-basis: 100%;
+    width: fit-content;
+    max-width: fit-content;
+    padding: 5px 8px;
+    min-height: 36px;
+    margin-top: 2px;
+    background: transparent;
+    border-color: var(--study-rule);
+    font-size: 13px;
+  }
+
+  .study-app .study-library > header h2 {
+    font-size: 21px;
+  }
+
+  .study-app .study-primary-session .study-session-topbar {
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .study-app.app-shell > .study-workspace-nav {
+    height: auto;
+    padding-inline: 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0;
+  }
+
+  .study-app.app-shell .c-workspace-brand {
+    font-size: 24px;
+  }
+
+  .study-app .study-first-visit {
+    padding: 8px 12px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .study-app .study-first-visit-explanation > summary strong {
+    font-size: 14px;
+  }
+
+  .study-app .study-first-visit .study-first-visit-actions {
+    width: auto;
+    flex-shrink: 0;
+    gap: 0;
+  }
+
+  .study-app .study-first-visit-actions button {
+    padding-inline: 8px;
+  }
+
+  .study-app .study-first-visit:has(.study-first-visit-explanation[open]) {
+    flex-wrap: wrap;
+  }
+
+  .study-app .study-first-visit-explanation[open] {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-app :is(.study-primary-action,.study-secondary-action) {
+    transition: none;
+  }
+}

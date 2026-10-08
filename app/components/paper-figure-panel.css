@@ -1,0 +1,8 @@
+.paper-figure-references{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;font-size:13px}
+.paper-figure-panel{padding:16px;margin:16px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);color:var(--ink);max-height:70vh;overflow:auto;z-index:12;overscroll-behavior:contain}
+.paper-figure-panel.is-pinned{position:sticky;top:12px}
+.paper-figure-panel header{display:flex;align-items:start;justify-content:space-between;gap:12px}.paper-figure-panel h3{font-size:17px;line-height:1.4;margin:5px 0}.paper-figure-panel small{color:var(--muted);font-size:12px}.paper-figure-panel header button{min-width:40px;min-height:40px;font-size:20px}
+.paper-figure-panel canvas{display:block;width:100%;height:auto;background:white;margin-top:12px}.paper-figure-panel canvas[hidden]{display:none}.paper-figure-panel p{font-size:13px;line-height:1.7}.paper-figure-caption{white-space:pre-wrap;overflow-wrap:anywhere}.paper-figure-pin{font-size:12px}.paper-figure-panel :focus-visible{outline:2px solid var(--paper-accent);outline-offset:3px}
+@media(max-width:640px){.paper-figure-panel,.paper-figure-panel.is-pinned{position:fixed;left:12px;right:12px;bottom:12px;top:auto;margin:0;max-height:42dvh;border-radius:8px;padding:12px;box-shadow:0 -3px 16px rgb(0 0 0 / 10%)}.paper-workshop:has(.paper-figure-panel){padding-bottom:44dvh}}
+.paper-workshop .paper-raw .paper-inline-figure{color:var(--paper-accent);text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+@media(max-width:640px){.paper-figure-panel .paper-figure-pin{display:none}}

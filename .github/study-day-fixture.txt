@@ -1,0 +1,20 @@
+import React,{useEffect,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {watchStudyDay} from '../../src/application/planning';
+import {studyDay,countNewWords,calendarDay,studyDayBounds} from '../../src/domain/planning';
+import '../../app/globals.css';import '../../app/c-study.css';
+let clock=new Date('2026-09-22T19:59:59.999Z'),tick=()=>{},visible=()=>{};
+const records=[{lexemeKey:'en:sample',itemKeys:['sample'],status:'learned',firstLearnedAt:'2026-09-22T18:00:00.000Z'}];
+function App(){const [day,setDay]=useState(studyDay(clock.toISOString()));const [now,setNow]=useState(clock.toISOString());
+ useEffect(()=>watchStudyDay({now:()=>clock,publish:setDay,schedule:fn=>{tick=fn;return 1;},clear(){},onVisible:fn=>{visible=fn;return()=>{};}}),[]);
+ const move=at=>{clock=new Date(at);tick();setNow(clock.toISOString());};
+ return <main className="study-plan-board" style={{maxWidth:900,margin:'32px auto',padding:24}}>
+ <h1>凌晨四点日界 · 隔离验收</h1><p>合成时钟与记录，不写生产、不更改系统时间。</p>
+ <p>真实日期：<strong>{calendarDay(now)}</strong> · 当前时刻：{new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(clock)}</p>
+ <h2>学习日：{day}</h2><p>今日计划身份：plan:{day}</p><p>今日已学新词：{countNewWords(day,records)}</p><p>原始记录：{records[0].firstLearnedAt}</p>
+ <p>当前学习日结束：{new Date(studyDayBounds(day).end).toISOString()}</p>
+ <button onClick={()=>move('2026-09-22T20:00:00.000Z')}>推进到 04:00</button>
+ <button onClick={()=>{clock=new Date('2026-09-23T21:00:00.000Z');visible();setNow(clock.toISOString());}}>模拟后台跨日后恢复</button>
+ </main>;
+}
+createRoot(document.getElementById('root')).render(<App/>);

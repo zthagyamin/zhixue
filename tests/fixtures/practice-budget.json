@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "valid": [
+    [],
+    [{"id":"papers","title":"论文","subjectIds":["a","b"],"minutes":15,"defaultItemMinutes":3}],
+    [{"id":"paused","title":"暂停自动加入","subjectIds":["a"],"minutes":0,"defaultItemMinutes":30}]
+  ],
+  "invalid": [
+    null,
+    [{"id":"","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3}],
+    [{"id":"g","title":" ","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":[],"minutes":10,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a","a"],"minutes":10,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":-1,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":181,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":1.5,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":true,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":0}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":31}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3,"unknown":true}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3},{"id":"g","title":"B","subjectIds":["b"],"minutes":10,"defaultItemMinutes":3}],
+    [{"id":"g","title":"A","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3},{"id":"h","title":"B","subjectIds":["a"],"minutes":10,"defaultItemMinutes":3}]
+  ]
+}

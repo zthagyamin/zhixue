@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {classifySubject,groupSubjects,PLUGIN_CAPABILITIES,DISCIPLINES} from '../app/learning-catalog.ts';
+import {PLUGIN_TYPES} from '../app/plugin-routing.ts';
+test('discipline comes from the subject, never from a shared exercise format',()=>{assert.equal(classifySubject({id:'a',name:'CS231n',domain:'course',pluginType:'recall'}),'computing');assert.equal(classifySubject({id:'b',name:'线性代数',pluginType:'quiz'}),'math');assert.equal(classifySubject({id:'c',name:'学术英语',pluginType:'three-stage'}),'language');assert.equal(classifySubject({id:'d',name:'细胞生物学',domain:'course',pluginType:'flashcard'}),'courses');});
+test('manual grouping wins and grouping preserves every original identity and object',()=>{const a={id:'1',name:'我的课'},b={id:'2',name:'Python'};const groups=groupSubjects([a,b],{'1':'math'});assert.equal(groups.find(g=>g.id==='math').subjects[0],a);assert.equal(groups.flatMap(g=>g.subjects).length,2);assert.ok(groups.flatMap(g=>g.subjects).includes(b));assert.equal(classifySubject(a),'other');assert.ok(DISCIPLINES.other);});
+test('every implemented plugin has task metadata; planned abilities cannot become registered plugins',()=>{assert.deepEqual(Object.keys(PLUGIN_CAPABILITIES).sort(),[...PLUGIN_TYPES].sort());for(const ability of Object.values(PLUGIN_CAPABILITIES)){assert.ok(ability.task);assert.ok(ability.disciplines.length);}assert.deepEqual(PLUGIN_CAPABILITIES.paper.disciplines,['all']);assert.ok(!PLUGIN_TYPES.includes('speaking'));});

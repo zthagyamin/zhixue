@@ -7,10 +7,11 @@ import {composeAccountPlanningInput} from '../../app/account-study-planning-proj
 import {buildLongTermPlanningInput} from '../../app/long-term-planning-input.ts';
 import {generateLongTermSchedule} from '../../app/long-term-pacing.ts';
 import {dateOffset} from '../../app/long-term-plan-types.ts';
+import {studyDay} from '../../src/domain/planning/index.ts';
 
-export async function startAutomaticDayPreview({port=3044,devPort=3012,scenario='enabled'}={}){
+export async function startAutomaticDayPreview({port=3044,devPort=3012,scenario='enabled',now=new Date().toISOString()}={}){
   if(!['enabled','paused','existing','rejected'].includes(scenario))throw new Error('Unknown automatic day scenario');
-  const origin=`http://127.0.0.1:${port}`,day=new Date(Date.now()+8*3600000).toISOString().slice(0,10),userId='d'.repeat(64);
+  const origin=`http://127.0.0.1:${port}`,day=studyDay(now),userId='d'.repeat(64);
   const account=await createAccountPreview({origin,day,userId,scenario:['existing','rejected'].includes(scenario)?'draft-15':'no-plan'});
   const client=createAccountStudyClient({companionUrl:origin,expectedUserId:userId,cache:null,
     fetcher:(path,init)=>account.handle(new Request(new URL(path,origin),{...init,headers:{...init?.headers,Origin:origin}}))});

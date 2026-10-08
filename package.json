@@ -18,7 +18,7 @@
     "test": "npm run architecture:check && npm run release:check && npm run lint && npm run typecheck && npm run build && npm run test:node",
     "architecture:check": "node scripts/architecture.mjs",
     "test:python": "node scripts/run-python-suite.mjs",
-    "test:node": "node --experimental-strip-types --test",
+    "test:node": "node --experimental-strip-types --test --test-concurrency=2",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",

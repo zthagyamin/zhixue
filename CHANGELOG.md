@@ -6,5 +6,6 @@
 - Replace personal and third-party educational examples with explicitly original synthetic material.
 - Keep the existing learning/data boundaries and the complete source regression suite.
 - Separate source repository content from maintainer-specific configuration and downloadable build artifacts.
+- Align automatic-plan browser fixtures with the four-o'clock learning day; retain the application launch budget separately from Windows host startup and bound test concurrency.
 
 This public history begins here; it does not reproduce internal development notes or claim unfinished features are released.

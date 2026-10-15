@@ -1,5 +1,6 @@
 """Real source catalog regression; isolated fixture vaults never touch user notes."""
 import json
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -56,7 +57,7 @@ class CodeMaterialIntakeTests(unittest.TestCase):
     def test_generated_material_uses_injected_strict_gate_and_preserves_support(self):
         material = {'id': 'one', 'prompt': 'Implement add.', 'initialCode': 'def add(a,b): pass', 'learningSupport': self.support}
         payload = {'subjects': [{'id': 'code', 'pluginType': 'code', 'items': [material]}]}
-        result = validate_cards(payload, 'Synthetic', 'Synthetic', seed={}, stamp=lambda fmt: '2026-10-08', code_material_available=has_executable_code_material)
+        result = validate_cards(payload, 'Synthetic', 'Synthetic', seed={}, stamp=lambda fmt: '2026-10-08', code_material_available=has_executable_code_material, hash_text=lambda text: hashlib.sha256(text.encode('utf-8')).hexdigest())
         generated = result['subjects'][0]['items'][0]
         self.assertEqual(generated['learningSupport'], self.support)
         generated['learningSupport']['cases'][0]['args'].append(99)

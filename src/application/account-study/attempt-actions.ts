@@ -23,7 +23,7 @@ export async function executeAttemptAction(body: Record<string, unknown>, auth: 
         if (mutation.binding.ownerId !== owner.userId || mutation.binding.libraryId !== owner.libraryId)
             throw new AccountFailure(403, 'attempt-scope-mismatch');
         try {
-            return accountValue(await store.mutate(owner, mutation));
+            return accountValue(await store.mutate(owner, mutation, auth.principal.kind === 'device' ? context.deviceWriter(auth.principal) : undefined));
         }
         catch (error) {
             if (error instanceof Error && /^(attempt-|submitted-answer-)/.test(error.message))

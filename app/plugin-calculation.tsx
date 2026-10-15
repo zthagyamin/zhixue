@@ -1,6 +1,7 @@
 'use client';
 import {registerStudyNavigationGuard} from './study-navigation-guard';
 import {sourceWorksheet} from '../src/domain/remediation';
+import {isNonWordOriginal} from '../src/domain/content';
 import {SourceReviewLauncher} from '../src/features/remediation';
 import {MathPracticeLauncher} from '../src/features/guided-math';
 import '../src/features/guided-math/practice.css';
@@ -60,6 +61,8 @@ export const CalculationPlugin: StudyPlugin<CalculationData> = {
   description: "输入数值或表达式结果，由 Companion 判定正误。",
   renderUI: function CalculationUI({ data, onGrade, context }: PluginRenderProps<CalculationData>) {
     const lifecycle=context?.nonWordLearning;
+    const renderQuestionMath=Boolean(lifecycle)||isNonWordOriginal(
+      context?.contentSource?.mode??'calculation',context?.contentSource?.data??data);
     const practice=lifecycle?.practice;
     useSyncExternalStore(context?.draft?.subscribe??noSubscription,context?.draft?.getSnapshot??emptySnapshot,emptySnapshot);
     const active=useRef(true),request=useRef<AbortController|null>(null);
@@ -151,7 +154,7 @@ export const CalculationPlugin: StudyPlugin<CalculationData> = {
         if(correct===null){await lifecycle.waitForReview(explanation);return;}
         await lifecycle.assess({status:correct?'correct':'incorrect',source:'deterministic',rating:correct?'good':'again',explanation});
         if(current()&&lifecycle.purpose==='first')await onGrade(correct?'good':'again',{deferAdvance:true});
-      }catch(reason){if(current())setFlowError(reason instanceof Error?reason.message:'作答保存尚未完成，输入和核对结果已保留。');}
+      }catch(reason){if(current())setFlowError(reason instanceof Error?reason.message:'作答未完成，当前输入保留。');}
       finally{if(request.current===controller)request.current=null;if(active.current)setSubmitting(false);}
     };
 
@@ -218,7 +221,7 @@ export const CalculationPlugin: StudyPlugin<CalculationData> = {
           </div>
 
           <h2 className="study-question">
-            {lifecycle?<MathText text={prompt}/>:prompt}
+            {renderQuestionMath?<MathText text={prompt}/>:prompt}
           </h2>
           {calculationStudy.calculation?.sourceLabel&&<p className="study-meta">来源：{calculationStudy.calculation.sourceLabel}</p>}
           {!variant&&support?.schemaVersion===2&&support.conditions?.length&&<div className="text-sm leading-relaxed mb-3"><span className="text-[var(--muted)]">条件：</span>{support.conditions.map((condition,index)=><div key={index}><MathText text={condition}/></div>)}</div>}

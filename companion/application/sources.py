@@ -76,7 +76,7 @@ class SourceApplication:
         try:
             return self.ports.mapping(owner, payload) if write else self.ports.mapping(owner)
         except (ValueError, OSError) as error:
-            status = 409 if write and str(error) == 'stale-mapping' else 400
+            status = 409 if write and str(error) in {'stale-mapping', 'mapping-preview-required', 'mapping-context-changed', 'mapping-preview-mismatch', 'mapping-preview-expired', 'mapping-source-changed'} else 400
             raise CompanionFailure(status, {'message': str(error)}) from error
 
     def changes(self, owner: str) -> dict:

@@ -11,11 +11,11 @@ from __future__ import annotations
 from study_day import study_day
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import plan_authority
 import snapshot_schema
@@ -41,6 +41,36 @@ CREATE TABLE IF NOT EXISTS codex_captures (
 """
 
 VALID_EVIDENCE = {"explicit", "speculative"}
+CAPTURE_DEFAULTS = {"sourceNote": "", "stateRef": "", "abilityId": "", "pluginType": "quiz",
+                    "planRevision": 0, "evidence": "explicit", "summary": None}
+CAPTURE_FIELDS = ("captureId", "itemId", "domain", "contentFingerprint", *CAPTURE_DEFAULTS)
+
+
+def normalize_capture(capture: dict[str, Any]) -> dict[str, Any]:
+    """Validate persisted fields before writes; retain the legacy ignored extra keys."""
+    if not isinstance(capture, dict):
+        raise ValueError("invalid-capture")
+    value = {field: capture.get(field, CAPTURE_DEFAULTS.get(field)) for field in CAPTURE_FIELDS}
+    snapshot_schema._validate_capture_id(value["captureId"])
+    for field in ("itemId", "domain", "contentFingerprint", "sourceNote", "stateRef", "abilityId", "pluginType"):
+        if not isinstance(value[field], str):
+            raise ValueError(f"invalid-capture-field: {field}")
+    if not value["itemId"].strip() or not value["contentFingerprint"].strip() or not value["pluginType"].strip():
+        raise ValueError("invalid-capture-field")
+    if value["summary"] is not None and not isinstance(value["summary"], str):
+        raise ValueError("invalid-capture-field: summary")
+    revision = value["planRevision"]
+    if type(revision) is not int and (type(revision) is not str or not re.fullmatch(r"\s*[+-]?\d+\s*", revision)):
+        raise ValueError("invalid-plan-revision")
+    value["planRevision"] = int(revision)
+    if not 0 <= value["planRevision"] <= 2**63 - 1:
+        raise ValueError("invalid-plan-revision")
+    value["evidence"] = capture_evidence(value)
+    for field in ("sourceNote", "stateRef"):
+        snapshot_schema._reject_traversal(value[field], field)
+    # Serialization and UTF-8 failures must also precede schema/directory writes.
+    json.dumps(value, ensure_ascii=False).encode("utf-8")
+    return value
 
 
 def _camel_case(name: str) -> str:
@@ -59,28 +89,36 @@ def ensure_schema(db: sqlite3.Connection) -> None:
 
 def capture_evidence(capture: dict[str, Any]) -> str:
     evidence = capture.get("evidence", "explicit")
-    if evidence not in VALID_EVIDENCE:
+    if not isinstance(evidence, str) or evidence not in VALID_EVIDENCE:
         raise ValueError("invalid-evidence")
     return evidence
 
 
 def store_capture(db: sqlite3.Connection, vault_root: Path, capture: dict[str, Any]) -> dict[str, Any]:
     """Idempotently persist a capture; returns the stored row (existing if any)."""
+    capture = normalize_capture(capture)
     ensure_schema(db)
-    evidence = capture_evidence(capture)
+    row = db.execute("SELECT * FROM codex_captures WHERE capture_id = ?", (capture["captureId"],)).fetchone()
+    if row is not None:
+        stored = _row_to_dict(db, row)
+        if any(stored[field] != capture[field] for field in CAPTURE_FIELDS):
+            raise ValueError("capture-conflict")
+        return stored
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     db.execute(
         "INSERT OR IGNORE INTO codex_captures(capture_id, item_id, domain, source_note, state_ref, "
         "ability_id, content_fingerprint, plugin_type, plan_revision, evidence, summary, captured_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (capture["captureId"], capture["itemId"], capture["domain"], capture.get("sourceNote", ""),
-         capture.get("stateRef", ""), capture.get("abilityId", ""), capture["contentFingerprint"],
-         capture.get("pluginType", "quiz"), int(capture.get("planRevision", 0)),
-         evidence, capture.get("summary"), now),
+        (capture["captureId"], capture["itemId"], capture["domain"], capture["sourceNote"],
+         capture["stateRef"], capture["abilityId"], capture["contentFingerprint"],
+         capture["pluginType"], capture["planRevision"], capture["evidence"], capture["summary"], now),
     )
     db.commit()
     row = db.execute("SELECT * FROM codex_captures WHERE capture_id = ?", (capture["captureId"],)).fetchone()
-    return _row_to_dict(db, row)
+    stored = _row_to_dict(db, row)
+    if any(stored[field] != capture[field] for field in CAPTURE_FIELDS):
+        raise ValueError("capture-conflict")
+    return stored
 
 
 def pending_captures(db: sqlite3.Connection) -> list[dict[str, Any]]:
@@ -117,15 +155,31 @@ def _finish_review_route(db: sqlite3.Connection, capture_id: str, revision: int)
 
 def _write_pending_candidate(vault_root: Path, capture: dict[str, Any]) -> None:
     """Write a speculative capture to sources/pending/ as a candidate JSON."""
-    dirs = snapshot_schema.ensure_sources_dirs(vault_root)
+    from mapped_source_registry import _atomic
     snapshot = snapshot_schema.build_snapshot(
         {key: capture[key] for key in ("captureId", "itemId", "domain", "sourceNote", "stateRef",
                                        "abilityId", "contentFingerprint", "pluginType", "planRevision")
          if key in capture}
-        | {"status": "pending"}
+        | {"status": "pending", "approvedAt": capture["capturedAt"]}
     )
-    target = dirs["pending"] / f"{capture['captureId']}.json"
-    target.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    snapshot_schema.validate_snapshot(snapshot)
+    root = Path(vault_root).absolute()
+    dirs = snapshot_schema.ensure_sources_dirs(root)
+    target = snapshot_schema._snapshot_target(root, dirs["pending"], capture["captureId"], pending=True)
+    if target.exists():
+        try:
+            previous = json.loads(target.read_bytes())
+            # Historical candidates may omit optional defaults and have a different
+            # creation timestamp. An equivalent retry preserves their original bytes.
+            expected = {key: value for key, value in snapshot.items() if key != "approvedAt"}
+            existing = {key: previous.get(key, CAPTURE_DEFAULTS.get(key)) for key in expected}
+            if existing != expected:
+                raise ValueError("capture-candidate-conflict")
+        except (ValueError, AttributeError) as error:
+            raise ValueError("capture-candidate-conflict") from error
+        return
+    payload = (json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    _atomic(root, target, payload, None)
 
 
 def route_capture(
@@ -145,6 +199,7 @@ def route_capture(
     if stored.get("processedAt"):
         return {"status": stored.get("routeStatus") or "review", "revision": stored.get("routeRevision")}
 
+    capture = stored
     evidence = capture_evidence(capture)
     capture_id = capture["captureId"]
     if vault_root is None or not Path(vault_root).exists():

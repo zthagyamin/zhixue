@@ -14,9 +14,9 @@ export function firstPendingRoundIndex(keys:readonly string[],round:SubjectRound
  if(selected>=0&&!settledSubjectKeys(round).includes(keys[selected]))return selected;
  return Math.max(0,keys.findIndex(key=>!settledSubjectKeys(round).includes(key)));
 }
-export function nativeTaskCompletedKeys(task:DailyTask,obligation:ReviewObligation|undefined,events:readonly StudyEventV3[],day:string):string[]{
+export function nativeTaskCompletedKeys(task:DailyTask,obligation:ReviewObligation|undefined,events:readonly StudyEventV3[],day:string,anchorEvents:readonly StudyEventV3[]=events):string[]{
  if(task.action.kind!=='practice')return [];
- const anchor=events.find(event=>event.eventId===obligation?.anchorEventId);
+ const anchor=anchorEvents.find(event=>event.eventId===obligation?.anchorEventId);
  const after=task.category==='review'?Date.parse(anchor?.occurredAt??obligation?.observedAt??''): -Infinity;
  if(task.category==='review'&&!Number.isFinite(after))return [];
  return task.action.itemKeys.filter(key=>{

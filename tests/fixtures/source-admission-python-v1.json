@@ -1,0 +1,498 @@
+{
+  "query": {
+    "itemKey": "generated:original-logic",
+    "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "presentation": {
+      "questionType": "quiz",
+      "prompt": "比较 𝛼 与 𝛽。",
+      "options": [
+        "é",
+        "z"
+      ]
+    },
+    "sourceItemKey": "practice:confirmed-source"
+  },
+  "pendingCapture": {
+    "schemaVersion": 1,
+    "status": "pending",
+    "durable": true,
+    "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "originalBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "reason": "source-unverified"
+  },
+  "confirmedCapture": {
+    "schemaVersion": 1,
+    "status": "confirmed",
+    "durable": true,
+    "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    },
+    "originalBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    },
+    "item": {
+      "questionType": "quiz",
+      "prompt": "比较 𝛼 与 𝛽。",
+      "options": [
+        "é",
+        "z"
+      ],
+      "answer": 0
+    },
+    "eventKind": "due",
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    }
+  },
+  "submission": {
+    "attemptId": "attempt-first",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "answerRevision": 2,
+    "answer": "  á\n𝛼 中文  ",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "purpose": "first",
+    "parentAttemptId": null,
+    "assistance": "independent",
+    "maxPreHintLevel": 0,
+    "answerRevealed": false
+  },
+  "submitReceipt": {
+    "schemaVersion": 1,
+    "status": "saved",
+    "durable": true,
+    "attemptId": "attempt-first",
+    "answerRevision": 2,
+    "submissionHash": "3e211871cdd9145c7d3a87fc271392b26f3ecfab4a2a358471ecf80d32f91f70",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "savedAt": "2026-10-10T10:00:00+00:00"
+  },
+  "pendingEvaluation": {
+    "schemaVersion": 1,
+    "durable": true,
+    "requestId": "pending-request",
+    "attemptId": "attempt-first",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "sourceBinding": null,
+    "sourceCaptureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd",
+    "answerRevision": 2,
+    "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+    "status": "pending",
+    "reason": "source-unverified",
+    "evaluationHash": "8b896f0c92abeff947d285543b868826d533475e61533f1b62770c31c1a0370c"
+  },
+  "confirmReceipt": {
+    "schemaVersion": 1,
+    "status": "confirmed",
+    "durable": true,
+    "attemptId": "attempt-first",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    },
+    "sourceCaptureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+  },
+  "evaluation": {
+    "schemaVersion": 1,
+    "durable": true,
+    "requestId": "fresh-evaluation",
+    "attemptId": "attempt-first",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    },
+    "sourceCaptureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b",
+    "answerRevision": 2,
+    "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+    "status": "resolved",
+    "correct": true,
+    "explanation": "Synthetic 核对 𝛼。",
+    "outcome": "correct",
+    "evaluationHash": "992a720041fe677364b72d51bdbfb12283c0682494223c45e9035d53404f2306"
+  },
+  "claimReceipt": {
+    "schemaVersion": 1,
+    "status": "accepted",
+    "durable": true,
+    "claim": {
+      "schemaVersion": 1,
+      "attemptId": "attempt-first",
+      "eventId": "event-first",
+      "binding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "generated:original-logic",
+        "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+      },
+      "sourceBinding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "practice:confirmed-source",
+        "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+      },
+      "sourceCaptureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b",
+      "evaluationHash": "992a720041fe677364b72d51bdbfb12283c0682494223c45e9035d53404f2306",
+      "answerRevision": 2,
+      "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+      "rating": "good",
+      "correct": true,
+      "occurredAt": "2026-10-10T09:00:00.000Z",
+      "eventKind": "due"
+    },
+    "claimHash": "b61020e45c0a699b50308b088bb08b1e297805a8ef52fc28d84a834eb930b0a5"
+  },
+  "readReceipt": {
+    "submission": {
+      "attemptId": "attempt-first",
+      "binding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "generated:original-logic",
+        "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+      },
+      "answerRevision": 2,
+      "answer": "  á\n𝛼 中文  ",
+      "submittedAt": "2026-10-10T09:00:00.000Z",
+      "purpose": "first",
+      "parentAttemptId": null,
+      "assistance": "independent",
+      "maxPreHintLevel": 0,
+      "answerRevealed": false
+    },
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+    },
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+    },
+    "evaluation": {
+      "schemaVersion": 1,
+      "durable": true,
+      "requestId": "fresh-evaluation",
+      "attemptId": "attempt-first",
+      "binding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "generated:original-logic",
+        "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "captureId": "source-capture:e505f5627fb94e2b9a30eb139e41583dae31540192c07e5da6d4a0b34882d0cd"
+      },
+      "sourceBinding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "practice:confirmed-source",
+        "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "captureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b"
+      },
+      "sourceCaptureId": "source-capture:df51537ba255a46e1133936cc44f9126e158fa8abfe817a3c4d155c7e096899b",
+      "answerRevision": 2,
+      "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+      "status": "resolved",
+      "correct": true,
+      "explanation": "Synthetic 核对 𝛼。",
+      "outcome": "correct",
+      "evaluationHash": "992a720041fe677364b72d51bdbfb12283c0682494223c45e9035d53404f2306"
+    },
+    "receipt": {
+      "schemaVersion": 1,
+      "status": "saved",
+      "durable": true,
+      "attemptId": "attempt-first",
+      "answerRevision": 2,
+      "submissionHash": "3e211871cdd9145c7d3a87fc271392b26f3ecfab4a2a358471ecf80d32f91f70",
+      "submittedAt": "2026-10-10T09:00:00.000Z",
+      "savedAt": "2026-10-10T10:00:00+00:00"
+    },
+    "schemaVersion": 1,
+    "status": "saved",
+    "durable": true
+  },
+  "vectors": [
+    {
+      "value": {
+        "Z": "é",
+        "a": "𝛼",
+        "ä": "中文",
+        "😀": "emoji",
+        "": "private scalar"
+      },
+      "canonical": "{\"Z\":\"é\",\"a\":\"𝛼\",\"ä\":\"中文\",\"\":\"private scalar\",\"😀\":\"emoji\"}",
+      "fingerprint": "b00267c829c1c84734cdfb0f474983f3780458c3bcbe7741d103af3bffef8aeb"
+    },
+    {
+      "value": {
+        "small": 1e-06,
+        "tiny": 1e-07,
+        "whole": 1,
+        "negative": 0,
+        "text": "\n\\ \" 𝛼"
+      },
+      "canonical": "{\"negative\":0,\"small\":1e-06,\"text\":\"\\n\\\\ \\\" 𝛼\",\"tiny\":1e-07,\"whole\":1}",
+      "fingerprint": "bf3100a5d584c92d5dc74410e805d43c4de16a0267f099f7b0e8fb400e81f2a0"
+    },
+    {
+      "value": {
+        "answer": [
+          "é",
+          "𝛼"
+        ],
+        "binding": {
+          "ownerId": "remote",
+          "libraryId": "库",
+          "captureId": "source:1"
+        }
+      },
+      "canonical": "{\"answer\":[\"é\",\"𝛼\"],\"binding\":{\"captureId\":\"source:1\",\"libraryId\":\"库\",\"ownerId\":\"remote\"}}",
+      "fingerprint": "d3d3e67017e8c5f1c4f4cf1b840b147d4578270fb169155c41e3ea6aef8a3855"
+    }
+  ],
+  "unknownCapture": {
+    "schemaVersion": 1,
+    "status": "confirmed",
+    "durable": true,
+    "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "originalBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "item": {
+      "answer": 0,
+      "options": [
+        "é",
+        "z"
+      ],
+      "prompt": "比较 𝛼 与 𝛽。",
+      "questionType": "quiz"
+    },
+    "eventKind": "due",
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    }
+  },
+  "unknownSubmission": {
+    "attemptId": "attempt-unknown",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "answerRevision": 2,
+    "answer": "  á\n𝛼 中文  ",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "purpose": "unknown",
+    "parentAttemptId": null,
+    "assistance": "unknown",
+    "maxPreHintLevel": 0,
+    "answerRevealed": false
+  },
+  "unknownReceipt": {
+    "schemaVersion": 1,
+    "status": "saved",
+    "durable": true,
+    "attemptId": "attempt-unknown",
+    "answerRevision": 2,
+    "submissionHash": "a72657abaa6b47e36179476eb1f314182a78a2db788dd673785c704b29bcfa68",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "savedAt": "2026-10-10T10:00:00+00:00"
+  },
+  "partialCapture": {
+    "schemaVersion": 1,
+    "status": "confirmed",
+    "durable": true,
+    "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "originalBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "item": {
+      "answer": 0,
+      "options": [
+        "é",
+        "z"
+      ],
+      "prompt": "比较 𝛼 与 𝛽。",
+      "questionType": "quiz"
+    },
+    "eventKind": "due",
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    }
+  },
+  "partialSubmission": {
+    "attemptId": "attempt-partial",
+    "binding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "generated:original-logic",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "answerRevision": 2,
+    "answer": "  á\n𝛼 中文  ",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "purpose": "first",
+    "parentAttemptId": null,
+    "assistance": "independent",
+    "maxPreHintLevel": 0,
+    "answerRevealed": false
+  },
+  "partialEvaluation": {
+    "schemaVersion": 1,
+    "durable": true,
+    "requestId": "partial-evaluation",
+    "attemptId": "attempt-partial",
+    "binding": {
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "itemKey": "generated:original-logic",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "sourceBinding": {
+      "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "itemKey": "practice:confirmed-source",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+    },
+    "sourceCaptureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+    "answerRevision": 2,
+    "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+    "status": "resolved",
+    "correct": false,
+    "explanation": "Synthetic partial 核对。",
+    "outcome": "partial",
+    "evaluationHash": "c8b69003fdd55d2167dc32e7e101b98f93237f4de90f3645b36d6162e2319720"
+  },
+  "partialClaimReceipt": {
+    "schemaVersion": 1,
+    "status": "accepted",
+    "durable": true,
+    "claim": {
+      "schemaVersion": 1,
+      "attemptId": "attempt-partial",
+      "eventId": "event-partial",
+      "binding": {
+        "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+        "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "itemKey": "generated:original-logic",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "sourceBinding": {
+        "ownerId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "libraryId": "local-vault:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "itemKey": "practice:confirmed-source",
+        "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "captureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c"
+      },
+      "sourceCaptureId": "source-capture:221d2d1642f0faf43a852bb90ba57f27f74f4e4b498b8eb48f72d085a869250c",
+      "evaluationHash": "c8b69003fdd55d2167dc32e7e101b98f93237f4de90f3645b36d6162e2319720",
+      "answerRevision": 2,
+      "answerHash": "7e0475a80c7dca32e06e9d882f99d0667eb59aa2341f276be5999c08c525c2ff",
+      "rating": "hard",
+      "correct": false,
+      "occurredAt": "2026-10-10T09:00:00.000Z",
+      "eventKind": "due"
+    },
+    "claimHash": "26718586d2ace7859dcd3c426b55b6c92b63f39b304e9184819ebe0e28324ea5"
+  }
+}

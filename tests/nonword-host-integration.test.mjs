@@ -13,16 +13,21 @@ async function settle(hooks) {for(let i=0;i<20;i++){hooks.flush();await tick();h
   // harness does not automatically mount children, so execute its rendering seam.
   for(const node of nodes(hooks.view()))if(typeof node.type==='function'&&typeof node.props.renderPlugin==='function')node.type(node.props);
 }}
-async function fixture({scope:providedScope,waitGrade,failAfterDurable=false,commitFeedback=false,temporary=false}={}) {
-  const scope=providedScope??{workspaceId:`account:host-${serial}`,ownerId:`host-${serial++}`,libraryId:'host-library',snapshotId:'host-snapshot',itemKey:'question',contentHash:'a'.repeat(64),groupId:'group',roundId:'round',cloud:false};
+async function fixture({scope:providedScope,waitGrade,failAfterDurable=false,commitFeedback=false,temporary=false,sourceConfirmationRequired=false,sourceService,beforeFormalService}={}) {
+  const scope=providedScope??{workspaceId:`account:host-${serial}`,ownerId:`host-${serial++}`,libraryId:'host-library',snapshotId:'host-snapshot',itemKey:'question',contentHash:'a'.repeat(64),groupId:'group',roundId:'round',cloud:false,sourceConfirmationRequired};
   const hooks=createHooks(),drivers=[],formal=[],moves=[];let handles,core=null,fail=failAfterDurable;
   const store=createLearningDraftStore(scope.workspaceId),draft=store.adapter('question','recall');
   const createDriver=async(purpose,intent,parentAttemptId,instanceId)=>{
-    const runtime=await createNonWordRuntime(scope,'recall',{purpose:temporary?'remediation':purpose,intent,parentAttemptId,instanceId,verifyFormalEvent:async eventId=>core?.eventId===eventId?core:null});
+    const runtime=await createNonWordRuntime(scope,'recall',{purpose:temporary?'remediation':purpose,intent,parentAttemptId,instanceId,
+      ...(sourceService?{sourceAdmission:sourceService.assess}:{}),verifyFormalEvent:async eventId=>core?.eventId===eventId?core:null});
     const driver={runtime,restore:()=>restoredFields(runtime.session.snapshot(),'recall'),fields:values=>recoveryFields('recall',values),answer:values=>rawAnswer('recall',values),phase:()=>evaluationPhase(runtime.session.snapshot()),verifiedCore:async()=>core?.coreHash??null};
+    if(beforeFormalService)driver.beforeFormal=()=>beforeFormalService(runtime.session.snapshot());
+    if(sourceService)driver.source={supported:()=>true,review:async()=>{await runtime.session.assess({status:'undetermined',source:'model',explanation:'恢复核对。'});},
+      beforeFormal:()=>sourceService.beforeFormal(runtime.session.snapshot()),
+      ...(sourceService.savePending?{savePending:()=>sourceService.savePending(runtime.session.snapshot())}:{})};
     drivers.push(driver);return driver;
   };
-  const props={temporary,bindingKey:JSON.stringify(scope),mode:'recall',draft,reference:'REFERENCE: use independent held-out evaluation.',recallConfigured:false,createDriver,
+  const props={temporary,sourceConfirmationRequired:scope.sourceConfirmationRequired,bindingKey:JSON.stringify(scope),mode:'recall',draft,reference:'REFERENCE: use independent held-out evaluation.',recallConfigured:false,createDriver,
     renderPlugin(current,lifecycle,grade){handles={draft:current,lifecycle,grade};return 'Synthetic learner input';},
     async onGrade(rating,options){await waitGrade?.promise;formal.push({rating,...options});if(options.identity)core={eventId:options.identity.eventId,coreHash:'c'.repeat(64),itemKey:scope.itemKey,contentHash:scope.contentHash,reviewedAt:options.identity.reviewedAt,rating};if(commitFeedback){const ticket=draft.begin();if(ticket)store.commit(ticket,()=>moves.push({source:'draft',rating}));}if(fail){fail=false;throw Error('durable receipt lost');}return {status:'saved'};},
     continuePending(){moves.push({source:'pending'});},resumeFormal(rating){moves.push({source:'fallback',rating});},renderMath:value=>value,
@@ -48,6 +53,114 @@ async function fixture({scope:providedScope,waitGrade,failAfterDurable=false,com
     async close(){hooks.unmount();await tick();await tick();},
   };
 }
+
+test('unverified generated source saves the original answer, advances pending once and creates no formal write',async()=>{
+  const f=await fixture({sourceConfirmationRequired:true});let restored;
+  try{
+    await f.edit('Temporary original answer.');await f.handles.lifecycle.submit('Temporary original answer.');
+    await f.handles.lifecycle.assess({status:'correct',source:'model',rating:'good',explanation:'Candidate feedback.'});
+    await f.handles.grade('good');await settle(f.hooks);
+    assert.equal(f.formal.length,0);assert.equal(f.handles.lifecycle.sourcePending,true);
+    const action=button(f.hooks.view(),'保留答案，继续');assert.ok(action);
+    action.props.onClick();action.props.onClick();
+    await waitForObservation(()=>settle(f.hooks),()=>f.moves.length===1,{label:'one durable source-pending continuation'});
+    assert.deepEqual(f.moves,[{source:'pending'}]);assert.equal(f.drivers[0].runtime.session.snapshot().formal,null);
+    await f.close();restored=await fixture({scope:f.scope});
+    assert.equal(restored.drivers[0].runtime.session.snapshot().submitted.answer,'Temporary original answer.');
+    assert.equal(restored.drivers[0].runtime.session.snapshot().evaluation.status,'pending');assert.equal(restored.formal.length,0);
+  }finally{if(restored)await restored.close();else await f.close();}
+});
+
+test('actual host resumes controlled source review and uses its result before formal writing',async()=>{
+  let confirmed=false,reviews=0,claims=0;
+  const sourceService={assess:async attempt=>{reviews++;assert.equal(attempt.submitted.answer,'Immutable source answer.');
+    return confirmed?{status:'confirmed',outcome:{status:'incorrect',source:'model',rating:'again',explanation:'The condition is missing.'}}
+      :{status:'pending',reason:'来源待核对。'};},
+    beforeFormal:async attempt=>{claims++;assert.equal(attempt.formal.rating,'again');assert.equal(attempt.evaluation.outcome,'incorrect');}};
+  const f=await fixture({sourceConfirmationRequired:true,sourceService});
+  try{
+    await f.handles.lifecycle.submit('Immutable source answer.');
+    await f.handles.lifecycle.assess({status:'correct',source:'self-assess',rating:'good',explanation:'Caller guess.'});
+    await f.handles.grade('good');assert.equal(f.formal.length,0);
+    confirmed=true;const start=reviews;await f.click('恢复核对');
+    await waitForObservation(()=>settle(f.hooks),()=>f.drivers[0].runtime.session.snapshot().evaluation.status==='resolved',{label:'restored source verdict'});
+    assert.equal(reviews,start+1);assert.equal(f.formal.length,0);
+    await f.handles.grade('good',{deferAdvance:true});
+    assert.equal(f.formal.length,1);assert.equal(f.formal[0].rating,'again');assert.equal(claims,1);
+    assert.equal(f.drivers[0].runtime.session.snapshot().submitted.answer,'Immutable source answer.');
+  }finally{await f.close();}
+});
+
+test('actual host mirrors an unknown saved answer through the controlled pending port and continues without grading',async()=>{
+ const saved=[],f=await fixture({sourceConfirmationRequired:true,sourceService:{savePending:async attempt=>saved.push(structuredClone(attempt)),
+  assess:async()=>assert.fail('Pending synchronization must not assess.'),beforeFormal:async()=>assert.fail('Pending synchronization must not claim.')}});
+ try{
+  await f.edit('original code');await f.handles.lifecycle.submit('original code');
+  await f.handles.lifecycle.waitForReview('环境异常，未能判定。');
+  assert.equal(saved.length,1);assert.equal(saved[0].submitted.answer,'original code');
+  assert.equal(f.drivers[0].runtime.session.snapshot().evaluation.status,'pending');assert.equal(f.formal.length,0);
+  await f.handles.lifecycle.continuePending();assert.equal(f.moves.length,1);assert.equal(f.moves[0].source,'pending');
+ }finally{f.hooks.unmount();}
+});
+
+test('switching content during formal reservation stops source claims and official writing',async()=>{
+  let claims=0,admissions=0;
+  const f=await fixture({beforeFormalService:async()=>{admissions++;},sourceService:{
+    assess:async()=>({status:'confirmed',outcome:{status:'correct',source:'model',rating:'good',explanation:'Verified.'}}),
+    beforeFormal:async()=>{claims++;}
+  }});
+  const waiting=deferred(),entered=deferred();
+  try{
+    await f.handles.lifecycle.submit('Saved original answer.');
+    await f.handles.lifecycle.assess({status:'correct',source:'model',rating:'good',explanation:'Verified.'});
+    const session=f.drivers[0].runtime.session,reserve=session.reserve;
+    session.reserve=async rating=>{const result=await reserve(rating);entered.resolve();await waiting.promise;return result;};
+    const grading=f.handles.grade('good',{deferAdvance:true});
+    await entered.promise;
+    f.hooks.render({...f.props,bindingKey:'changed-owner-or-content',createDriver:()=>new Promise(()=>{})});
+    await settle(f.hooks);waiting.resolve();
+    await assert.rejects(grading,/切换/);
+    assert.equal(admissions,0);assert.equal(claims,0);assert.equal(f.formal.length,0);
+    assert.equal(session.snapshot().submitted.answer,'Saved original answer.');
+  }finally{waiting.resolve();await f.close();}
+});
+
+test('specialized admission must be durable before the actual host calls the official writer',async()=>{
+  let tries=0;
+  const f=await fixture({beforeFormalService:async attempt=>{
+    tries++;assert.equal(attempt.formal.status,'claimed');assert.equal(attempt.submitted.answer,'Immutable math answer.');
+    if(tries===1)throw Error('Synthetic admission receipt lost');
+  }});
+  try{
+    await f.handles.lifecycle.submit('Immutable math answer.');
+    await f.handles.lifecycle.assess({status:'correct',source:'deterministic',rating:'good',explanation:'Verified final.'});
+    await assert.rejects(f.handles.grade('good',{deferAdvance:true}),/admission receipt lost/);
+    const identity=f.drivers[0].runtime.session.snapshot().formal.eventId;
+    assert.equal(f.formal.length,0);
+    await f.handles.grade('good',{deferAdvance:true});
+    assert.equal(tries,2);assert.equal(f.formal.length,1);assert.equal(f.formal[0].identity.eventId,identity);
+  }finally{await f.close();}
+});
+
+test('source-pending continuation surfaces a storage failure and allows retry without pretending to advance',async()=>{
+  const f=await fixture({sourceConfirmationRequired:true});
+  try{
+    await f.handles.lifecycle.submit('Saved temporary answer.');
+    await f.handles.lifecycle.assess({status:'correct',source:'model',rating:'good',explanation:'Candidate.'});
+    await f.handles.grade('good');await settle(f.hooks);
+    const runtime=f.drivers[0].runtime,write=runtime.repository.mutate;let fail=true;
+    runtime.repository.mutate=mutation=>{
+      if(fail&&mutation.kind==='checkpoint'&&mutation.checkpoint.traversed){fail=false;return Promise.reject(Error('source pending traversal save failed'));}
+      return write(mutation);
+    };
+    button(f.hooks.view(),'保留答案，继续').props.onClick();
+    await waitForObservation(()=>settle(f.hooks),()=>text(f.hooks.view()).includes('source pending traversal save failed'),{label:'visible pending save failure'});
+    assert.equal(f.moves.length,0);assert.equal(runtime.session.snapshot().checkpoint.traversed,false);
+    await f.click('保留答案，继续');
+    await waitForObservation(()=>settle(f.hooks),()=>f.moves.length===1,{label:'successful pending retry'});
+    assert.equal(f.formal.length,0);assert.equal(runtime.session.snapshot().submitted.answer,'Saved temporary answer.');
+  }finally{await f.close();}
+});
 test('host persists first snapshot before official writer and retries a lost receipt with the fixed identity',async()=>{
   const f=await fixture({failAfterDurable:true});try {
     await f.edit('My original answer.');await f.handles.lifecycle.submit('My original answer.');await f.handles.lifecycle.assess({status:'correct',source:'model',rating:'good',explanation:'Matches the source.'});

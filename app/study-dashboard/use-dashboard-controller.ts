@@ -336,7 +336,8 @@ export function useDashboardController(){
     },now:()=>new Date().toISOString(),
   });
   const applyAccountLoaded=accountSources.apply,refreshAccountRead=accountSources.read,cancelAccountRead=accountSources.cancel;
-  const accountPendingLoadedRef=useMemo(()=>({get current(){return accountSources.getPending();}}),[accountSources.getPending]);
+  const getPendingAccountSource=accountSources.getPending;
+  const accountPendingLoadedRef=useMemo(()=>({get current(){return getPendingAccountSource();}}),[getPendingAccountSource]);
   const readAccountAgain=useCallback(async(rebuild=false)=>{
     if(rebuild)await accountClient.clearReadCache();const value=await refreshAccountRead({enable:true});
     if(value){accountProbeRef.current=workspaceId;setAccountReadPaused(false);}return value;
@@ -388,7 +389,7 @@ export function useDashboardController(){
       if(active) setCompanionSession(current=>current?.token===companionSession.token && JSON.stringify(current.capabilities??[])!==JSON.stringify(capabilities)?{...current,capabilities}:current);
     }).catch(()=>{});
     return ()=>{active=false;};
-  },[companionSession,companionRetryToken]);
+  },[companionSession,companionRetryToken,setCompanionSession]);
   const companionPlanClient = useMemo(() => companionSession ? createCompanionPlanClient({
     baseUrl: companionUrl,
     sessionToken: companionSession.token,
@@ -438,8 +439,9 @@ export function useDashboardController(){
     publish:(result,_frame,options)=>{setCloudSyncMetadata(current=>({...current,v3:{...current.v3,supported:true,cursor:result.cursor,projectionMismatchCount:current.v3?.projectionMismatchCount??0}}));if(options?.notify!==false)noteEventsChanged();},
     error:()=>setCloudMessage('最新云端学习历史尚未完整读取；保留上次完整历史和本机新作答，未切换到旧读取接口。'),
   });
+  const readNativeBootstrap=nativeBootstrap.read;
   const runV3Bootstrap=useCallback(async(options?:{retryUnsupported?:boolean;forceFullBootstrap?:boolean;notify?:boolean;strict?:boolean})=>
-    await nativeBootstrap.read(options,{strict:options?.strict})??{supported:false,cursor:0,projections:[]},[nativeBootstrap.read]);
+    await readNativeBootstrap(options,{strict:options?.strict})??{supported:false,cursor:0,projections:[]},[readNativeBootstrap]);
 
   const [reviewDiagnostics, setReviewDiagnostics] = useState<Awaited<ReturnType<typeof readSyncDiagnostics>> | null>(null);
   const diagnosticReader=useSourceReader({scope:workspaceId,resource:companionSession,
@@ -447,7 +449,8 @@ export function useDashboardController(){
     read:frame=>readSyncDiagnostics(frame.owner,companionSession,companionUrl,companionHeaders,cloudSyncMetadata),publish:setReviewDiagnostics,
     error:()=>setCloudMessage('同步诊断暂不可用；原学习记录仍保留。'),
   });
-  const diagnosticsLoading=diagnosticReader.busy,refreshReviewDiagnostics=useCallback(()=>diagnosticReader.read(undefined),[diagnosticReader.read]);
+  const readReviewDiagnostics=diagnosticReader.read;
+  const diagnosticsLoading=diagnosticReader.busy,refreshReviewDiagnostics=useCallback(()=>readReviewDiagnostics(undefined),[readReviewDiagnostics]);
 
   const captureSyncFrame=():SyncFrame<PendingActivity>=>{
     const owner=workspaceId,epoch=accountModeEpoch.current,account=accountLoadedRef.current;
@@ -1051,7 +1054,8 @@ export function useDashboardController(){
         setWorkspacePhase('ready');
     },error:error=>{setStorageReady(false);setWorkspacePhase(error instanceof WorkspaceReadError?error.phase:'identity-error');},
   });
-  useEffect(()=>{void workspaceReader.read(undefined);return workspaceReader.cancel;},[workspaceReader.read,workspaceReader.cancel]);
+  const readWorkspace=workspaceReader.read,cancelWorkspaceRead=workspaceReader.cancel;
+  useEffect(()=>{void readWorkspace(undefined);return cancelWorkspaceRead;},[readWorkspace,cancelWorkspaceRead]);
 
   useEffect(() => { if (storageReady) void saveWorkspaceRecord(workspaceId, "progress", progress); }, [progress, storageReady, workspaceId]);
   useEffect(()=>{if(storageReady&&accountProgress?.workspaceId===workspaceId&&accountProgress.historyReady)void saveAccountProgress(accountProgress).catch(()=>setCloudMessage('账号进度视图暂未缓存；原作答记录仍单独保留。'));},[storageReady,workspaceId,accountProgress]);
@@ -1320,7 +1324,10 @@ export function useDashboardController(){
   const restartWork=useRef<RestartWork|null>(null);
   const [restartStatus,setRestartStatus]=useState<{scope:string;owner:string;library:string;day:string;subjectId:string;completed:number;total:number;busy:boolean;canRetry:boolean;message:string}|null>(null);
   const restartEpoch=useRef(0);
-  useLayoutEffect(()=>{restartEpoch.current++;return()=>{restartEpoch.current++;};},[workspaceId,nativeScope,accountLibraryId,currentDay,tab,learningDrafts]);
+  useLayoutEffect(()=>{
+    const epoch=restartEpoch;
+    epoch.current++;return()=>{epoch.current++;};
+  },[workspaceId,nativeScope,accountLibraryId,currentDay,tab,learningDrafts]);
   const cancelSubjectRestart=()=>{if(learningDrafts.isPending())return;restartWork.current=null;setRestartStatus(null);};
   const restartSubjectRound = async (subjectId: string, onlyKeys?: readonly string[]) => {
     if(learningDrafts.isPending()){setPlanMessage('当前作答或重新开始正在处理，请稍候。');return;}

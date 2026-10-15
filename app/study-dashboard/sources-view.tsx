@@ -1,5 +1,5 @@
 "use client";
-import {StudyTermHelp} from "../study-term-help";
+import {StudyTermHelp,RecoveryDataControls} from './recovery-data-controls';
 import { useState } from "react";
 import { AccountStudyConnection } from "../account-study-controls";
 import { CompanionSettingsCard } from "../companion-settings-card";
@@ -989,24 +989,7 @@ export function SourcesView({ model }: Props) {
                   </div>
 
                   {/* 数据备份导出 */}
-                  <section className="settings-card">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-bold text-sm text-[var(--ink)] mb-1">导出恢复数据包</h4>
-                        <p className="text-xs text-[var(--ink)] opacity-60">
-                          导出当前账号在此浏览器中的恢复数据。仅当前页面暂存、尚未提交的输入不等于已保存记录，请先处理；具体内容以恢复包为准。
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="study-secondary-action"
-                        disabled={!accountWorkspaceId || !storageReady || !sessionResolved}
-                        onClick={() => void handleExportRecovery()}
-                      >
-                        导出恢复数据包
-                      </button>
-                    </div>
-                  </section>
+                  <RecoveryDataControls workspaceId={accountWorkspaceId} ready={storageReady&&sessionResolved} onExport={()=>void handleExportRecovery()} onChanged={()=>void refreshSettingsOverview()}/>
                 </div>
               )}
 

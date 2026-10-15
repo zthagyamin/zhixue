@@ -2,6 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {D1MathMappingStore} from '../src/infrastructure/math-study/index.ts';
 import {mappingFixture,reviewedCases} from './fixtures/math-mapping-fixtures.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
+
+for(const change of ['revoke','expire','replace-library'])test(`mapping publication remains non-durable when qualification changes at commit: ${change}`,async t=>{
+ const f=await mappingFixture(t),actor=await activateSyntheticWriter(f.db.binding,f.scope);
+ const before=f.db.sqlite.prepare('SELECT * FROM math_variant_mappings_v1').all();
+ const reached=changeWriterAtCommit(f.db.binding,f.db.sqlite,f.scope,actor,change,'math_variant_mappings_v1');
+ const result=await f.store.publish(f.scope,f.preparation,{...f.provenance,originGrantId:actor.grantId});
+ assert.equal(reached(),true);assert.equal(result.durable,false);assert.equal(result.status,'conflict');
+ assert.deepEqual(f.db.sqlite.prepare('SELECT * FROM math_variant_mappings_v1').all(),before);
+});
+
+test('historical mapping timestamp cannot qualify a grant already expired at actual insertion time',async t=>{
+ const f=await mappingFixture(t),actor=await activateSyntheticWriter(f.db.binding,f.scope);
+ const expired=new Date(Date.now()-60000).toISOString(),publishedAt=new Date(Date.now()-120000).toISOString();
+ f.db.sqlite.prepare('UPDATE account_study_grants SET expires_at=? WHERE grant_id=?').run(expired,actor.grantId);
+ const result=await f.store.publish(f.scope,f.preparation,{originGrantId:actor.grantId,publishedAt});
+ assert.equal(result.durable,false);assert.equal(f.db.sqlite.prepare('SELECT count(*) AS n FROM math_variant_mappings_v1').get().n,0);
+});
 
 for(const example of reviewedCases)test(`real SQLite immutable preparation ${example.templateId} binds complete original and exact duplicate receipt`,async t=>{
  const f=await mappingFixture(t,example),before=f.db.sqlite.prepare('SELECT attempt_json FROM learning_attempts_v1').get().attempt_json;

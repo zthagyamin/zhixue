@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {spawnSync} from 'node:child_process';
+import {spawnPythonSync} from '../scripts/python-runtime.mjs';
 import {fileURLToPath} from 'node:url';
 import {buildRecallPrompt,recallPrompt,isRecallEcho} from '../app/recall-content.ts';
 import {recallReference,recallChosenRating} from '../app/recall-flow-model.ts';
@@ -77,7 +77,7 @@ test('echo comparison removes known wrappers, labels and trailing punctuation on
   assert.equal(isRecallEcho('',''),false);
 });
 function python(script,input){
-  const result=spawnSync(process.env.PYTHON||'python',['-I','-X','utf8','-c',script,fileURLToPath(new URL('../companion/',import.meta.url))],{
+  const result=spawnPythonSync(['-I','-X','utf8','-c',script,fileURLToPath(new URL('../companion/',import.meta.url))],{
     input:JSON.stringify(input),encoding:'utf8',timeout:30000,env:{...process.env,PYTHONUTF8:'1'},
   });
   assert.ifError(result.error);assert.equal(result.status,0,result.stderr);

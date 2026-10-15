@@ -56,21 +56,38 @@ export function createAccountStudyHttpHandlers(deps: AccountHttpDependencies) {
             throw new ApiFailure(401, 'authentication-required');
         return { principal: { kind: 'browser', userId: user.userId } };
     }
-    function handler(run: (request: Request, auth: Authenticated) => Promise<AccountReply>) {
+    function handler(run: (request: Request, auth: Authenticated) => Promise<{reply: AccountReply; activated?: boolean}>) {
         return async (request: Request) => {
             try {
                 if (!(typeof deps.enabled === 'function' ? deps.enabled() : deps.enabled))
                     return json({ error: 'account-study-disabled' }, 503);
-                return encodeAccountReply(await run(request, await authenticate(request)));
+                const auth = await authenticate(request), result = await run(request, auth);
+                // A later read or duplicate path must not return data under obsolete device authority.
+                await revalidateDevice(auth, result.activated ? 'active' : undefined);
+                return encodeAccountReply(result.reply);
             }
             catch (error) {
                 return failure(error);
             }
         };
     }
-    return { GET: handler((request, auth) => application.get(query(request), auth)), POST: handler(async (request, auth) => {
+    async function revalidateDevice(auth: Authenticated, expectedState?: 'active'): Promise<void> {
+        if (auth.principal.kind !== 'device') return;
+        const current = await (await deps.getAccessStore()).authenticate(auth.secret);
+        const original = auth.principal;
+        if (!current || current.userId !== original.userId || current.libraryId !== original.libraryId
+            || current.grantId !== original.grantId || current.state !== (expectedState ?? original.state)) {
+            throw new ApiFailure(403, 'study-writer-required');
+        }
+    }
+    return { GET: handler(async (request, auth) => ({reply: await application.get(query(request), auth)})), POST: handler(async (request, auth) => {
             if (auth.principal.kind === 'browser' && request.headers.get('Origin') !== new URL(request.url).origin)
                 throw new ApiFailure(403, 'origin-mismatch');
-            return application.post(await readJson(request), auth, request.signal);
+            const body = await readJson(request);
+            request.signal.throwIfAborted();
+            await revalidateDevice(auth);
+            request.signal.throwIfAborted();
+            const reply = await application.post(body, auth, request.signal);
+            return {reply, activated: body.action === 'activate-grant'};
         }) };
 }

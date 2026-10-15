@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonWordLearningPort, NonWordOutcome } from '../../application/nonword-study';
 import type { FSRSRating } from '../../domain/assessment';
 import { requireCourseFeedback, hostFormalRating } from './host-course-boundary';
+import {continueHostFormal,continueHostPending,continueStoredHostPending,persistHostPending} from './host-continuation';
+import {reviewHostSource} from './host-source-review';
 import type { HostDriver, HostProps, HostGradeOptions } from './host-contracts';
 export type { HostDraft, HostDriver } from './host-contracts';
 import { useHostClock } from './host-clock';
@@ -21,6 +23,8 @@ export function NonWordStudyHost(props: HostProps) {
     const binding = useRef(props.bindingKey), [readyKey, setReadyKey] = useState('');
     const firstDriver = useRef<HostDriver | null>(null), gradeTask = useRef<Promise<void> | null>(null);
     const initialization = useRef(createHostInitialization<HostDriver>());
+    const createDriver: HostProps['createDriver'] = (purpose, intent, parent, instance, task) =>
+        props.createDriver(purpose, intent, parent, instance, task, () => live.current && binding.current === props.bindingKey);
     const [generation, setGeneration] = useState(0), [elapsed, setElapsed] = useState(0);
     const view = useRef({ purpose: 'first' as 'first' | 'guided' | 'remediation', lessonStep: 'independent' as 'reading' | 'guided' | 'independent', paused: false, referenceSeen: false, instanceId: undefined as string | undefined });
     const groupBase = useRef(0), clock = useHostClock<HostDriver>({ current: () => activeDriver.current, initial: current => current.runtime.session.snapshot()?.checkpoint.activeSeconds ?? 0, counting: () => !view.current.paused && typeof document !== 'undefined' && document.visibilityState === 'visible', now: () => Date.now() });
@@ -35,7 +39,10 @@ export function NonWordStudyHost(props: HostProps) {
         rating: FSRSRating;
         options?: HostGradeOptions;
     } | null>(null);
-    const refreshStatus = (current: HostDriver) => refreshHostStatus(current, () => live.current && activeDriver.current === current, setStatus);
+    const refreshStatus = useCallback((current: HostDriver) => {
+        if(live.current&&activeDriver.current===current)setElapsed(groupBase.current+tick(current));
+        return refreshHostStatus(current, () => live.current && activeDriver.current === current, setStatus);
+    },[tick]);
     const save = async (current = activeDriver.current) => {
         if (!current)
             return;
@@ -60,7 +67,7 @@ export function NonWordStudyHost(props: HostProps) {
         await save();
         await saveQueue.current;
     };
-    const variant=useHostVariant({props,activeDriver,firstDriver,live,binding,continuationLock,gradeTask,view,values,shownReference,groupBase,intent,flush,persistView,
+    const variant=useHostVariant({props:{...props,createDriver},activeDriver,firstDriver,live,binding,continuationLock,gradeTask,view,values,shownReference,groupBase,intent,flush,persistView,
         grade:(rating,options)=>grade(rating,options),clock:{deactivate:clock.deactivate,activate},state:{driver:setDriver,
             lesson:()=>setLessonStep('independent'),generation:()=>setGeneration(value=>value+1),status:refreshStatus,busy:setBusy,error:setError}});
     useEffect(() => {
@@ -69,7 +76,7 @@ export function NonWordStudyHost(props: HostProps) {
         activeDriver.current = null;
         firstDriver.current = null;
         let cancelled = false;
-        void initialization.current.get(props.bindingKey, () => props.createDriver('first', 'review')).then(async (current) => {
+        void initialization.current.get(props.bindingKey, () => createDriver('first', 'review')).then(async (current) => {
             if (cancelled)
                 return;
             firstDriver.current = current;
@@ -82,7 +89,7 @@ export function NonWordStudyHost(props: HostProps) {
             view.current = savedView ? { ...savedView, instanceId: savedView.instanceId } : { purpose: 'first', lessonStep: 'independent', paused: false, referenceSeen: false, instanceId: undefined };
             shownReference.current = Boolean(savedView?.referenceSeen)&&hostVariantSeed(savedView?.instanceId)===null;
             const restoredIntent = stored.checkpoint.intent === 'lesson' ? 'learn' : 'review';
-            const active = await restoreHostAuxiliary(current,savedView,restoredIntent,props.createDriver,variant);
+            const active = await restoreHostAuxiliary(current,savedView,restoredIntent,createDriver,variant);
             if (cancelled)
                 return;
             activeDriver.current = active;
@@ -130,43 +137,12 @@ export function NonWordStudyHost(props: HostProps) {
             return;
         return driver.runtime.subscribeStatus?.(() => { void refreshStatus(driver); });
         // Status notifications are pinned to the active runtime.
-    }, [driver]);
-    const continueFormal = async (parent: HostDriver) => {
-        if (continuationLock.current || !live.current || binding.current !== props.bindingKey)
-            return;
-        continuationLock.current = true;
-        setBusy(true);
-        setRetryContinue(false);
-        try {
-            await flush();
-            const attempt = parent.runtime.session.snapshot();
-            if (!props.temporary) {
-                if (attempt?.formal?.status !== 'linked')
-                    throw Error('正式结果尚未可靠保存。');
-                await parent.runtime.session.markTraversed();
-                await parent.runtime.afterWrite();
-            }
-            else if (parent.group) {
-                await parent.runtime.session.markAuxiliaryTraversed();
-                await parent.runtime.afterWrite();
-            }
-            const rating = attempt?.formal?.rating ?? (attempt?.evaluation.status === 'resolved' ? attempt.evaluation.rating : null);
-            if (!rating)
-                throw Error('本次作答仍待核对，请从待核对入口继续。');
-            await parent.continueGroup?.(rating);
-            if (live.current && binding.current === props.bindingKey && !props.draft.continueAfterFeedback?.())
-                props.resumeFormal(rating);
-        }
-        catch (reason) {
-            continuationLock.current = false;
-            setRetryContinue(true);
-            setError(reason instanceof Error ? reason.message : '续学状态尚未保存，请再试一次。');
-        }
-        finally {
-            if (live.current)
-                setBusy(false);
-        }
-    };
+    }, [driver,refreshStatus]);
+    const continueFormal = (parent: HostDriver) => continueHostFormal(parent, {
+        locked: () => continuationLock.current, current: () => live.current && binding.current === props.bindingKey,
+        live: () => live.current, temporary: props.temporary, lock: value => {continuationLock.current = value;},
+        busy: setBusy, retry: setRetryContinue, error: setError, flush,
+        consumeDraft: () => props.draft.continueAfterFeedback?.(), resume: props.resumeFormal });
     const draft = useHostDraft({ raw: props.draft, temporary: props.temporary === true, active: () => activeDriver.current,
         isPrimary: () => activeDriver.current?.runtime.purpose === 'first' || props.temporary === true && activeDriver.current === firstDriver.current,
         current: () => live.current && binding.current === props.bindingKey && !continuationLock.current, values: () => values.current, continue: continueFormal,
@@ -178,12 +154,23 @@ export function NonWordStudyHost(props: HostProps) {
         }
     }, generation);
     const execution=useHostExecution({current:()=>activeDriver.current?.runtime??null,primary:()=>firstDriver.current?.runtime??null,
-        createChild:async(parent,id)=>(await props.createDriver('remediation',intent,parent,id)).runtime},props.bindingKey);
+        createChild:async(parent,id)=>(await createDriver('remediation',intent,parent,id)).runtime},props.bindingKey);
     const lifecycle = useMemo<NonWordLearningPort>(() => ({
         attemptId: driver?.runtime.session.snapshot()?.attemptId,
         ready: Boolean(driver && readyKey === props.bindingKey), purpose: driver?.runtime.purpose ?? 'first', intent,
         get submitted() { return Boolean(activeDriver.current?.runtime.session.snapshot()?.submitted); },
+        get sourcePending() {
+            const attempt = activeDriver.current?.runtime.session.snapshot();
+            return Boolean(attempt?.submitted&&attempt.evaluation.status==='pending'
+                &&(activeDriver.current?.source||props.sourceConfirmationRequired));
+        },
         get course(){return activeDriver.current?.course;},
+        get firstSelfRating(){return activeDriver.current?.source?.selfRating?.();},
+        get firstOutcome(){
+            const evaluation=firstDriver.current?.runtime.session.snapshot()?.evaluation;
+            return evaluation?.status==='resolved'?{status:evaluation.outcome,source:evaluation.source,
+                rating:evaluation.rating,explanation:evaluation.feedback}:undefined;
+        },
         get practice(){return activeDriver.current?.runtime.practice;},
         ...(props.mode==='code'?{prepareExecution:execution.prepare,recordExecutionReport:execution.recordExecutionReport}:{}),
         get submittedHintLevel() { return activeDriver.current?.runtime.session.snapshot()?.submitted?.maxPreHintLevel; },
@@ -230,30 +217,19 @@ export function NonWordStudyHost(props: HostProps) {
                 throw Error('来源或账号已切换，本次操作已停止。');
             if (!current)
                 throw Error('答案尚未可靠保存。');
+            await current.source?.savePending?.();
+            if(!live.current||binding.current!==props.bindingKey||activeDriver.current!==current)
+                throw Error('来源或账号已切换，本次操作已停止。');
             await current.runtime.session.pending(/参考|来源/.test(reason) ? 'no-reference' : /AI|连接|停止|超时/.test(reason) ? 'offline' : 'invalid', reason);
             await current.runtime.afterWrite();
             await refreshStatus(current);
         },
-        async continuePending() {
-            const current = activeDriver.current;
-            if (!live.current || binding.current !== props.bindingKey)
-                throw Error('来源或账号已切换，本次操作已停止。');
-            if (!current)
-                throw Error('答案尚未可靠保存。');
-            await flush();
-            await current.runtime.session.traversePending();
-            await current.runtime.afterWrite();
-            if (current.runtime.purpose === 'guided') {
-                setStatus('引导答案已保存，等待核对；可以收起讲解进入独立尝试。');
-                return;
-            }
-            await current.continueGroup?.('pending');
-            props.continuePending();
-        },
+        continuePending:()=>continueStoredHostPending({current:()=>activeDriver.current,valid:()=>live.current&&binding.current===props.bindingKey,
+            flush,status:setStatus,advance:props.continuePending}),
         async recordRemediation(answer, outcome) {
             if(props.mode==='code')return execution.recordRemediation(answer,outcome);
             await recordNonWordAuxiliary({parent:firstDriver.current?.runtime??null,mode:props.mode,newId:()=>crypto.randomUUID(),
-                createChild:async(parent,id)=>(await props.createDriver('remediation',intent,parent,id)).runtime},answer,outcome);
+                createChild:async(parent,id)=>(await createDriver('remediation',intent,parent,id)).runtime},answer,outcome);
         },
         async startRemediation() {
             if (gradeTask.current)
@@ -287,8 +263,7 @@ export function NonWordStudyHost(props: HostProps) {
                 if (!live.current || binding.current !== props.bindingKey)
                     return;
                 if (attempt.evaluation.status === 'pending') {
-                    await parent.runtime.session.traversePending();
-                    await parent.runtime.afterWrite();
+                    await persistHostPending(parent);
                     await parent.continueGroup?.('pending');
                     if (live.current && binding.current === props.bindingKey)
                         props.continuePending();
@@ -308,7 +283,7 @@ export function NonWordStudyHost(props: HostProps) {
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [driver, draft, intent, generation, readyKey, props.bindingKey]);
+    }), [driver, draft, intent, generation, readyKey, props.bindingKey, props.sourceConfirmationRequired]);
     const grade = async (rating: FSRSRating, options?: HostGradeOptions) => {
         const current = activeDriver.current;
         if (!live.current || binding.current !== props.bindingKey)
@@ -325,6 +300,11 @@ export function NonWordStudyHost(props: HostProps) {
                 await lifecycle.submit(current.answer(values.current));
             attempt = current.runtime.session.snapshot();
             await requireCourseFeedback(current);
+            if (attempt?.evaluation.status === 'pending' && lifecycle.sourcePending) {
+                setRetryGrade(null);
+                setStatus('临时答案已保存，来源待核对，不计正式成绩。');
+                return;
+            }
             if (attempt?.evaluation.status !== 'resolved' && !['recall', 'flashcard'].includes(props.mode))
                 throw Error('本题还没有可靠核对结果，不能生成成绩。');
             if (attempt?.evaluation.status !== 'resolved')
@@ -359,13 +339,18 @@ export function NonWordStudyHost(props: HostProps) {
                 values.current.recallAttempt = frozen;
                 props.draft.write('recallAttempt', frozen);
             }
-            const applied = hostFormalRating(props, current, draft, rating);
+            const applied = hostFormalRating(props, current, draft, current.source&&attempt?.evaluation.status==='resolved'?attempt.evaluation.rating:rating);
             const identity = await current.runtime.session.reserve(applied);
             await current.group?.synchronize();
             if (await current.group?.status() === 'cloud-conflict')
                 throw Error('本组续学信息存在冲突，原答保留，尚未重复评分。');
-            await (current.course?.beforeFormal?.()??current.runtime.synchronize?.());
+            if(!live.current||binding.current!==props.bindingKey||activeDriver.current!==current)throw Error('来源已切换，原答案保留。');
+            await (current.beforeFormal?.()??current.course?.beforeFormal?.()??current.runtime.synchronize?.());
+            if(!live.current||binding.current!==props.bindingKey||activeDriver.current!==current)throw Error('来源已切换，原答案保留。');
+            await current.source?.beforeFormal();
+            if(!live.current||binding.current!==props.bindingKey||activeDriver.current!==current)throw Error('来源已切换，原答案保留。');
             const restoredCore = await current.verifiedCore();
+            if(!live.current||binding.current!==props.bindingKey||activeDriver.current!==current)throw Error('来源已切换，原答案保留。');
             if (restoredCore) {
                 await current.runtime.session.link(restoredCore);
                 await current.runtime.afterWrite();
@@ -408,7 +393,7 @@ export function NonWordStudyHost(props: HostProps) {
         setBusy(true);
         try {
             const parent = firstDriver.current?.runtime.session.snapshot(), instanceId = purpose === 'first' ? undefined : crypto.randomUUID();
-            const current = purpose === 'first' && firstDriver.current ? firstDriver.current : await props.createDriver(purpose, nextIntent, purpose !== 'first' && parent?.submitted ? parent.attemptId : undefined, instanceId,taskId);
+            const current = purpose === 'first' && firstDriver.current ? firstDriver.current : await createDriver(purpose, nextIntent, purpose !== 'first' && parent?.submitted ? parent.attemptId : undefined, instanceId,taskId);
             await persistView({ purpose, instanceId });
             const old = activeDriver.current;
             if (old)
@@ -435,6 +420,9 @@ export function NonWordStudyHost(props: HostProps) {
         setLessonStep(next === 'learn' ? 'reading' : 'independent');
     };
     const pluginGrade = useTrackedPluginGrade(grade, gradeTask);
+    const continueSourcePending=()=>continueHostPending(lifecycle,{current:()=>live.current&&binding.current===props.bindingKey,
+        live:()=>live.current,locked:()=>continuationLock.current||gradeLock.current,lock:value=>{continuationLock.current=value;},
+        busy:setBusy,error:setError,guided:()=>view.current.purpose==='guided'});
     return <HostView ready={Boolean(driver && readyKey === props.bindingKey)} busy={busy} paused={paused} intent={intent} lessonStep={lessonStep} purpose={driver?.runtime.purpose ?? 'first'} submitted={Boolean(driver?.runtime.session.snapshot()?.submitted)} temporary={props.temporary} status={status} elapsed={elapsed} error={error} retryContinue={retryContinue} retryGrade={Boolean(retryGrade)} generation={generation} question={driver?.course?.task.prompt??props.question} reference={driver?.course?.task.answer??props.reference} renderMath={props.renderMath} renderPlugin={props.renderPlugin} draft={draft} lifecycle={lifecycle} onGrade={pluginGrade} actions={{ chooseIntent: next => void chooseIntent(next).catch(reason => setError(String(reason))), pause: () => void flush().then(async () => { await persistView({ paused: !view.current.paused }); tick(); setPaused(view.current.paused); }).catch(reason => setError(String(reason))),
             retryContinue: () => {
                 const parent = firstDriver.current;
@@ -445,6 +433,10 @@ export function NonWordStudyHost(props: HostProps) {
                 if (pending)
                     void grade(pending.rating, pending.options).catch(() => { });
             },
+            continueSourcePending,
+            reviewSource:()=>void reviewHostSource(activeDriver.current,{current:()=>live.current&&binding.current===props.bindingKey,
+                locked:()=>gradeLock.current||continuationLock.current,lock:value=>{gradeLock.current=value;},
+                busy:setBusy,error:setError,flush,restore:next=>{values.current=next;setGeneration(value=>value+1);},refresh:refreshStatus}),
             beginGuided: () => void switchDriver('guided', 'learn').then(() => persistView({ lessonStep: 'guided', referenceSeen: true })).then(() => setLessonStep('guided')).catch(reason => setError(String(reason))),
             skipRemediation: () => void lifecycle.finishRemediation?.().catch(reason => setError(String(reason))), beginIndependent: () => void switchDriver('first', 'learn').then(() => persistView({ lessonStep: 'independent' })).then(() => setLessonStep('independent')).catch(reason => setError(String(reason))) }}/>;
 }

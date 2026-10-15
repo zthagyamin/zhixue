@@ -20,6 +20,7 @@ class RouteServices:
     accept_assistance_payload: Callable[..., Any]
     accept_study_event_v3: Callable[..., Any]
     ai_store: Callable[..., Any]
+    authenticate_session: Callable[..., Any]
     allowed_origin: Callable[..., Any]
     attach_state_handles: Callable[..., Any]
     call_deepseek: Callable[..., Any]
@@ -55,6 +56,7 @@ class RouteServices:
     vault_mapping_request: Callable[..., Any]
     with_connections: Callable[..., Any]
     read_state: Callable[[], dict[str, Any]]
+    local_chat_transport: Callable[..., Any] | None = None
 
     @property
     def STATE(self) -> dict[str, Any]:

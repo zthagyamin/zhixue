@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createAccountStudyHandlers} from '../app/account-study-api.ts';
+import {createStudyAIChat} from '../src/infrastructure/ai/chat.ts';
 
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
 const origin='https://study.example.test';
@@ -52,4 +53,23 @@ test('failed failure-persistence closes with an error and never emits a durable 
   const f=fixture({store:{complete:async()=>{throw Error('store unavailable');},fail:async()=>{failures++;throw Error('store unavailable');}}});
   const response=await f.run(),body=await response.text();
   assert.equal(response.status,200);assert.match(body,/"type":"error"/);assert.doesNotMatch(body,/"type":"done"/);assert.equal(failures,1);
+});
+
+test('actual account response preserves partial text and emits error without waiting for provider cancel acknowledgment',async()=>{
+  const entered=deferred(),acknowledgment=deferred(),f=fixture();let watchdog,cancelCount=0;
+  const stream=new ReadableStream({start(controller){controller.enqueue(new TextEncoder().encode(
+    'data: {"choices":[{"delta":{"content":"saved partial"}}]}\n\ndata: {invalid}\n\n'));},
+    cancel(){cancelCount++;entered.resolve();return acknowledgment.promise;}});
+  f.dependencies.getChatAi=async()=>createStudyAIChat({key:'synthetic-key',model:'synthetic-chat',
+    fetcher:async()=>new Response(stream)});
+  const response=await f.run(),text=response.text();void text.catch(()=>{});
+  try{
+    await entered.promise;
+    const body=await Promise.race([text,new Promise((_,reject)=>{
+      watchdog=setTimeout(()=>reject(Error('provider-cancel-retained-account-response')),500);
+    })]);
+    assert.match(body,/saved partial/);assert.match(body,/"type":"error"/);assert.doesNotMatch(body,/"type":"done"/);
+    assert.equal(f.trace.filter(value=>value==='fail').length,1);assert.equal(f.trace.includes('complete'),false);
+    assert.equal(cancelCount,1);assert.equal(stream.locked,false);
+  }finally{clearTimeout(watchdog);acknowledgment.resolve();await text.catch(()=>{});}
 });

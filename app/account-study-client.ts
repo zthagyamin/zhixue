@@ -16,6 +16,10 @@ import {createAccountReadCache} from './account-study-read-cache.ts';
 import {readAccountPages} from './account-study-paging.ts';
 // @ts-expect-error TS5097: Node contract tests execute explicit TypeScript extensions.
 import {parseReadContentDecision} from './account-study-read-model.ts';
+// @ts-expect-error TS5097: standalone Node source contracts.
+import {parseAccountSyncStatus} from '../src/domain/sources/index.ts';
+// @ts-expect-error TS5097: standalone Node source contracts.
+import {requestCompanion} from '../src/infrastructure/sources/index.ts';
 
 type Fetcher=typeof fetch;type Prepared={grantId:string;libraryId:string;tokenHash:string;label:string};
 export type AccountStudyLoaded={bundle:StudyBundle;bundles:StudyBundle[];catalog:CloudPlanningCatalogV1;catalogs:CloudPlanningCatalogV1[];facts:CloudPlanningFactsV1;records:{sequence:number;record:StudyRecordEnvelope}[];writebacks:unknown[];eventThrough:number;taskThrough:number};
@@ -27,7 +31,15 @@ async function payload(response:Response):Promise<Record<string,unknown>>{let va
 let clientIdentity=0;
 export function createAccountStudyClient(options:{companionUrl:string;sessionToken?:string;fetcher?:Fetcher;expectedUserId?:string;libraryId?:string;cache?:AccountReadCache|null}){
   const fetcher=options.fetcher??fetch,localHeaders={'Content-Type':'application/json',...(options.sessionToken?{'X-Study-Loop-Session':options.sessionToken}:{})};
-  const local=async(action:string,body?:unknown,method='POST')=>{if(!options.sessionToken)throw new Error('companion-pairing-required');return payload(await fetcher(`${options.companionUrl}/v1/account-sync/${action}`,{method,headers:localHeaders,...(body===undefined?{}:{body:JSON.stringify(body)})}));};
+  const local=async(action:string,body?:unknown,method='POST',signal?:AbortSignal)=>{
+    if(!options.sessionToken)throw new Error('companion-pairing-required');
+    const response=await fetcher(`${options.companionUrl}/v1/account-sync/${action}`,{method,headers:localHeaders,signal,...(body===undefined?{}:{body:JSON.stringify(body)})});
+    if(response.status===401)throw new Error('companion-pairing-required');
+    try{return await payload(response);}catch(error){
+      if(response.status===403&&error instanceof Error&&error.message==='account-request-failed')throw new Error('companion-origin-not-allowed');
+      throw error;
+    }
+  };
   const expectedOwner:Record<string,string>=options.expectedUserId===undefined?{}:{expectedUserId:options.expectedUserId};
   if(options.expectedUserId!==undefined)studyId(options.expectedUserId,'expected-user');if(options.libraryId!==undefined)studyId(options.libraryId,'library');
   let model:AccountReadModel|null=null,libraryId=options.libraryId,lifecycle=0;
@@ -37,7 +49,12 @@ export function createAccountStudyClient(options:{companionUrl:string;sessionTok
   const cloudGet=async(action:string,query:Record<string,string|number>={},signal?:AbortSignal)=>{const params=new URLSearchParams({action,...(libraryId&&action!=='bootstrap'?{libraryId}:{}),...Object.fromEntries(Object.entries(query).map(([k,v])=>[k,String(v)])),...expectedOwner});return payload(await fetcher(`/api/account-study?${params}`,{cache:'no-store',credentials:'same-origin',signal}));};
   const cloudPost=async(action:string,body:Record<string,unknown>={},signal?:AbortSignal)=>payload(await fetcher('/api/account-study',{method:'POST',credentials:'same-origin',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...(libraryId&&action!=='register-grant'?{libraryId}:{}),...body,...expectedOwner})}));
   return {
-    localStatus:()=>local('status',undefined,'GET'),
+    async localStatus(){
+      const requested=lifecycle,currentLibrary=libraryId;
+      const value=await requestCompanion(new AbortController().signal,10000,signal=>local('status',undefined,'GET',signal));
+      if(requested!==lifecycle||currentLibrary!==libraryId)throw new DOMException('Study library or cache changed','AbortError');
+      return parseAccountSyncStatus(value,currentLibrary);
+    },
     async prepare(label:string,choice:{replaceLibrary?:boolean;rotateGrant?:boolean}={}):Promise<Prepared>{
       const requested=lifecycle;
       const prepared=await local('prepare',{label,...(choice.rotateGrant?{rotateGrant:true}:{})}) as unknown as Prepared,bootstrap=await cloudGet('bootstrap'),profile=bootstrap.profile as {libraryId?:string|null;revision:number};

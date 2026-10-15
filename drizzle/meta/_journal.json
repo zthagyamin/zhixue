@@ -176,6 +176,13 @@
       "when": 1791417600000,
       "tag": "0024_math_variant_mappings_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1791445200000,
+      "tag": "0025_paper_reading_workspaces_v1",
+      "breakpoints": true
     }
   ]
 }

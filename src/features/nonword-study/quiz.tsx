@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState, type Dispatch, type SetStateAction, type RefObject, type ReactNode } from 'react';
 import type { NonWordLearningPort } from '../../application/nonword-study';
-import { quizMaterial, transitionQuiz, type NonWordQuizState, type QuizMaterial } from '../../domain/content';
+import { quizMaterial, transitionQuiz, evaluateSelection, type NonWordQuizState, type QuizMaterial } from '../../domain/content';
 import { LearningText, LearningFeedback } from './text';
 type Data = {
     prompt: string;
@@ -84,7 +84,12 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
             setError(reason instanceof Error ? reason.message : '结果尚未可靠保存。');
         }
     };
-    const feedback = retry ? state.retry : state.first?.result;
+    const savedFeedback = retry ? state.retry : state.first?.result;
+    const checkedFeedback = savedFeedback ? evaluateSelection(material, retry ? state.selection : state.first!.selection) : null;
+    const referenceConflict=Boolean(savedFeedback&&checkedFeedback&&savedFeedback.status!==checkedFeedback.status);
+    // Recover option detail from the bound original source, never checkpoint result arrays.
+    // The stored first outcome remains the only rating intent.
+    const feedback=referenceConflict?savedFeedback:checkedFeedback;
     const labels = (ids: string[]) => ids.map(id => material.options.find(option => option.id === id)?.text ?? id).join('；') || '无';
     const firstCorrect = state.first?.result.status === 'correct';
     return <div ref={rootRef} data-study-shortcuts data-study-activity="quiz" className="study-activity study-quiz nonword-study">
@@ -98,8 +103,8 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
     {!feedback && <button type="button" className="study-primary-action" disabled={busy || !state.selection.length} onClick={() => void submit()}>{busy ? '正在保存…' : retry ? '核对这次补练' : '提交答案'}</button>}
     {feedback && <section aria-label="作答反馈" className="nonword-feedback">
       <h3>{feedback.status === 'correct' ? '回答正确' : feedback.status === 'partial' ? '部分正确' : '这次需要复习'}</h3>
-      {feedback.status !== 'correct' && <p>错选：{labels(feedback.wrong)}<br />漏选：{labels(feedback.missing)}</p>}
-      {material.options.filter(option => feedback.wrong.includes(option.id) && option.explanation).map(option => <LearningFeedback key={option.id} text={option.explanation!} renderMath={renderMath} fullLabel="查看完整选项解释"/>)}
+      {referenceConflict?<p role="status">当前参考与已保存结果不一致，原结果保留，请核对原题。</p>:feedback.status !== 'correct' && <p>错选：{labels(feedback.wrong)}<br />漏选：{labels(feedback.missing)}</p>}
+      {!referenceConflict&&material.options.filter(option => feedback.wrong.includes(option.id) && option.explanation).map(option => <LearningFeedback key={option.id} text={option.explanation!} renderMath={renderMath} fullLabel="查看完整选项解释"/>)}
       {data.explanation && <LearningFeedback text={data.explanation} renderMath={renderMath}/>}
       <details><summary>完整参考答案</summary><LearningText text={labels(material.correctIds)} renderMath={renderMath}/></details>
       {retry && <p role="status">本次是辅助补练；首轮{firstCorrect ? '通过' : '仍需复习'}，原结果保持不变。</p>}

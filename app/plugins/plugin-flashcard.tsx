@@ -69,7 +69,13 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
         await lifecycle.assess({status:rating==='again'?'incorrect':rating==='hard'?'partial':'correct',source:'self-assess',rating,
           explanation:`用户主动自评为${{again:'忘记',hard:'困难',good:'良好',easy:'极易'}[rating]}。`});
         if(!current())return;
-        if(lifecycle.purpose==='first')await onGrade(rating,{deferAdvance:true});
+        setFlashcardRating(lifecycle.firstSelfRating??rating);
+        if(lifecycle.sourcePending){setSubmitted(false);return;}
+        if(lifecycle.purpose==='first'){
+          await onGrade(lifecycle.firstSelfRating??rating,{deferAdvance:true});if(!current())return;
+          if(lifecycle.sourcePending){setSubmitted(false);return;}
+          if(!context?.draft?.hasSavedFeedback?.())throw Error('正式自评尚未取得持久回执，所选评级已保留，请重试保存。');
+        }
         if(current())setSubmitted(true);
       }catch(reason){if(current())setFlowError(reason instanceof Error?reason.message:'自评尚未保存，卡片与所选评级已保留。');}
       finally{actionLock.current=false;if(current())setSaving(false);}
@@ -79,11 +85,18 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
       if(!lifecycle?.ready||saving||actionLock.current||consumed.current||context?.draft?.isPending?.())return;
       actionLock.current=true;setFlowError('');
       try{
+        if(lifecycle.sourcePending){setSubmitted(false);return;}
         if(lifecycle.purpose==='remediation'){
           if(!lifecycle.finishRemediation)throw Error('当前入口尚未提供补练结束回执，自评结果已保留。');
           await lifecycle.finishRemediation();consumed.current=true;
         }else if(context?.draft?.hasSavedFeedback?.())consumed.current=context.draft.continueAfterFeedback?.()===true;
-        else if(lifecycle.purpose==='first'&&submitted&&flashcardRating){await onGrade(flashcardRating,{deferAdvance:false});if(live.current)consumed.current=true;}
+        else if(lifecycle.purpose==='first'&&submitted&&flashcardRating){
+          await onGrade(flashcardRating,{deferAdvance:true});
+          if(!live.current)return;
+          if(lifecycle.sourcePending){setSubmitted(false);return;}
+          if(!context?.draft?.hasSavedFeedback?.())throw Error('正式自评尚未取得持久回执，所选评级已保留，请重试保存。');
+          consumed.current=context.draft.continueAfterFeedback?.()===true;
+        }
       }catch(reason){if(live.current)setFlowError(reason instanceof Error?reason.message:'继续前的保存尚未完成。');}
       finally{actionLock.current=false;}
     };
@@ -189,6 +202,7 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
         {flowError&&<p role="alert">{flowError}</p>}
         {lifecycle&&flashcardRating&&showAnswer&&<section className="nonword-feedback mt-6 w-full" aria-label="闪卡自评反馈">
           <p>{flashcardRating==='again'?'自评：忘记，首轮需要复习。':flashcardRating==='hard'?'自评：困难，仍需巩固。':`自评：${flashcardRating==='good'?'良好':'极易'}。`}</p>
+          {lifecycle.sourcePending&&<p role="status">本次自评和所选评级已保留；来源仍待核对，尚未保存正式成绩。</p>}
           {flashcardRating==='again'&&<p>先对照背面的关键解释，再选择继续或独立重试。</p>}
           {saving?<p role="status">正在保存自评…</p>:!submitted&&!context?.draft?.hasSavedFeedback?.()?<button type="button" className="study-secondary-action" disabled={context?.draft?.isPending?.()} onClick={()=>handleNonWordGrade(flashcardRating)}>重试保存自评</button>:
             lifecycle.purpose==='guided'?<p role="status">引导自评已保存；请收起讲解后进入独立尝试。</p>:

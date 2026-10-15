@@ -14,6 +14,8 @@ export const SCENARIOS = Object.freeze([
   {id: 'guided-maths', questionType: 'calculation', title: '基线 · 数学：展开后求值'},
   {id: 'nonvocab-flashcard', questionType: 'flashcard', title: '基线 · 非词汇卡：数据泄漏'},
 ].map(Object.freeze));
+const CODE_SCENARIO=Object.freeze({id:'code-basic',questionType:'code',title:'基线 · 编程：两数相加'});
+const availableScenario=id=>[...SCENARIOS,CODE_SCENARIO].find(row=>row.id===id);
 
 function portValue(value) {
   const port = Number(value);
@@ -21,7 +23,7 @@ function portValue(value) {
   return port;
 }
 export function scenarioLinks(port, scenario = 'all') {
-  const selected = scenario === 'all' ? SCENARIOS : SCENARIOS.filter(row => row.id === scenario);
+  const selected = scenario === 'all' ? SCENARIOS : [availableScenario(scenario)].filter(Boolean);
   if (!selected.length) throw Error('Unknown nonword scenario');
   const first = portValue(port);
   if (first + selected.length - 1 > 65535) throw Error('Invalid fixture port range');
@@ -65,6 +67,13 @@ function scenarioBody(row) {
     title: row.title, sourceHash, completionRule: 'graded-practice'};
   const practice = {itemId: itemKey, abilityId: itemKey, domain: row.id === 'paper-recall' ? 'paper' : 'course',
     questionType: row.questionType, sourceLabel: '隔离合成材料 · 非真实学习资料'};
+  if(row.id==='code-basic')return {...common,eventKind:'python',practice:{...practice,domain:'python',
+    prompt:'实现 add(a, b)，返回两个整数之和。样例：add(1, 2) == 3。',
+    initialCode:'def add(a, b):\n    return a - b',testCode:'',solutionCode:'def add(a, b):\n    return a + b',
+    explanation:'用 return a + b 返回两个参数之和。'},learningSupport:{schemaVersion:1,type:'code',functionNames:['add'],cases:[
+      {id:'positive',functionName:'add',args:[1,2],expected:3,hint:'检查是否把第二个参数也加进了返回值。'},
+      {id:'negative',functionName:'add',args:[-1,2],expected:1,hint:'两数相加同样适用于负数。'},
+    ]}};
   if (row.id === 'quiz-multiple') return {...common, practice: {...practice,
     prompt: '这段合成实验报告说：控制其他训练条件后，加入 dropout 的验证误差降低。请选择报告支持的全部判断。',
     explanation: 'A 是报告观察；B 保留了实验条件。C 把单次观察扩展成所有数据与所有模型的保证，超出了材料。'},
@@ -94,20 +103,22 @@ function scenarioBody(row) {
     learningSupport: {schemaVersion: 1, type: 'flashcard', mode: 'bidirectional', direction: 'forward', parentId: 'synthetic-concept-parent'}};
 }
 
-export async function createNonwordAccount({repo, origin, scenario, day = '2026-10-05'}) {
+export async function createNonwordAccount({repo, origin, scenario, day = '2026-10-05', materialBody,stage3=false,ownerTag,libraryId='library-a'}) {
   const url = new URL(origin);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1') throw Error('Fixture requires http loopback');
   portValue(url.port);
-  const row = SCENARIOS.find(entry => entry.id === scenario);
+  const row = availableScenario(scenario);
   if (!row) throw Error('Unknown nonword scenario');
-  const [{createAccountPreview}, {createAccountStudyClient}, {sealStudyItem, sealStudySnapshot},
+  const [{createAccountPreview}, {createAccountStudyClient}, {sealStudyItem, sealStudySnapshot,studyId},
     {snapshotBody}, planning, {generateTaskPlan}, {editTaskPlan}] = await Promise.all([
     moduleAt(repo, 'tests/fixtures/account-preview.mjs'), moduleAt(repo, 'app/account-study-client.ts'),
     moduleAt(repo, 'app/account-study-content.ts'), moduleAt(repo, 'tests/fixtures/account-study-fixtures.mjs'),
     moduleAt(repo, 'app/account-study-planning.ts'), moduleAt(repo, 'app/task-plan-engine.ts'), moduleAt(repo, 'app/task-plan-edit.ts'),
   ]);
-  const userId = createHash('sha256').update(`synthetic-nonword:${scenario}`).digest('hex');
-  const account = await createAccountPreview({origin, userId, day, scenario: 'account-writeback'});
+  studyId(libraryId,'library');
+  if(ownerTag!==undefined&&(typeof ownerTag!=='string'||! /^[A-Za-z0-9_-]{1,64}$/.test(ownerTag)))throw Error('Invalid synthetic owner tag');
+  const userId = createHash('sha256').update(`synthetic-nonword:${scenario}`+(ownerTag===undefined?'':':'+ownerTag)).digest('hex');
+  const account = await createAccountPreview({origin, userId, day, scenario: 'account-writeback',stage3});
   const token = randomBytes(32).toString('base64url');
   async function post(action, body = {}, machine = true) {
     const response = await account.handle(new Request(origin + '/api/account-study', {method: 'POST',
@@ -118,11 +129,11 @@ export async function createNonwordAccount({repo, origin, scenario, day = '2026-
     return value;
   }
   try {
-    await account.registerDevice({grantId: 'synthetic-nonword-grant', libraryId: 'library-a',
+    await account.registerDevice({grantId: 'synthetic-nonword-grant', libraryId,
       tokenHash: createHash('sha256').update(token).digest('hex'), label: 'Synthetic nonword QA'});
     await post('activate-grant');
-    const item = await sealStudyItem(scenarioBody(row)), items = [item];
-    const snapshot = await sealStudySnapshot(snapshotBody(items, {snapshotId: `synthetic-${scenario}`,
+    const item = await sealStudyItem(materialBody??scenarioBody(row)), items = [item];
+    const snapshot = await sealStudySnapshot(snapshotBody(items, {libraryId,snapshotId: `synthetic-${scenario}`,
       sourceHash: item.sourceHash, generatedAt: `${day}T00:00:00.000Z`}));
     await post('begin-snapshot', {snapshot});
     await post('stage-items', {snapshotId: snapshot.snapshotId, entries: [{position: 0, item}]});
@@ -133,7 +144,7 @@ export async function createNonwordAccount({repo, origin, scenario, day = '2026-
         sourceHash: item.sourceHash, completionRule: item.completionRule}]};
     const {catalog} = await planning.toCloudPlanningCatalog(native, {snapshot, items});
     await post('publish-planning-catalog', {catalog});
-    const facts = await planning.sealCloudPlanningFacts({schemaVersion: 1, libraryId: 'library-a',
+    const facts = await planning.sealCloudPlanningFacts({schemaVersion: 1, libraryId,
       snapshotId: snapshot.snapshotId, catalogHash: catalog.catalogHash, observedAt: `${day}T00:00:00.000Z`,
       nativePlanRevision: 0, sourceReviews: [], captureReviews: [], legacyEvents: [], legacyTaskEvents: [],
       contentCandidates: [], historyComplete: true});
@@ -160,13 +171,23 @@ export async function createNonwordAccount({repo, origin, scenario, day = '2026-
         const key = record.provenanceMode === 'task' ? 'task:unrated' : `${record.practiceMode}:${record.event.attempt.rating}`;
         recordCounts[key] = (recordCounts[key] ?? 0) + 1;
       }
-      return {scope: 'synthetic-in-memory-only', scenario, baselineSha: BASELINE_SHA, userId, libraryId: 'library-a', day,
+      return {scope: 'synthetic-in-memory-only', scenario, ...(materialBody?{customMaterial:true}:{}), baselineSha: BASELINE_SHA, userId, libraryId, day,
         counts: {items: loaded.bundle.items.length, tasks: state.approvedPlan.tasks.length, records: inspect.records,
           assistance: inspect.assistance, assistanceReceipts: inspect.assistanceReceipts,
           aiRequests: inspect.aiRequests.reduce((sum, value) => sum + value.count, 0)},
         recordCounts, externalModels: 'blocked', realNotes: 'blocked', browserAcceptance: 'unrun'};
     };
-    return {...account, client, status};
+    let materialRevision=1;
+    const reviseMaterial=async body=>{
+      if(account.inspect().records!==0)throw Error('Synthetic revision requires empty formal history');
+      const state=await client.getPlanState(day);
+      const {publishNonwordRevision}=await import('./nonword-material-revision.mjs');
+      const result=await publishNonwordRevision({post,libraryId,day,scenario,title:row.title,body,
+        revision:materialRevision+1,planRevision:state.revision,predecessorOperationId:state.approvedOperationId,
+        modules:{sealStudyItem,sealStudySnapshot,snapshotBody,planning,generateTaskPlan,editTaskPlan}});
+      materialRevision=result.snapshot.revision;return result;
+    };
+    return {...account, client, status,reviseMaterial};
   } catch (error) { account.close(); throw error; }
 }
 

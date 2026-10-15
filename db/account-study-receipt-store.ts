@@ -9,6 +9,8 @@ import {parseStudyRecord} from '../app/account-study-record.ts';
 import {studyObject,studyId,studyCount,studyHash} from '../app/account-study-content.ts';
 // @ts-expect-error TS5097: Node tests use explicit TypeScript extensions.
 import {canonicalizeJson} from '../app/study-event-v3.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../src/infrastructure/account-study-writer/index.ts';
 
 type ReceiptRow={sequence:number;user_id:string;library_id:string;receipt_id:string;event_id:string;envelope_hash:string;status:string;
   payload_hash:string;payload_json:string;writer_grant_id:string;received_at:string};
@@ -45,6 +47,7 @@ export class AccountStudyReceiptStore {
     return row?this.wire(scope,row):null;
   }
   async append(scope:StudyScope,raw:unknown,writerGrantId:string):Promise<AppendResult> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     args(scope);const receipt=parseWritebackReceipt(raw),now=this.clock().toISOString();
     if(!await this.writer(scope,writerGrantId,now)) throw new Error('study-writer-required');
     const parent=await this.parent(scope,receipt.eventId);
@@ -54,9 +57,11 @@ export class AccountStudyReceiptStore {
     if(existing){const stored=await this.wire(scope,existing);return existing.payload_hash===hash?{status:'duplicate',receipt:stored}:{status:'conflict',current:stored};}
     const before=await this.latest(scope,receipt.eventId);
     if(before?.receipt.status==='applied'&&receipt.status!=='applied') return {status:'conflict',current:before};
-    const inserted=await this.q("INSERT INTO account_study_writeback_receipts(user_id,library_id,receipt_id,event_id,envelope_hash,status,payload_hash,payload_json,writer_grant_id,received_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM account_study_grants WHERE user_id=? AND library_id=? AND grant_id=? AND state='active' AND expires_at>?) AND (?='applied' OR NOT EXISTS (SELECT 1 FROM account_study_writeback_receipts WHERE user_id=? AND library_id=? AND event_id=? AND status='applied')) ON CONFLICT DO NOTHING RETURNING sequence",
+    const writer=studyWriterCondition(scope,writerGrantId);
+    const inserted=await this.q(`INSERT INTO account_study_writeback_receipts(user_id,library_id,receipt_id,event_id,envelope_hash,status,payload_hash,payload_json,writer_grant_id,received_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${writer.sql} AND (?='applied' OR NOT EXISTS (SELECT 1 FROM account_study_writeback_receipts WHERE user_id=? AND library_id=? AND event_id=? AND status='applied')) ON CONFLICT DO NOTHING RETURNING sequence`,
       ...args(scope),receipt.receiptId,receipt.eventId,receipt.envelopeHash,receipt.status,hash,canonicalizeJson(receipt),writerGrantId,now,
-      ...args(scope),writerGrantId,now,receipt.status,...args(scope),receipt.eventId).all<{sequence:number}>();
+      ...writer.bindings,receipt.status,...args(scope),receipt.eventId).all<{sequence:number}>();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const saved=await this.q('SELECT * FROM account_study_writeback_receipts WHERE user_id=? AND library_id=? AND receipt_id=?',...args(scope),receipt.receiptId).first<ReceiptRow>();
     if(saved){const stored=await this.wire(scope,saved);if(saved.payload_hash!==hash) return {status:'conflict',current:stored};
       return {status:inserted.results.length?'accepted':'duplicate',receipt:stored};}

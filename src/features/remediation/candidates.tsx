@@ -1,11 +1,11 @@
 'use client';
 import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {createTemporaryDraft,type TemporaryDraft} from '../../application/temporary-practice';
-import {approveCandidates,candidateDocument,sourceFingerprint,type CandidateRow,type CandidateSource} from '../../domain/practice-candidates';
+import {approveCandidates,candidateDocument,sourceFingerprint,type CandidateArtifact,type CandidateRow,type CandidateSource} from '../../domain/practice-candidates';
 import {TemporaryDialog,type LeaveGuardPort} from './dialog';
 import type {TemporaryFactory} from './source-review';
 
-type Props={source:Omit<CandidateSource,'version'>&{version?:string};seeds:CandidateRow[];scope:string;createDraft?:TemporaryFactory;isCurrent?:()=>boolean;registerGuard?:LeaveGuardPort;download:(name:string,content:string)=>void;label:string;defaultFragmentId?:string};
+type Props={source:Omit<CandidateSource,'version'>&{version?:string};seeds:CandidateRow[];scope:string;createDraft?:TemporaryFactory;isCurrent?:()=>boolean;registerGuard?:LeaveGuardPort;download:(name:string,content:string)=>void;label:string;defaultFragmentId?:string;serialize?:(artifact:CandidateArtifact)=>Promise<string>};
 type Session={source:CandidateSource;seeds:CandidateRow[];draft:TemporaryDraft};
 export function CandidateLauncher(props:Props){
     const [session,setSession]=useState<Session|null>(null),[notice,setNotice]=useState(''),[preparing,setPreparing]=useState(false);
@@ -39,10 +39,10 @@ export function CandidateLauncher(props:Props){
         <button type="button" className="study-secondary-action" disabled={!props.seeds.length||preparing} onClick={()=>void open()}>{preparing?'正在准备候选…':props.label}</button>
         {!props.seeds.length&&<p className="study-meta">{props.source.kind==='paper'?'请先在主线自检中标记“还说不清”的项目。':'按原段落生成 2–6 项候选；更多段落请先人工整理，不会自动扩增任务。'}</p>}
         {notice&&<p role="status">{notice}</p>}
-        {session&&<CandidateEditor {...session} download={props.download} registerGuard={props.registerGuard} onClose={()=>setSession(null)}/>}
+        {session&&<CandidateEditor {...session} download={props.download} serialize={props.serialize} registerGuard={props.registerGuard} onClose={()=>setSession(null)}/>}
     </section>;
 }
-function CandidateEditor({source,seeds,draft,download,registerGuard,onClose}:Session&{download:Props['download'];registerGuard?:LeaveGuardPort;onClose:()=>void}){
+function CandidateEditor({source,seeds,draft,download,serialize,registerGuard,onClose}:Session&{download:Props['download'];serialize?:Props['serialize'];registerGuard?:LeaveGuardPort;onClose:()=>void}){
     useSyncExternalStore(draft.subscribe,draft.getSnapshot,()=>0);
     const [reviewed,setReviewed]=useState(false),[workload,setWorkload]=useState(false),[message,setMessage]=useState(''),[exported,setExported]=useState(false),[busy,setBusy]=useState(false);
     const locked=useRef(false);
@@ -56,9 +56,10 @@ function CandidateEditor({source,seeds,draft,download,registerGuard,onClose}:Ses
         if(locked.current||!draft.isActive())return;locked.current=true;setBusy(true);draft.setBusy(true);setMessage('');
         try{
             const artifact=approveCandidates(source,selected,{reviewed,workload,currentVersion:source.version});
-            const identity=await sourceFingerprint(artifact);
+            const document=serialize?await serialize(artifact):candidateDocument(artifact);
+            const identity=await sourceFingerprint(JSON.parse(document));
             if(!draft.isActive())return;
-            download(`知学复测候选-${identity.slice(0,12)}.zhixue-candidates.json`,candidateDocument(artifact));
+            download(`知学复测候选-${identity.slice(0,12)}.zhixue-candidates.json`,document);
             draft.acknowledge();setExported(true);setMessage('已准备无损候选文件。请用支持此格式的新版 Companion 在“单个学习文件”中预览、确认导入，再确认计划。旧版不支持时请先更新，不要改名当普通文本导入；目前尚未新增题库、成绩或排程。');
         }catch(error){
             const code=error instanceof Error?error.message:'';

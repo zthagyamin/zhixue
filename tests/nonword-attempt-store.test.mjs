@@ -3,6 +3,7 @@ import test from 'node:test';
 import {indexedDB,IDBKeyRange} from 'fake-indexeddb';
 globalThis.indexedDB=indexedDB;globalThis.IDBKeyRange=IDBKeyRange;
 import {openD1} from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import {AccountStudyStore} from '../db/account-study-store.ts';
 import {sealStudyItem,sealStudySnapshot} from '../app/account-study-content.ts';
 import {prepareAccountStudyRecord} from '../app/account-study-record-client.ts';
@@ -29,6 +30,13 @@ async function graded(f,attemptId='attempt-one') {
   evaluation.evaluationHash=await evaluationFingerprint(evaluation);
   return (await f.store.mutate(scope,{...f.base,attemptId,operationId:'evaluate',kind:'evaluate',expectedRevision:row.revision,answerRevision:row.answerRevision,evaluation})).attempt;
 }
+
+for(const change of ['revoke','expire','replace-library'])test(`attempt draft does not persist when device qualification changes at commit: ${change}`,async t=>{
+ const f=await setup(t),writer=await activateSyntheticWriter(f.binding,scope),before=f.sqlite.prepare('SELECT * FROM learning_attempts_v1').all();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,scope,writer,change,'learning_attempts_v1');
+ await assert.rejects(f.store.mutate(scope,f.checkpoint,writer.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(f.sqlite.prepare('SELECT * FROM learning_attempts_v1').all(),before);
+});
 test('two devices have CAS conflict, receipt recovery, owner isolation and exact source registration',async t=>{
   const f=await setup(t),two=new D1LearningAttemptStore(f.binding);
   const [a,b]=await Promise.all([f.store.mutate(scope,f.checkpoint),two.mutate(scope,{...f.checkpoint,operationId:'device-two',answer:'Other'})]);

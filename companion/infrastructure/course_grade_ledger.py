@@ -12,6 +12,7 @@ from pathlib import Path
 from account_sync_schema import canonical_json, study_digest, study_hash
 from native_course_schema import logical_attempt_body, make_receipt, parse_grade_request
 from course_study_domain import parse_course_diagnostic, parse_course_evaluation_trace
+from infrastructure.shared_ai_budget import reservation_totals
 
 SCHEMA = (
     '''CREATE TABLE IF NOT EXISTS native_course_attempts (
@@ -222,26 +223,7 @@ class CourseGradeLedger:
             row = self._attempt(db, request['attemptId'])
             if row is None or row[2] != 'inflight' or row[3] != request['requestId']:
                 raise ValueError('native-course-reservation-conflict')
-            count, tokens = db.execute('''SELECT count(*),COALESCE(sum(reserved),0)
-                FROM native_course_requests WHERE owner=? AND budget_day=? AND reserved>0''',
-                                       (self.owner, day)).fetchone()
-            active = db.execute('''SELECT count(*) FROM native_course_requests r
-                JOIN native_course_attempts a ON a.owner=r.owner AND a.library=r.library
-                AND a.root=r.root AND a.active_request=r.request_id
-                WHERE r.owner=? AND r.reserved>0 AND r.state='inflight' AND a.started>=?''',
-                                (self.owner, self.clock() - self.lease_seconds)).fetchone()[0]
-            # Additive math authority shares the same authenticated-owner limits.
-            # Older databases have no math table and retain the original behavior.
-            math_table = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='native_math_budget'").fetchone()
-            if math_table:
-                math_count, math_tokens = db.execute(
-                    'SELECT count(*),COALESCE(sum(reserved),0) FROM native_math_budget WHERE owner=? AND day=?',
-                    (self.owner, day)).fetchone()
-                count += math_count
-                tokens += math_tokens
-                active += db.execute(
-                    "SELECT count(*) FROM native_math_budget WHERE owner=? AND state='inflight' AND started>=?",
-                    (self.owner, self.clock() - self.lease_seconds)).fetchone()[0]
+            count, tokens, active = reservation_totals(db,self.owner,day,self.clock()-self.lease_seconds)
             if count >= limits['dailyRequestLimit'] or tokens + reservation > limits['dailyTokenLimit']:
                 raise ValueError('native-course-daily-budget')
             if active >= limits['concurrentLimit']:

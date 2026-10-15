@@ -30,6 +30,10 @@ class CompanionSyncTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.vault = Path(self.temp_dir.name)
         self.original_config = dict(server.CONFIG)
+        self.original_state = server.STATE
+        server.STATE = {'contentMode': 'personal', 'source': {'title': 'Synthetic fixture'},
+                        'subjects': [{'id': 'synthetic-vocabulary', 'pluginType': 'three-stage', 'domain': 'ielts',
+                                      'items': [{'word': 'syntheticvariant', 'meaning': '测试词义'}]}]}
         self.original_database_path = server.LOCAL_DATABASE_PATH
         self.original_pairing_code = server.PAIRING_CODE
         self.original_pairing_failures = server.PAIRING_FAILURES
@@ -71,6 +75,7 @@ next_action: 定向复测
         self.ai_network_guard.stop()
         server.CONFIG.clear()
         server.CONFIG.update(self.original_config)
+        server.STATE = self.original_state
         server.LOCAL_DATABASE_PATH = self.original_database_path
         server.PAIRING_CODE = self.original_pairing_code
         server.PAIRING_FAILURES = self.original_pairing_failures
@@ -331,7 +336,11 @@ next_action: 定向复测
         subject = payload["subjects"][0]
         self.assertEqual(subject["domain"], "paper")
         self.assertEqual(subject["pluginType"], "recall")
-        self.assertEqual(subject["items"][0]["abilityId"], "paper:residual")
+        # Model content is usable, but its claimed ability is not source authority.
+        self.assertNotIn('abilityId', subject['items'][0])
+        self.assertTrue(subject['items'][0]['itemId'].startswith('generated:'))
+        self.assertFalse(subject['items'][0]['allowLegacyAliases'])
+        self.assertEqual(subject['items'][0]['prompt'], '解释残差连接')
         self.assertEqual(subject["items"][1]["pluginType"], "calculation")
         self.assertEqual(subject["items"][1]["answer"], 14)
 
@@ -341,7 +350,7 @@ next_action: 定向复测
                 server.save_deepseek_key("sk-test-key-long-enough", "owner-hash")
 
 
-    def make_v3_activity(self, event_id: str, rating: str = "good", state_ref: str | None = None, ability_id: str | None = None, item_key: str = "word-1") -> dict:
+    def make_v3_activity(self, event_id: str, rating: str = "good", state_ref: str | None = None, ability_id: str | None = None, item_key: str = "word:syntheticvariant") -> dict:
         event = {
             "schemaVersion": 3,
             "eventId": event_id,
@@ -365,6 +374,42 @@ next_action: 定向复测
         if ability_id:
             local_context["abilityId"] = ability_id
         return {"event": event, "localContext": local_context}
+
+    def confirmed_result_card_activity(self, event_id, rating='again', item_key='practice:normalization'):
+        """Real local source/capture/answer/claim, with a synthetic authenticated owner.
+
+        The queue/projection regressions keep their original assertions, but no
+        longer claim that a bare result-card ID is sufficient source evidence.
+        """
+        from infrastructure.nonword_source_adapter import create_source_admission, _approved_entries
+        from infrastructure.nonword_source_resolver import exercise_presentation
+        owner = 'account-001'
+        self.write('n.md', '# Synthetic normalization source\nNormalization stabilizes scale.\n')
+        self.write('01 学习/专项课程/Test/检测与错题/第01讲 掌握检测.md',
+                   '# Synthetic assessment\n## A. Definition\n'
+                   '1. 归一化作用是哪一种？\n> 1: 稳定尺度\n')
+        item = next(item for item, _, _ in _approved_entries(server.route_services(), self.vault)
+                    if item.get('itemId') == 'normalization')
+        with mock.patch.object(server, 'installation_owner_hash', return_value=owner):
+            store = create_source_admission(server.route_services(), owner)
+            capture = store.capture({'itemKey': item_key, 'sourceItemKey': 'practice:' + item['itemId'],
+                                     'contentHash': 'a' * 64, 'presentation': exercise_presentation(item)})
+            self.assertEqual(capture['status'], 'confirmed')
+            store.submit({'attemptId': event_id + ':answer', 'binding': capture['binding'], 'answerRevision': 1,
+                          'answer': 1 if rating in ('again', 'hard') else 0,
+                          'submittedAt': '2026-08-24T10:00:00.000Z',
+                          'purpose': 'first', 'parentAttemptId': None, 'assistance': 'unknown'})
+            self.assertEqual(store.evaluate({'attemptId': event_id + ':answer', 'requestId': event_id + ':evaluate'})['status'], 'resolved')
+            claim = store.claim({'attemptId': event_id + ':answer', 'eventId': event_id, 'rating': rating})['claim']
+        payload = self.make_v3_activity(event_id, rating=rating, item_key=item_key)
+        payload['event']['item']['kind'] = claim['eventKind']
+        payload['event']['domain'] = 'differential-review'
+        payload['event']['coreHash'] = server.compute_study_event_core_hash(payload['event'])
+        return payload
+
+    def accept_result_card_activity(self, database, payload):
+        with mock.patch.object(server, 'installation_owner_hash', return_value='account-001'):
+            return server.accept_study_event_v3(database, self.vault, 'account-001', payload)
 
     def count_jsonl_event(self, event_id: str) -> int:
         events_dir = self.vault / "_System/Integrations/Study Loop/events"
@@ -625,9 +670,12 @@ next_action: 定向复测
         finally:
             httpd.shutdown()
             thread.join(3)
+            httpd.server_close()
+            self.assertFalse(thread.is_alive(), "Owned refresh HTTP thread must stop")
+            self.assertEqual(httpd.socket.fileno(), -1, "Owned refresh listener must close")
 
-    def test_deepseek_transport_failure_retries_and_raises_safe_error(self) -> None:
-        """A reset DeepSeek connection is retried and never leaks the raw socket error."""
+    def test_deepseek_unknown_delivery_is_not_retried_and_raises_safe_error(self) -> None:
+        """A reset can follow accepted POST; preserve a safe error without resending."""
         with (
             mock.patch.object(server, "deepseek_key", return_value="sk-test-key-123456"),
             mock.patch.object(server.study_ai_provider, "open_request", side_effect=urllib.error.URLError(ConnectionResetError(10054, "远程主机强迫关闭了一个现有的连接。"))) as urlopen,
@@ -636,7 +684,7 @@ next_action: 定向复测
             with self.assertRaises(server.DeepSeekUnavailableError) as context:
                 server.call_deepseek("当前材料", "", "测试材料", "当前学习材料")
 
-        self.assertEqual(urlopen.call_count, 2)
+        self.assertEqual(urlopen.call_count, 1)
         self.assertNotIn("10054", str(context.exception))
         self.assertIn("AI", str(context.exception))
         self.assertIn("网络", str(context.exception))
@@ -646,7 +694,7 @@ next_action: 定向复测
         response.__enter__.return_value = response
         response.__exit__.return_value = False
         response.read.return_value = json.dumps({
-            "choices": [{"message": {"content": "```json\n"
+            "choices": [{"finish_reason": "stop", "message": {"content": "```json\n"
                 "{\"verdict\":\"partial\",\"confidence\":0.82,"
                 "\"feedback\":\"方向正确，但遗漏缩放参数。\","
                 "\"matched_points\":[\"稳定信号\"],\"missed_points\":[\"γ 缩放\"]}"
@@ -715,6 +763,8 @@ next_action: 定向复测
             # Health is public.
             health = json.loads(urllib.request.urlopen(base + "/v1/health", timeout=5).read())
             self.assertTrue(health["ok"])
+            self.assertIn("nonword-source-v1", health["capabilities"])
+            self.assertIn("nonword-source-code-hint-v1", health["capabilities"])
 
             # Pair through the HTTP boundary (setUp pins PAIRING_CODE to A1B2C3).
             request = urllib.request.Request(
@@ -875,7 +925,7 @@ next_action: 定向复测
         (result_root / "l6-norm.md").write_text("""---
 type: learning-result
 domain: course
-item_id: cs231n-l6-norm
+item_id: normalization
 ability_id: norm-purpose
 review_date: 2000-01-01
 source_note: "[[n.md]]"
@@ -903,7 +953,7 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
             payload = json.loads(urllib.request.urlopen(request, timeout=5).read())
             # 渐进迁移保留未匹配的 legacy 到期项；结果卡只覆盖同一能力。
             self.assertGreaterEqual(len(payload["items"]), 1)
-            item = next(entry for entry in payload["items"] if entry["itemId"] == "cs231n-l6-norm")
+            item = next(entry for entry in payload["items"] if entry["itemId"] == "normalization")
 
             request = urllib.request.Request(base + "/v1/practice/grade",
                 data=json.dumps({"item": item, "answer": 0}).encode("utf-8"), headers=session_headers, method="POST")
@@ -926,7 +976,7 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
         card.write_text("""---
 type: learning-result
 domain: course
-item_id: cs231n-l6-norm
+item_id: normalization
 ability_id: norm-purpose
 review_date: 2026-08-18
 source_note: "[[n.md]]"
@@ -938,17 +988,9 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
 复习要点：
 - 归一化作用
 """, encoding="utf-8")
+        payload = self.confirmed_result_card_activity('practice-ev-001', item_key='normalization')
         with server.local_database() as database:
-            server.accept_study_event_v3(
-                database, self.vault, "account-001",
-                self.make_v3_activity(
-                    "practice-ev-001",
-                    state_ref="01 学习/专项课程/Test/学习记录/第01讲 学习状态.md",
-                    ability_id="norm-purpose",
-                    rating="again",
-                    item_key="test-item",
-                ),
-            )
+            self.accept_result_card_activity(database, payload)
         text = card.read_text(encoding="utf-8")
         self.assertIn(review_queue.REVIEW_QUEUE_BEGIN, text)
         self.assertIn("归一化作用", text)
@@ -967,7 +1009,7 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
         card.write_text("""---
 type: learning-result
 domain: course
-item_id: cs231n-l6-norm
+item_id: normalization
 ability_id: norm-purpose
 review_date: 2026-08-18
 source_note: "[[n.md]]"
@@ -979,24 +1021,16 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
 复习要点：
 - 归一化作用
 """, encoding="utf-8")
+        payload = self.confirmed_result_card_activity('practice-ev-prefix-001')
         with server.local_database() as database:
-            server.accept_study_event_v3(
-                database, self.vault, "account-001",
-                self.make_v3_activity(
-                    "practice-ev-prefix-001",
-                    state_ref="01 学习/专项课程/Test/学习记录/第01讲 学习状态.md",
-                    ability_id="norm-purpose",
-                    rating="again",
-                    item_key="practice:cs231n-l6-norm",
-                ),
-            )
+            self.accept_result_card_activity(database, payload)
         queue = review_queue.read_queue(self.vault, "01 学习/学习结果/l6-norm.md")
         self.assertEqual(len(queue), 1)
         self.assertEqual(queue[0]["name"], "归一化作用")
 
-    def test_stale_card_edit_skips_write_back_but_accepts_event(self) -> None:
-        # spec §9：写回前哈希核对，用户同时编辑卡片 → 跳过队列写回并提示；
-        # 事件本身仍被接受（已提交、幂等），卡片内容不被覆盖。
+    def test_source_edit_during_write_preserves_edit_and_keeps_answer_without_formal_event(self) -> None:
+        # ADR-040: an original-source edit before the formal transaction commits
+        # invalidates new admission. The temporary answer and user edit remain.
         import review_queue
         result_root = self.vault / "01 学习/学习结果"
         result_root.mkdir(parents=True)
@@ -1004,7 +1038,7 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
         card.write_text("""---
 type: learning-result
 domain: course
-item_id: cs231n-l6-norm
+item_id: normalization
 ability_id: norm-purpose
 review_date: 2026-08-18
 source_note: "[[n.md]]"
@@ -1017,6 +1051,7 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
 - 归一化作用
 """, encoding="utf-8")
         real_apply = review_queue.apply_result
+        payload = self.confirmed_result_card_activity('practice-ev-stale-001')
 
         def concurrent_edit_then_apply(*args: object, **kwargs: object) -> dict:
             # 模拟用户在与事件写回并行的时刻编辑了卡片文件。
@@ -1025,17 +1060,8 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
 
         with mock.patch.object(review_queue, "apply_result", side_effect=concurrent_edit_then_apply):
             with server.local_database() as database:
-                result = server.accept_study_event_v3(
-                    database, self.vault, "account-001",
-                    self.make_v3_activity(
-                        "practice-ev-stale-001",
-                        state_ref="01 学习/专项课程/Test/学习记录/第01讲 学习状态.md",
-                        ability_id="norm-purpose",
-                        rating="again",
-                        item_key="practice:cs231n-l6-norm",
-                    ),
-                )
-        self.assertEqual(result["status"], "accepted")
+                with self.assertRaisesRegex(ValueError, 'source-admission-source-changed'):
+                    self.accept_result_card_activity(database, payload)
         text = card.read_text(encoding="utf-8")
         self.assertIn("用户正在编辑…", text)
         self.assertNotIn(review_queue.REVIEW_QUEUE_BEGIN, text)
@@ -1043,7 +1069,11 @@ state_ref: "[[01 学习/专项课程/Test/学习记录/第01讲 学习状态.md]
             count = database.execute(
                 "SELECT count(*) FROM study_events_v3 WHERE account_id = 'account-001' AND event_id = 'practice-ev-stale-001'"
             ).fetchone()[0]
-        self.assertEqual(count, 1)
+        self.assertEqual(count, 0)
+        from infrastructure.nonword_source_adapter import create_source_admission
+        with mock.patch.object(server, 'installation_owner_hash', return_value='account-001'):
+            saved = create_source_admission(server.route_services(), 'account-001').read_attempt('practice-ev-stale-001:answer')
+        self.assertEqual(saved['submission']['answer'], 1)
 
     def test_capture_endpoint_routes_by_evidence(self) -> None:
         # POST /v1/capture stores and routes: explicit+stateRef -> review

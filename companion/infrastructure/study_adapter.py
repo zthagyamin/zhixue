@@ -3,8 +3,10 @@ from __future__ import annotations
 from study_day import study_day
 
 from datetime import datetime
+import hashlib
 import change_detect
 import practice_engine
+from application.generated_content import sanitize_generated_payload
 from application.study import StudyApplication, StudyPorts
 
 
@@ -22,7 +24,7 @@ def create_study_application(services) -> StudyApplication:
         with services.DATA_LOCK:
             # Legacy fallback is a new read stage after the indexed probe.
             root = services.source_path('learning_vault_root')
-            return dict(services.STATE)
+            return sanitize_generated_payload(dict(services.STATE), hash_text=lambda text: hashlib.sha256(text.encode('utf-8')).hexdigest())
 
     def refresh_legacy():
         nonlocal root

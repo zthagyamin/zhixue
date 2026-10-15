@@ -1,5 +1,6 @@
 """Immutable raw math answer ledger; this store never writes formal study events."""
 from __future__ import annotations
+from infrastructure.shared_ai_budget import reservation_totals
 import copy
 import json
 import os
@@ -149,6 +150,26 @@ class MathGradeLedger:
                     raise ValueError('native-math-formal-event-conflict') from None
         return {'schemaVersion':1,'durable':True,'status':'barrier-saved','attemptId':formal['attemptId'],'eventId':formal['eventId'],'claimHash':study_hash(formal)}
 
+    def formal_evidence(self, event_id, database):
+        """Read existing evidence within the receiver transaction; never create schema."""
+        exists = database.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='native_math_formal'").fetchone()
+        if not exists:
+            return None
+        row = database.execute('SELECT attempt_id FROM native_math_formal '
+            'WHERE owner=? AND library=? AND root=? AND event_id=?', (*self.scope, event_id)).fetchone()
+        if not row:
+            return None
+        saved = self._attempt(database, row[0])
+        formal = self._formal(database, row[0])
+        if not saved or not formal:
+            raise ValueError('native-math-ledger-integrity')
+        rows = database.execute('SELECT request_id FROM native_math_requests '
+            'WHERE owner=? AND library=? AND root=? AND attempt_id=? ORDER BY request_id', (*self.scope, row[0])).fetchall()
+        requests = [self._request(database, request[0]) for request in rows]
+        return copy.deepcopy({'claim': saved['claim'], 'formal': formal,
+            'requests': [request for request in requests if request and request['state'] == 'done'
+                         and request['request']['mode'] == 'final']})
+
     def _request(self, db, request_id):
         row = db.execute('SELECT input_json,fingerprint,state,started,result_json FROM native_math_requests WHERE owner=? AND library=? AND root=? AND request_id=?', (*self.scope,request_id)).fetchone()
         if not row:
@@ -228,14 +249,7 @@ class MathGradeLedger:
             old=db.execute('SELECT reserved FROM native_math_budget WHERE owner=? AND library=? AND root=? AND request_id=?',(*self.scope,request_id)).fetchone()
             if old:
                 raise ValueError('native-math-provider-outcome-unknown')
-            count,tokens=db.execute('SELECT count(*),COALESCE(sum(reserved),0) FROM native_math_budget WHERE owner=? AND day=?',(self.scope[0],day)).fetchone()
-            running=db.execute("SELECT count(*) FROM native_math_budget WHERE owner=? AND state='inflight' AND started>=?",(self.scope[0],self.clock()-self.lease_seconds)).fetchone()[0]
-            exists=db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='native_course_requests'").fetchone()
-            if exists:
-                other_count,other_tokens=db.execute('SELECT count(*),COALESCE(sum(reserved),0) FROM native_course_requests WHERE owner=? AND budget_day=? AND reserved>0',(self.scope[0],day)).fetchone()
-                count+=other_count
-                tokens+=other_tokens
-                running+=db.execute("SELECT count(*) FROM native_course_requests r JOIN native_course_attempts a ON a.owner=r.owner AND a.library=r.library AND a.root=r.root AND a.active_request=r.request_id WHERE r.owner=? AND r.state='inflight' AND r.reserved>0 AND a.started>=?",(self.scope[0],self.clock()-self.lease_seconds)).fetchone()[0]
+            count,tokens,running=reservation_totals(db,self.scope[0],day,self.clock()-self.lease_seconds)
             if count>=limits['dailyRequestLimit'] or tokens+amount>limits['dailyTokenLimit']:
                 raise ValueError('native-math-daily-budget')
             if running>=limits['concurrentLimit']:

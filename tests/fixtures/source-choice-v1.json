@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {"id":"legacy-correct","item":{"options":["独立性","长度"],"answer":"独立性"},"selection":["option-0"],"status":"correct"},
+    {"id":"legacy-wrong","item":{"options":["独立性","长度"],"answer":"独立性"},"selection":["option-1"],"status":"incorrect"},
+    {"id":"multiple-partial","item":{"learningSupport":{"schemaVersion":1,"type":"quiz","selection":"multiple","options":[{"optionId":"a","text":"条件A"},{"optionId":"b","text":"条件B"},{"optionId":"c","text":"错误条件"}],"correctOptionIds":["a","b"]}},"selection":["a"],"status":"partial"},
+    {"id":"multiple-correct","item":{"learningSupport":{"schemaVersion":1,"type":"quiz","selection":"multiple","options":[{"optionId":"a","text":"A"},{"optionId":"b","text":"B"},{"optionId":"c","text":"C"}],"correctOptionIds":["a","b"]}},"selection":["b","a"],"status":"correct"},
+    {"id":"multiple-wrong","item":{"learningSupport":{"schemaVersion":1,"type":"quiz","selection":"multiple","options":[{"optionId":"a","text":"A"},{"optionId":"b","text":"B"},{"optionId":"c","text":"C"}],"correctOptionIds":["a","b"]}},"selection":["a","c"],"status":"incorrect"}
+  ]
+}

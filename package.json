@@ -1,6 +1,6 @@
 {
   "name": "zhixue-study-loop",
-  "version": "1.41.1",
+  "version": "1.42.2",
   "private": true,
   "description": "由个人资料驱动的 IELTS、Python 与差分复习学习系统。",
   "homepage": "https://zhixue-daily.zthagyamin.chatgpt.site",
@@ -25,8 +25,10 @@
     "package:companion": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-companion.ps1",
     "release:check": "node --experimental-strip-types scripts/check-release-notes.mjs",
     "assets:companion": "node scripts/prepare-companion-assets.mjs",
-    "pretest": "npm run assets:companion",
-    "open-source:check": "node scripts/check-open-source.mjs"
+    "pretest": "npm run open-source:check && npm run assets:companion",
+    "open-source:check": "node scripts/check-open-source.mjs",
+    "test:nonword-host": "node scripts/nonword-host-recovery-check.mjs",
+    "test:dashboard-recovery": "node --experimental-strip-types scripts/dashboard-recovery-check.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "6.11.0",
@@ -53,8 +55,8 @@
     }
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.54.9",
-    "@cloudflare/workers-types": "5.20260915.1",
+    "@cloudflare/vite-plugin": "1.63.1",
+    "@cloudflare/workers-types": "5.20261006.1",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
     "@openai/sites-vite-plugin": "0.1.0",
@@ -79,7 +81,7 @@
     "typescript-eslint": "8.59.3",
     "vinext": "1.0.0-beta.10",
     "vite": "8.3.0",
-    "wrangler": "4.131.2"
+    "wrangler": "4.149.0"
   },
   "type": "module",
   "license": "MIT"

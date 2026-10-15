@@ -1,8 +1,21 @@
 """Runs only from the copied disposable Companion in the UI harness."""
 from pathlib import Path
 from http.server import ThreadingHTTPServer
+import sys
+
+FIXTURE_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(FIXTURE_ROOT))
+for name in ('gateway_cli', 'index_gateway', 'server'):
+    if name in sys.modules:
+        filename = getattr(sys.modules[name], '__file__', None)
+        if not isinstance(filename, str) or Path(filename).resolve().parent != FIXTURE_ROOT:
+            raise RuntimeError('Preview must use only its copied Companion')
 import gateway_cli
+import index_gateway
 import server
+
+if any(Path(module.__file__).resolve().parent != FIXTURE_ROOT for module in (gateway_cli, index_gateway, server)):
+    raise RuntimeError('Preview must use only its copied Companion')
 
 vault=Path(server.CONFIG['learning_vault_root'])
 gateway_cli.init(vault)
@@ -14,5 +27,6 @@ gateway_cli.add_subject(vault,'astronomy','天文学','astronomy','quiz','subjec
 server.PAIRING_CODE='TEST01'
 server.deepseek_key=lambda:None
 server.STATE={'status':'connected','contentMode':'personal','subjects':[]}
+httpd=ThreadingHTTPServer(('127.0.0.1',int(server.CONFIG['port'])),server.Handler)
 print('Disposable Companion fixture ready. Pairing code: TEST01',flush=True)
-ThreadingHTTPServer(('127.0.0.1',43222),server.Handler).serve_forever()
+httpd.serve_forever()

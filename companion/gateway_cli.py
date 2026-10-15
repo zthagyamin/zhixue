@@ -4,8 +4,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 
+# Embedded and isolated Python omit the script directory from their import path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import index_gateway as gateway
 
 

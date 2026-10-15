@@ -3,13 +3,14 @@
 list -> variant -> grade -> v3 practice-event write-back, asserting that the
 review queue managed block and the review point text land in the result card.
 
-The v3 payload follows the REAL production shape (same envelope the website
+The v3 payload follows the production shape (same envelope the website
 sends): the practice item identity lives in ``event.item.key`` as
 "practice:{itemId}" and abilityId travels in ``localContext``. The website's
 stateRef plumbing only forwards paths that end in ``.md``, while result-card
 items carry wikilink targets WITHOUT ``.md`` — so production practice events
-arrive with ``stateRef`` DROPPED (unmapped). The write-back routing must still
-resolve the card through ``item.key`` ("practice:" prefix stripped) and fire.
+arrive with ``stateRef`` DROPPED. A bare ID cannot authorize new grades. After
+the source lifecycle confirms the actual card and saved answer, the private
+canonical route restores the source state and writes its review point once.
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ import tempfile
 import threading
 import unittest
 import urllib.request
+import urllib.error
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -27,6 +29,7 @@ sys.path.insert(0, str(ROOT / "companion"))
 
 import review_queue  # noqa: E402
 import server  # noqa: E402
+from source_admission_fixture import logical_payload, prepare_source_event  # noqa: E402
 
 SOURCE_NOTE = "01 学习/专项课程/Stanford CS231n/课程笔记/第06讲 CNN架构与训练"
 STATE_NOTE = "01 学习/专项课程/Stanford CS231n/学习记录/第06讲 学习状态"
@@ -140,14 +143,21 @@ state_ref: "[[{STATE_NOTE}]]"
             graded = json.loads(urllib.request.urlopen(request, timeout=5).read())
             self.assertIn("correct", graded)
 
-            # 写回：v3 事件 rating=again → 学习结果卡托管块出现复习点。
-            # stateRef 被生产客户端丢弃（unmapped），但 item.key 的
-            # "practice:{itemId}" 仍必须命中结果卡并触发写回。
+            # 无来源证据的旧事件不能冒用 word 标签取得正式成绩。
+            request = urllib.request.Request(base + '/v1/activity',
+                data=json.dumps(self._v3_practice_event()).encode('utf-8'), headers=session_headers, method='POST')
+            with self.assertRaises(urllib.error.HTTPError) as rejected:
+                urllib.request.urlopen(request, timeout=5)
+            self.assertEqual(rejected.exception.code, 400)
+            # 真实来源准入恢复私有映射；V3 原逻辑 ID 与原答案保留。
+            event = logical_payload(server, self.vault, self._v3_practice_event())
+            admission = prepare_source_event(server, self.vault, server.installation_owner_hash(), event)
+            self.assertIsNotNone(admission['claim'])
             request = urllib.request.Request(base + "/v1/activity",
-                data=json.dumps(self._v3_practice_event()).encode("utf-8"), headers=session_headers, method="POST")
+                data=json.dumps(event).encode("utf-8"), headers=session_headers, method="POST")
             result = json.loads(urllib.request.urlopen(request, timeout=5).read())
             self.assertEqual(result["status"], "accepted")
-            self.assertEqual(result["mappingStatus"], "unmapped")
+            self.assertEqual(result["mappingStatus"], "mapped")
             card_text = (self.vault / "01 学习/学习结果/l6-norm.md").read_text(encoding="utf-8")
             self.assertIn(review_queue.REVIEW_QUEUE_BEGIN, card_text)
             self.assertIn("归一化解决每层信号失控", card_text)

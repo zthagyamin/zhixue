@@ -6,6 +6,8 @@ import {createLearningDraftStore} from '../app/learning-draft-store.ts';
 import {prepareAttemptEvidence} from '../src/domain/assessment/index.ts';
 import {attemptFailureMessage} from '../src/features/study-attempt/index.ts';
 import {createSubjectGradeHandler} from '../src/features/study-attempt/index.ts';
+import {dashboardValue,dashboardModuleKey} from './fixtures/dashboard-functions.mjs';
+import {completesSubjectItemAfterAttempt,reviewDisplayStage} from '../src/domain/planning/index.ts';
 const A={itemId:'A',fingerprint:'v1',questionType:'recall',prompt:'A',answer:'reference'},B={...A,itemId:'B',prompt:'B'};
 function inline(){const hooks=createHooks(),load=loader(hooks.api,{'app/study-guidance.tsx':{StudyGuidanceHelp:()=>null},'app/study-item-source.tsx':{StudyItemSource:()=>null},'app/review-context.tsx':{ReviewContext:()=>null},'app/plugins/index.ts':{registry:{get:()=>({renderUI:()=>null})}},'app/math-text.tsx':{MathText:()=>null}},{confirm:()=>true});const store=load('app/learning-draft-store.ts').createLearningDraftStore('inline-synthetic');return{hooks,store,Practice:load('app/practice-session.tsx').PracticeSession};}
 const plugin=f=>[...nodes(f.hooks.view())].find(n=>n.props.onGrade&&n.props.context);
@@ -44,7 +46,16 @@ for(const rating of ['again','hard','good'])test(`real subject callback ${rating
 test('real subject persistence failure leaves pass unfinished and retryable',async()=>{const f=subjectFixture({fail:true});f.grade('again',{deferAdvance:true});await Promise.all(f.work);await tick();assert.equal(f.records.length,0);assert.equal(f.state.round,undefined);assert.equal(f.draft.hasSavedFeedback(),false);assert.equal(f.draft.hasSaveFailure(),true);assert.equal(f.store.isPending(),false);});
 test('real subject A failure visits B next while leaving A due for consolidation',async()=>{const f=subjectFixture({count:2});f.grade('again',{deferAdvance:true});await Promise.all(f.work);f.draft.continueAfterFeedback();assert.equal(f.state.index,1);assert.deepEqual(f.state.round.reviewedKeys,['A']);assert.deepEqual(f.state.round.correctKeys,[]);assert.equal(isSubjectPassComplete(f.state.round,f.keys),false);});
 test('recall feedback key is stage-stable and page pass is not used as official completion',()=>{
- assert.match(source,/actualPluginType === "calculation" \|\| actualPluginType === "recall"\) \? 1/);
+ for(const mode of ['recall','calculation']){
+  const keys=[0,1,3].map(completedStage=>{
+   const subject={id:'synthetic',pluginType:mode};
+   const currentStage=dashboardValue('currentStage',{actualPluginType:mode,completedStage,subject,currentItem:A,
+    quickReview:false,completesSubjectItemAfterAttempt,reviewDisplayStage});
+   assert.equal(currentStage,1);
+   return dashboardModuleKey({subject,itemProgressKey:'A',actualPluginType:mode,currentStage,stageRoundBump:0});
+  });
+  assert.equal(new Set(keys).size,1,'Saved progress must preserve the real recall/calculation host key');
+ }
  assert.match(source,/recallPassUsed&&isSubjectPassComplete/);
  assert.match(source,/本轮练习结束/);assert.match(source,/本轮结束不代表全部答对/);
  const controller=readFileSync(new URL('../app/study-dashboard/use-dashboard-controller.ts',import.meta.url),'utf8');assert.doesNotMatch(controller,/isSubjectPassComplete/);

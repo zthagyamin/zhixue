@@ -28,6 +28,11 @@ class MappedRegistrationTests(unittest.TestCase):
         topology.save(self.db, self.vault, self.owner, self.rules, 0)
         return self.catalog()
 
+    def confirm_through_server(self, server, owner, rules):
+        context = server.vault_mapping_request(owner)['contextId']
+        preview = server.vault_mapping_request(owner, dict(action='preview', schemaVersion=2, contextId=context, rules=rules))
+        return server.vault_mapping_request(owner, dict(action='confirm', schemaVersion=2, contextId=context, previewId=preview['previewId'], revision=preview['revision'], rules=rules))
+
     def test_registered_binding_exact_content_isolated_and_original_unchanged(self):
         before = self.source.read_bytes(); expected = topology.extract(self.vault, self.rules)[0]
         catalog = self.confirm()
@@ -156,11 +161,14 @@ class MappedRegistrationTests(unittest.TestCase):
         raw = original.read_bytes()
         owner = 'a' * 64
         with mock.patch.object(server, 'installation_owner_hash', return_value=owner):
-            server.vault_mapping_request(owner, {'action':'confirm','revision':0,'rules':[{**self.rules[0], 'pathGlob':'course.md'}]})
+            self.confirm_through_server(server, owner, [{**self.rules[0], 'pathGlob':'course.md'}])
             catalog = server.effective_gateway(harness.vault)
             subject = next(s for s in catalog['subjects'] if s['id']=='mapped:course')
             item = subject['items'][0]; key = 'practice:' + item['itemId']
             event = harness.fixture.make_v3_activity('mapped-native-event', item_key=key, state_ref=item['stateRef'], ability_id=item['abilityId'])
+            from source_admission_fixture import logical_payload, prepare_source_event
+            event = logical_payload(server, harness.vault, event)
+            prepare_source_event(server, harness.vault, owner, event)
             with server.local_database() as db:
                 result = server.accept_study_event_v3(db, harness.vault, owner, event)
             self.assertEqual(result['mappingStatus'], 'mapped'); self.assertTrue(result['companionReceipt']['durable'])
@@ -241,7 +249,7 @@ class MappedRegistrationTests(unittest.TestCase):
             self.assertEqual(server.learning_result.parse_result_cards(fixture.vault), legacy_cards)
             self.assertFalse(any('Study Loop/mapped/' in p.as_posix() for p in server.supported_note_files(fixture.vault)))
             self.assertIn('ielts-vocabulary', [s['id'] for s in before['subjects']])
-            server.vault_mapping_request(owner, {'action':'confirm','revision':0,'rules':[{**self.rules[0], 'pathGlob':'mapped-course.md'}]})
+            self.confirm_through_server(server, owner, [{**self.rules[0], 'pathGlob':'mapped-course.md'}])
             self.assertFalse((fixture.vault/gateway.GATEWAY_ROOT).exists(), 'Mapping must not migrate global legacy mode')
             during = visible(); ids = {s['id'] for s in during['subjects']}
             self.assertTrue({'legacy-existing','ielts-vocabulary','mapped:course'} <= ids)
@@ -249,9 +257,18 @@ class MappedRegistrationTests(unittest.TestCase):
             item = next(s for s in during['subjects'] if s['id']=='mapped:course')['items'][0]
             catalog = server.effective_gateway(fixture.vault); key = 'practice:' + item['itemId']
             event = fixture.make_v3_activity('coexisting-mapped-event', item_key=key, state_ref=item['stateRef'], ability_id=item['abilityId'])
+            from source_admission_fixture import logical_payload, prepare_source_event
+            event = logical_payload(server, fixture.vault, event)
+            prepare_source_event(server, fixture.vault, owner, event)
+            fixture.write('01 学习/学习结果/legacy-question.md',
+                '---\ntype: learning-result\nitem_id: legacy-question\nability_id: legacy-ability\n'
+                'review_enabled: true\nreview_date: 2026-01-01\nsource_note: "[[mapped-course]]"\n'
+                'state_ref: "[[legacy-state]]"\n---\n# Legacy question\n复习要点：\n- Explain the independent legacy reference.\n')
+            legacy_event = logical_payload(server, fixture.vault, fixture.make_v3_activity(
+                'coexisting-legacy-event', item_key='practice:legacy-question', state_ref='legacy-state.md', ability_id='legacy-ability'))
+            prepare_source_event(server, fixture.vault, owner, legacy_event)
             with server.local_database() as db:
                 result = server.accept_study_event_v3(db, fixture.vault, owner, event)
-                legacy_event = fixture.make_v3_activity('coexisting-legacy-event', item_key='practice:legacy-question', state_ref='legacy-state.md', ability_id='legacy-ability')
                 legacy_result = server.accept_study_event_v3(db, fixture.vault, owner, legacy_event)
             self.assertEqual(legacy_result['mappingStatus'], 'mapped')
             self.assertIn('legacy-ability', legacy_state.read_text(encoding='utf-8'))
@@ -263,11 +280,13 @@ class MappedRegistrationTests(unittest.TestCase):
                 server.safe_refresh()
                 refreshed = visible()
                 self.assertIn('ielts-vocabulary', [s['id'] for s in refreshed['subjects']])
-            server.vault_mapping_request(owner, {'action':'confirm','revision':1,'rules':[]})
+            self.confirm_through_server(server, owner, [])
             after = visible()
             self.assertEqual({s['id'] for s in after['subjects']}, {s['id'] for s in before['subjects']})
             self.assertIsNone(server.indexed_study_payload(fixture.vault, owner))
-            self.assertEqual(server.learning_result.parse_result_cards(fixture.vault), legacy_cards)
+            original_card_ids = {card['itemId'] for card in legacy_cards}
+            self.assertEqual([card for card in server.learning_result.parse_result_cards(fixture.vault)
+                              if card['itemId'] in original_card_ids], legacy_cards)
             self.assertEqual(state.read_bytes(), recorded)
             self.assertEqual(gateway.read_subject_events(fixture.vault,binding,owner)[0]['event']['eventId'],'coexisting-mapped-event')
             for path, raw in original_bytes.items(): self.assertEqual(path.read_bytes(),raw)

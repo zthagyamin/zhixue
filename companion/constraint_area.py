@@ -5,11 +5,13 @@ from __future__ import annotations
 import base64
 import copy
 import json
+import hashlib
 import threading
+import uuid
 from functools import wraps
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from managed_markdown import replace_managed_block
 
@@ -19,6 +21,7 @@ CONSTRAINT_END = "%% ZHIXUE:CONSTRAINTS:END %%"
 CONSTRAINT_DATA_PREFIX = "<!-- ZHIXUE:CONSTRAINT-DATA "
 VALID_MODES = {"auto", "temporary", "locked"}
 CONSTRAINT_LOCK = threading.RLock()
+_UNSET = object()
 
 
 def _synchronized(function):
@@ -184,13 +187,16 @@ def _render(document: dict[str, Any], now: datetime) -> str:
 
 
 @_synchronized
-def read_constraints(vault_root: Path, now: datetime | None = None) -> dict[str, Any]:
+def read_constraints(vault_root: Path, now: datetime | None = None, *,
+                     on_read: Callable[[bytes | None], None] | None = None) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     path = Path(vault_root) / CONSTRAINT_RELATIVE_PATH
-    if not path.exists():
+    original = path.read_bytes() if path.exists() else None
+    if on_read is not None:
+        on_read(original)
+    if original is None:
         return default_constraints(now)
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        text = handle.read()
+    text = original.decode("utf-8")
     if CONSTRAINT_BEGIN not in text:
         return default_constraints(now)
     if text.count(CONSTRAINT_BEGIN) > 1 or text.count(CONSTRAINT_END) > 1:
@@ -218,7 +224,9 @@ def read_constraints(vault_root: Path, now: datetime | None = None) -> dict[str,
 
 
 @_synchronized
-def write_constraints(vault_root: Path, document: dict[str, Any], now: datetime | None = None) -> Path:
+def write_constraints(vault_root: Path, document: dict[str, Any], now: datetime | None = None, *,
+                      expected: bytes | None | object = _UNSET,
+                      on_written: Callable[[Path, str, bytes | None], None] | None = None) -> Path:
     now = now or datetime.now(timezone.utc)
     normalized = copy.deepcopy(document)
     normalized.pop("effective", None)
@@ -227,14 +235,23 @@ def write_constraints(vault_root: Path, document: dict[str, Any], now: datetime 
         raise ValueError("invalid-temporary-expiry")
     normalized["effective"] = _effective(normalized, now)
     path = Path(vault_root) / CONSTRAINT_RELATIVE_PATH
-    if path.exists():
-        with path.open("r", encoding="utf-8", newline="") as handle:
-            original = handle.read()
-    else:
-        original = "# 学习约束\n"
+    previous = path.read_bytes() if path.exists() else None
+    if expected is not _UNSET and previous != expected:
+        raise ValueError("stale-vault-edit")
+    original = previous.decode("utf-8") if previous is not None else "# 学习约束\n"
     updated = replace_managed_block(original, CONSTRAINT_BEGIN, CONSTRAINT_END, _render(normalized, now))
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.zhixue.tmp")
-    temporary.write_text(updated, encoding="utf-8", newline="")
-    temporary.replace(path)
+    temporary = path.with_name(f".{path.name}.zhixue-{uuid.uuid4().hex}.tmp")
+    try:
+        temporary.write_text(updated, encoding="utf-8", newline="")
+        current = path.read_bytes() if path.exists() else None
+        if current != previous:
+            raise ValueError("stale-vault-edit")
+        temporary.replace(path)
+        if on_written is not None:
+            on_written(path, hashlib.sha256(updated.encode("utf-8")).hexdigest(), previous)
+        if (path.read_bytes() if path.exists() else None) != updated.encode("utf-8"):
+            raise ValueError("stale-vault-edit")
+    finally:
+        temporary.unlink(missing_ok=True)
     return path

@@ -74,7 +74,7 @@ export function failure(error: unknown): Response {
         return json({ error: code }, 409);
     if (code === 'plan-operation-conflict' || code === 'plan-operation-in-flight' || code === 'plan-operation-cancelled' || code === 'unknown-current-plan' || code === 'unknown-plan-restore' || code === 'unknown-plan-cancel' || code === 'plan-cancel-target-changed' || code === 'plan-predecessor-pending' || code === 'plan-execution-revision' || code === 'plan-execution-binding' || code === 'plan-execution-claim-required' || code === 'content-decision-conflict' || code === 'content-decision-final' || code === 'question-ai-content-changed')
         return json({ error: code }, 409);
-    if (code === 'account-ai-key-required' || code === 'ai-cost-confirmation-required')
+    if (code === 'account-ai-key-required' || code === 'ai-cost-confirmation-required' || code === 'cloud-ai-destination')
         return json({ error: code }, 400);
     if (code === 'account-ai-daily-limit' || code === 'account-ai-token-limit' || code === 'account-ai-concurrency-limit' || code === 'study-grant-limit')
         return json({ error: code }, 429);

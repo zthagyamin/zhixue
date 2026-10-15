@@ -6,18 +6,20 @@ import unittest
 import threading
 import urllib.request
 import urllib.error
-from http.server import ThreadingHTTPServer
 from unittest import mock
 
 import test_companion as fixtures
 import test_index_gateway as gateway_fixtures
 import index_gateway
+from source_admission_fixture import logical_payload, prepare_source_event, install_accepted_history
 
 server = fixtures.server
+ThreadingHTTPServer = server.ThreadingHTTPServer
 
 
 class GatewayServerTests(unittest.TestCase):
     def setUp(self):
+        self.local_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self.fixture = fixtures.CompanionSyncTests()
         self.fixture.setUp()
         self.vault = self.fixture.vault
@@ -28,16 +30,39 @@ class GatewayServerTests(unittest.TestCase):
         self.root = self.builder.subject()
         self.source = self.builder.quiz(self.root)
         self.key = 'practice:astronomy-fixture:lesson-a:q1'
+        self.source_attempts = {}
 
     def tearDown(self):
         self.fixture.tearDown()
 
-    def accept(self, payload):
+    def authorize(self, payload, owner=None):
+        owner = owner or server.installation_owner_hash() or 'account'
         with server.local_database() as db:
-            return server.accept_study_event_v3(db, self.vault, 'account', payload)
+            server.ensure_study_v3_schema(db)
+            prior = db.execute('SELECT core_hash FROM study_events_v3 WHERE account_id=? AND event_id=?',
+                               (owner, payload['event']['eventId'])).fetchone()
+        if prior is not None:
+            return None  # Accepted historical cores never acquire a fresh claim on replay.
+        admission = prepare_source_event(server, self.vault, owner, payload)
+        self.source_attempts[payload['event']['eventId']] = admission
+        return admission
+
+    def accept(self, payload, owner=None):
+        owner = owner or server.installation_owner_hash() or 'account'
+        with server.local_database() as db:
+            server.ensure_study_v3_schema(db)
+            existing = db.execute('SELECT core_hash FROM study_events_v3 WHERE account_id=? AND event_id=?',
+                                  (owner, payload['event']['eventId'])).fetchone()
+        if existing is None:
+            self.authorize(payload, owner)
+        with server.local_database() as db:
+            return server.accept_study_event_v3(db, self.vault, owner, payload)
+
+    def source_payload(self, *args, **kwargs):
+        return logical_payload(server, self.vault, self.fixture.make_v3_activity(*args, **kwargs))
 
     def payload(self, event_id='gateway-event-001'):
-        return self.fixture.make_v3_activity(event_id, item_key=self.key, state_ref=self.root + '/state.md', ability_id='astronomy-fixture:lesson-a:q1')
+        return self.source_payload(event_id, item_key=self.key, state_ref=self.root + '/state.md', ability_id='astronomy-fixture:lesson-a:q1')
 
     def test_snapshot_uses_only_gateway_and_reads_new_subject_without_restart(self):
         method = getattr(server, 'indexed_study_payload', None)
@@ -78,16 +103,32 @@ class GatewayServerTests(unittest.TestCase):
         self.fixture.write('unrelated.md', '---\ntype: project\n---\n# Other\n')
         payload = self.payload()
         payload['localContext']['stateRef'] = 'unrelated.md'
-        with self.assertRaises(ValueError):
-            self.accept(payload)
+        # A proven original may be accepted, but only its independent private
+        # route is used; the caller's conflicting path never acquires authority.
+        self.assertEqual(self.accept(payload)['status'], 'accepted')
         self.assertNotIn('ZHIXUE', (self.vault / 'unrelated.md').read_text(encoding='utf-8'))
+        with server.local_database() as db:
+            route = json.loads(db.execute('SELECT binding_json FROM study_event_bindings WHERE event_id=?',
+                                          (payload['event']['eventId'],)).fetchone()[0])
+        self.assertEqual(route['binding']['stateRef'], self.root + '/state.md')
 
-    def test_unknown_item_remains_unmapped_even_with_client_state_path(self):
+    def test_unknown_item_keeps_temporary_answer_without_formal_score_or_client_state_target(self):
         payload = self.payload()
         payload['event']['item']['key'] = 'practice:unknown'
         payload['event']['coreHash'] = server.compute_study_event_core_hash(payload['event'])
-        result = self.accept(payload)
-        self.assertEqual(result['mappingStatus'], 'unmapped')
+        admission = self.authorize(payload)
+        self.assertEqual(admission['capture']['status'], 'pending')
+        self.assertTrue(admission['receipt']['durable'])
+        self.assertEqual(admission['evaluation']['status'], 'pending')
+        self.assertNotIn('correct', admission['evaluation'])
+        self.assertNotIn('rating', admission['evaluation'])
+        with self.assertRaisesRegex(ValueError, 'source-unverified'):
+            self.accept(payload)
+        self.assertEqual(admission['store'].read_attempt(admission['submission']['attemptId'])['submission']['answer'],
+                         'Temporary original answer.')
+        with server.local_database() as db:
+            for table in ('study_events_v3', 'study_event_bindings', 'state_handles', 'study_event_projections'):
+                self.assertEqual(db.execute('SELECT count(*) FROM ' + table).fetchone()[0], 0, table)
         self.assertFalse((self.vault / self.root / 'records').exists())
 
     def test_projection_failure_rolls_back_journal_and_database(self):
@@ -149,7 +190,7 @@ class GatewayServerTests(unittest.TestCase):
         card = self.result_card(bom=True)
         relative = card.relative_to(self.vault).as_posix()
         server.review_queue.apply_result(self.vault,relative,{'name':'Stable review point'},'good',event_id='older-event')
-        payload = self.fixture.make_v3_activity('card-bom-event',rating='hard',item_key='practice:stable-card',state_ref=self.root+'/state.md',ability_id='card-ability')
+        payload = self.source_payload('card-bom-event',rating='hard',item_key='practice:stable-card',state_ref=self.root+'/state.md',ability_id='card-ability')
         self.assertEqual(self.accept(payload)['projectionStatus'],'applied')
         queue = server.review_queue.read_queue(self.vault,relative)
         self.assertEqual(len(queue),1)
@@ -157,7 +198,7 @@ class GatewayServerTests(unittest.TestCase):
 
     def test_pending_retry_uses_frozen_binding_after_index_is_changed(self):
         self.result_card()
-        payload = self.fixture.make_v3_activity('card-retry-event',item_key='practice:stable-card',state_ref=self.root+'/state.md',ability_id='card-ability')
+        payload = self.source_payload('card-retry-event',item_key='practice:stable-card',state_ref=self.root+'/state.md',ability_id='card-ability')
         with mock.patch.object(server.review_queue,'apply_result',side_effect=ValueError('stale-vault-edit')):
             self.assertEqual(self.accept(payload)['projectionStatus'],'pending')
         index = self.vault / self.builder.entry / 'subjects/astronomy-fixture.md'
@@ -172,16 +213,16 @@ class GatewayServerTests(unittest.TestCase):
             root = self.root if subject_id=='astronomy-fixture' else self.builder.subject(subject_id)
             path = self.builder.quiz(root)
             path.write_text(path.read_text(encoding='utf-8').replace('| 解析 |','| 解析 | state_ref |').replace('| Grounded explanation |','| Grounded explanation | [[shared]] |').replace('|---|---|---|---|---|','|---|---|---|---|---|---|'),encoding='utf-8')
-            payload=self.fixture.make_v3_activity('initial-'+subject_id,item_key=f'practice:{subject_id}:lesson-a:q1',state_ref='shared.md',ability_id=f'{subject_id}:lesson-a:q1')
+            payload=self.source_payload('initial-'+subject_id,item_key=f'practice:{subject_id}:lesson-a:q1',state_ref='shared.md',ability_id=f'{subject_id}:lesson-a:q1')
             self.accept(payload)
         server.LOCAL_DATABASE_PATH=self.vault/'fresh.db'
-        payload=self.fixture.make_v3_activity('recovered-event',item_key=self.key,state_ref='shared.md',ability_id='astronomy-fixture:lesson-a:q1')
+        payload=self.source_payload('recovered-event',item_key=self.key,state_ref='shared.md',ability_id='astronomy-fixture:lesson-a:q1')
         self.accept(payload)
         self.assertIn('botany-fixture:lesson-a:q1',shared.read_text(encoding='utf-8'))
         # Removing the last playable file must not remove the subject's history root.
         (self.vault/'subjects/botany-fixture/lesson.md').unlink()
         server.LOCAL_DATABASE_PATH=self.vault/'another-fresh.db'
-        payload=self.fixture.make_v3_activity('recovered-empty-subject-event',item_key=self.key,state_ref='shared.md',ability_id='astronomy-fixture:lesson-a:q1')
+        payload=self.source_payload('recovered-empty-subject-event',item_key=self.key,state_ref='shared.md',ability_id='astronomy-fixture:lesson-a:q1')
         self.accept(payload)
         self.assertIn('botany-fixture:lesson-a:q1',shared.read_text(encoding='utf-8'))
 
@@ -207,8 +248,8 @@ class GatewayServerTests(unittest.TestCase):
 
     def test_http_planning_evidence_is_paired_and_bound_to_the_context_epoch(self):
         self.result_card()
-        payload = self.fixture.make_v3_activity('http-evidence-frame', item_key='practice:stable-card', state_ref=self.root + '/state.md', ability_id='card-ability')
-        self.accept(payload)
+        payload = self.source_payload('http-evidence-frame', item_key='practice:stable-card', state_ref=self.root + '/state.md', ability_id='card-ability')
+        install_accepted_history(server, self.vault, 'account', payload)
         server.CONFIG['allowed_origins'] = ['http://127.0.0.1:3080']
         httpd = ThreadingHTTPServer(('127.0.0.1', 0), server.Handler)
         thread = threading.Thread(target=httpd.serve_forever, daemon=True);thread.start()
@@ -216,7 +257,7 @@ class GatewayServerTests(unittest.TestCase):
         headers = {'Origin': 'http://127.0.0.1:3080', 'Content-Type': 'application/json'}
         def request(path, payload=None):
             req = urllib.request.Request(base + path, headers=headers, data=None if payload is None else json.dumps(payload).encode())
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with self.local_opener.open(req, timeout=5) as response:
                 return json.loads(response.read())
         try:
             headers['X-Study-Loop-Session'] = request('/v1/pair', {'code': 'A1B2C3', 'userId': 'planning-evidence-fixture'})['sessionToken']
@@ -229,8 +270,10 @@ class GatewayServerTests(unittest.TestCase):
             page = request('/v1/plan/evidence?' + query)
             self.assertEqual(page['records'], [])
             account = server.authenticate_session(headers['X-Study-Loop-Session'])
+            paired_payload = self.payload('paired-evidence-event')
+            self.authorize(paired_payload, owner=account)
             with server.local_database() as database:
-                server.accept_study_event_v3(database, self.vault, account, self.payload('paired-evidence-event'))
+                server.accept_study_event_v3(database, self.vault, account, paired_payload)
             context = request('/v1/plan/context')
             query = urllib.parse.urlencode({'sourceHash': context['catalog']['sourceHash'], 'planRevision': context['planRevision']})
             page = request('/v1/plan/evidence?' + query)
@@ -253,7 +296,7 @@ class GatewayServerTests(unittest.TestCase):
         headers = {'Origin': 'http://127.0.0.1:3080', 'Content-Type': 'application/json'}
         def request(path, payload=None):
             req = urllib.request.Request(base + path, headers=headers, data=None if payload is None else json.dumps(payload).encode())
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with self.local_opener.open(req, timeout=5) as response:
                 return json.loads(response.read())
         try:
             headers['X-Study-Loop-Session'] = request('/v1/pair', {'code': 'A1B2C3', 'userId': 'task-plan-fixture'})['sessionToken']
@@ -294,7 +337,7 @@ class GatewayServerTests(unittest.TestCase):
         headers = {'Origin': 'http://127.0.0.1:3080', 'Content-Type': 'application/json'}
         def request(path, payload=None):
             req = urllib.request.Request(base + path, headers=headers, data=None if payload is None else json.dumps(payload).encode())
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with self.local_opener.open(req, timeout=5) as response:
                 return json.loads(response.read())
         try:
             event = test_task_events.sealed(subjectId='astronomy-fixture', unitIds=[])
@@ -324,7 +367,7 @@ class GatewayServerTests(unittest.TestCase):
         headers = {'Origin': 'http://127.0.0.1:3080', 'Content-Type': 'application/json'}
         def request(path, payload=None):
             req = urllib.request.Request(base + path, headers=headers, data=None if payload is None else json.dumps(payload).encode())
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with self.local_opener.open(req, timeout=5) as response:
                 return json.loads(response.read())
         try:
             headers['X-Study-Loop-Session'] = request('/v1/pair', {'code': 'A1B2C3', 'userId': 'suggestion-fixture'})['sessionToken']
@@ -351,6 +394,15 @@ class GatewayServerTests(unittest.TestCase):
             httpd.server_close()
             thread.join(timeout=5)
 
+    def test_loopback_http_fixture_ignores_ambient_proxy(self):
+        failure = urllib.error.HTTPError('http://127.0.0.1/synthetic', 502,
+                                        'synthetic ambient proxy', {}, None)
+        with mock.patch('urllib.request.getproxies', return_value={'http': 'http://synthetic-proxy.invalid:9'}), \
+                mock.patch.object(urllib.request, '_opener', None), \
+                mock.patch.object(urllib.request.ProxyHandler, 'proxy_open', side_effect=failure) as proxy:
+            self.test_http_task_suggestions_rebuild_catalog_and_never_save()
+        proxy.assert_not_called()
+
     def test_http_indexed_routes_never_reenter_legacy_discovery(self):
         server.CONFIG['allowed_origins']=['http://127.0.0.1:3080']
         httpd=ThreadingHTTPServer(('127.0.0.1',0),server.Handler)
@@ -360,7 +412,7 @@ class GatewayServerTests(unittest.TestCase):
         headers={'Origin':'http://127.0.0.1:3080','Content-Type':'application/json'}
         def request(path,payload=None):
             req=urllib.request.Request(base+path,headers=headers,data=None if payload is None else json.dumps(payload).encode())
-            with urllib.request.urlopen(req,timeout=5) as response:
+            with self.local_opener.open(req,timeout=5) as response:
                 return json.loads(response.read())
         try:
             headers['X-Study-Loop-Session']=request('/v1/pair',{'code':'A1B2C3','userId':'gateway-http-fixture'})['sessionToken']

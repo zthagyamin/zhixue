@@ -27,7 +27,7 @@ type Options={resolveSource?:PracticeEvidenceAttemptPort['resolveSource'];cloud?
         getVariant?:NonNullable<PracticeLearningPort['calculation']>['getVariant'];
         prepareVariant?:(descriptor:NonNullable<PracticeEvidenceV1['variant']>)=>Promise<MathVariant>;
         evaluate:(request:MathStudyRequestV1,signal?:AbortSignal)=>Promise<MathStudyResultV1>};
-    requestHint?:(input:{answer:string;report:CodeRunReportV1})=>Promise<string>};
+    requestHint?:(input:{answer:string;report:CodeRunReportV1})=>Promise<string>;revalidateHint?:boolean};
 /** Attach an independent evidence adapter without extending any V1 checkpoint fields. */
 export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,options:Options={}){
     const id=original.session.snapshot()!.attemptId;
@@ -35,6 +35,7 @@ export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,o
     const attempts:PracticeEvidenceAttemptPort={readAttempt:value=>original.repository.read(value),
         ...(options.resolveSource?{resolveSource:options.resolveSource}:{})};
     let approvedHint:{attemptId:string;hint:PracticeEvidenceHint}|null=null;
+    const validatedHints=new Map<string,{report:CodeRunReportV1;hint:PracticeEvidenceHint}>();
     let approvedDiagnostic:{attemptId:string;diagnostic:PracticeEvidenceDiagnostic}|null=null;
     const service:PracticeEvidenceServiceWritePort={resolveModelHint:async input=>approvedHint?.attemptId===input.attempt.attemptId
         &&evidenceEqual(approvedHint.hint,input.hint)?approvedHint.hint:null,
@@ -114,6 +115,7 @@ export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,o
         }
     };
     const practice:PracticeLearningPort={snapshot:()=>cached?structuredClone(cached):null,refresh,
+        readSaved:attemptId=>session.read(attemptId),
         ...(options.calculation?{calculation:{support:options.calculation.support,sourceLabel:options.calculation.sourceLabel,
             get canVariant(){return !activeVariant&&!cached?.variant&&Boolean(options.calculation?.canVariant);},
             activeVariant:()=>activeVariant??options.calculation?.activeVariant?.()??null,
@@ -179,8 +181,11 @@ export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,o
                 explanation:evaluation.feedback??'原代码已保存，等待核对。'};
             const own=cached?.execution,child=own?.prepared?await session.read(own.prepared.attemptId):null;
             const active=child?.execution?.latest?child.execution:own;
+            const verified=active?.latest?.identity?validatedHints.get(active.latest.identity.attemptId):null;
+            const restoreHint=active?.hint&&(!options.revalidateHint||active.hint.source!=='model'
+                ||verified&&evidenceEqual(verified.report,active.latest)&&evidenceEqual(verified.hint,active.hint));
             return {...(own?.first?{first:own.first}:{}),...(active?.latest?{latest:active.latest}:{}),
-                ...(active?.latestOutput===undefined?{}:{output:active.latestOutput}),...(active?.hint?{hint:active.hint}:{}),firstState};
+                ...(active?.latestOutput===undefined?{}:{output:active.latestOutput}),...(restoreHint?{hint:active!.hint}:{}),firstState};
         },
         async saveStep(text){if(activeVariant||cached?.variant)throw Error('math-variant-step-unavailable');stepDraft=text;await beforeSubmit();},flush:flushStep,beforeSubmit,
         stageStep(text){
@@ -195,7 +200,7 @@ export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,o
             const record=await session.read(target),attempt=await original.repository.read(target);
             if(!attempt?.submitted||!evidenceEqual(record?.execution?.latest,report))throw Error('当前运行结果已变化，请重新查看反馈。');
             const hint=record?.execution?.hint;
-            if(hint?.runId===report.runId&&hint.caseId===report.firstFailure?.caseId)return hint.text;
+            if(!options.revalidateHint&&hint?.runId===report.runId&&hint.caseId===report.firstFailure?.caseId)return hint.text;
             if(cloud){
                 await synchronize();
                 if((await repository.pending()).some(row=>row.mutation.attemptId===target))throw Error('代码详情尚未同步，请稍后重试提示。');
@@ -208,7 +213,11 @@ export async function attachPracticeDriver<T>(driver:T,original:NonWordRuntime,o
             if(!evidenceEqual(current?.submitted,attempt.submitted)||!evidenceEqual(latest?.execution?.latest,report))throw Error('当前作答已变化，旧提示未应用。');
             const prepared:PracticeEvidenceHint={runId:report.runId,...(report.firstFailure?{caseId:report.firstFailure.caseId}:{}),text,source:'model'};
             approvedHint={attemptId:target,hint:prepared};
-            try{await write({kind:'code-hint',hint:prepared},target,true);return text;}finally{approvedHint=null;}
+            try{
+                await write({kind:'code-hint',hint:prepared},target,true);
+                if(options.revalidateHint)validatedHints.set(target,{report:structuredClone(report),hint:structuredClone(prepared)});
+                return text;
+            }finally{approvedHint=null;}
         }}:{}),
         status:async()=>{
             if(stepError)return stepError;

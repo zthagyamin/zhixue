@@ -24,10 +24,10 @@ export interface StudyStorePort{
   getSnapshotItems(scope:StudyScope,snapshot:string,position:number,limit:number):Promise<unknown>;
   getSnapshotItem(scope:StudyScope,snapshot:string,item:string):Promise<StudyItemVersion|null>;
   listRecordsAfter(scope:StudyScope,after:number,limit:number,through?:number):Promise<unknown>;
-  beginSnapshot(scope:StudyScope,snapshot:StudySnapshot):Promise<void>;
-  stageSnapshotItems(scope:StudyScope,snapshot:string,entries:unknown):Promise<void>;
-  completeSnapshot(scope:StudyScope,snapshot:string,expectedRevision:number):Promise<unknown>;
-  appendRecord(scope:StudyScope,record:StudyRecordEnvelope):Promise<{status:'accepted'|'duplicate'|'conflict';durable:boolean;sequence:number}>;
+  beginSnapshot(scope:StudyScope,snapshot:StudySnapshot,writerGrantId:string):Promise<void>;
+  stageSnapshotItems(scope:StudyScope,snapshot:string,entries:unknown,writerGrantId:string):Promise<void>;
+  completeSnapshot(scope:StudyScope,snapshot:string,expectedRevision:number,writerGrantId:string):Promise<unknown>;
+  appendRecord(scope:StudyScope,record:StudyRecordEnvelope,writerGrantId?:string):Promise<{status:'accepted'|'duplicate'|'conflict';durable:boolean;sequence:number}>;
 }
 export interface ReceiptStorePort{
   append(scope:StudyScope,receipt:MachineWritebackReceipt,grant:string):Promise<unknown>;
@@ -38,8 +38,8 @@ export interface PlanStorePort{
   getCatalogByHash(scope:StudyScope,hash:string):Promise<CloudPlanningCatalogV1|null>;
   getFacts(scope:StudyScope,snapshot:string):Promise<unknown>;
   getState(scope:StudyScope,day:string):Promise<{currentPlan:CloudTaskPlanV1|null}>;
-  putCatalog(scope:StudyScope,catalog:unknown):Promise<unknown>;
-  putFacts(scope:StudyScope,facts:unknown):Promise<unknown>;
+  putCatalog(scope:StudyScope,catalog:unknown,writerGrantId:string):Promise<unknown>;
+  putFacts(scope:StudyScope,facts:unknown,writerGrantId:string):Promise<unknown>;
   mutate(scope:StudyScope,mutation:unknown):Promise<unknown>;
   appendExecution(scope:StudyScope,receipt:unknown,grant:string):Promise<unknown>;
   claimExecution(scope:StudyScope,operation:string,grant:string):Promise<unknown>;
@@ -69,6 +69,8 @@ export interface AiStorePort{
 }
 export interface ChatProviderPort{stream(request:StudyAIChatRequest,maxTokens:number,signal:AbortSignal):AsyncIterable<StudyAIStreamEvent>}
 export type AccountStudyDependencies={
+  getPaperReadingStore?:()=>Promise<import('../paper-reading').PaperReadingStorePort>;
+  getPaperReadingProvider?:(scope:StudyScope,revision?:number)=>Promise<import('../paper-reading').PaperReadingProviderPort>;
   getMathMappingStore?:()=>Promise<import('../math-study').AccountMathMappingStorePort>;
   getPracticeEvidenceStore?:(service?:PracticeEvidenceServiceWritePort)=>Promise<AccountPracticeEvidenceStorePort>;
   getPracticeEvidenceMapping?:()=>Promise<AccountPracticeEvidenceMappingPort>;

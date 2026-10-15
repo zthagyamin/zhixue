@@ -157,6 +157,9 @@ def validate_recall_evaluation(result: Any, criteria=None) -> dict:
             missing = [point["id"] for point in points if point.get("mandatory") and point["id"] not in matched]
             if status == "complete" and missing:
                 raise ValueError("recall-evaluation-missing-mandatory")
+            # Optional omissions are allowed; zero matched points are contradictory.
+            if status == "complete" and not matched:
+                raise ValueError("recall-evaluation-no-matched-points")
             total = sum(point.get("weight", 1) for point in points)
             hit = sum(point.get("weight", 1) for point in points if point["id"] in matched)
             coverage = {"matched": [point["id"] for point in points if point["id"] in matched],

@@ -73,3 +73,7 @@ For ordinary bugs, provide the version, platform, entry point, steps, expected/a
 ## License
 
 Submit only contributions you are entitled to provide under the project's [MIT License](LICENSE), identifying any third-party material and its compatible terms. The license does not cover users' imported materials or automatically relicense third-party packages. See [third-party notices](THIRD_PARTY_NOTICES.md).
+
+## Public imports
+
+Selective imports must follow [the public distribution boundary](docs/open-source.md) and its machine-readable policy. Run the public guard before staging; changes to pinned examples, baselines, notices or exceptions need explicit provenance and content review in the PR. Never import private history or regenerate all policy hashes to bypass a failure.

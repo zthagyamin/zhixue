@@ -75,7 +75,7 @@ test('planning facts are separate, path-free and bind legacy coverage explicitly
   assert.deepEqual(await api.parseCloudPlanningFacts(facts),facts);assert.match(facts.factsHash,/^[a-f0-9]{64}$/);
   await assert.rejects(api.parseCloudPlanningFacts({...facts,stateRef:'private.md'}),/field/);
 });
-import {spawnSync} from 'node:child_process';
+import {spawnPythonSync} from '../scripts/python-runtime.mjs';
 import {buildLongTermPlanningInput} from '../app/long-term-planning-input.ts';
 test('allocated words, material and independent physical practice survive TS/Python cloud seal and materialize',async()=>{
  const {input,bundle}=await setup();input.catalog.subjects.push({subjectId:'reading',name:'Reading',priority:2,planningStatus:'none',words:[],units:[],goals:[]});
@@ -86,6 +86,6 @@ test('allocated words, material and independent physical practice survive TS/Pyt
  const plan=await generateTaskPlan(facts);const cloud=await api.sealCloudTaskPlan(plan,catalog,context(0));assert.deepEqual((await api.toEngineTaskPlan(cloud,catalog)),plan);
  const native=(await api.materializeCloudTaskPlan(cloud,input.catalog,materials)).nativePlan;assert.deepEqual(native.longTermAllocation,plan.longTermAllocation);
  const script=`import json,sys\nsys.path.insert(0,'companion')\nfrom account_sync_plan_writer import validate_cloud_plan,materialize_cloud_plan\nx=json.load(sys.stdin)\nvalidate_cloud_plan(x['cloud'])\nprint(json.dumps(materialize_cloud_plan(x['cloud'],x['native'],x['materials']),ensure_ascii=False))`;
- const result=spawnSync(process.env.PYTHON??'C:/Users/30972/Documents/ChatGPT/项目/.codex-staging/zhixue-review-python/Scripts/python.exe',['-c',script],{input:JSON.stringify({cloud,native:input.catalog,materials}),encoding:'utf8',env:{...process.env,PYTHONUTF8:'1'}});
+ const result=spawnPythonSync(['-c',script],{input:JSON.stringify({cloud,native:input.catalog,materials}),encoding:'utf8',env:{...process.env,PYTHONUTF8:'1'}});
  assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),native);
 });

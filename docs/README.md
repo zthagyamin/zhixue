@@ -9,3 +9,5 @@
 | Roadmap | [Roadmap](en/roadmap.md) | [路线图](zh-CN/roadmap.md) |
 
 Technical architecture and protocol documents are preserved in their original language under [architecture](architecture/README.md). User-facing documents are maintained in both languages.
+
+Public maintenance: [1.42.2 scope](releases/v1.42.2.md), [account action contract](contracts/account-action-matrix.md), [distribution rules](open-source.md).

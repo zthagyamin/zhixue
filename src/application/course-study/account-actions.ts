@@ -27,10 +27,11 @@ export async function executeCourseAction(body:Record<string,unknown>,auth:Authe
         studyObject(body,['action','mutation'],['libraryId']);
         const mutation=parseCourseEvidenceMutation(body.mutation);
         if(mutation.binding.ownerId!==scope.userId||mutation.binding.libraryId!==scope.libraryId)throw new AccountFailure(403,'course-evidence-scope-mismatch');
-        return {kind:'value',status:200,value:await store.mutate(scope,mutation)};
+        return {kind:'value',status:200,value:await store.mutate(scope,mutation,auth.principal.kind==='device'?context.deviceWriter(auth.principal):undefined)};
     }catch(error){
         if(error instanceof AccountFailure)throw error;
         const code=error instanceof Error?error.message:'';
+        if(code==='study-writer-required')throw new AccountFailure(403,code);
         if(/^(course-|invalid-course-|unsupported-course-)/.test(code))throw new AccountFailure(409,code);
         throw new AccountFailure(400,'invalid-course-evidence-request');
     }

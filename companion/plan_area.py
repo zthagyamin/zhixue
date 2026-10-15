@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import copy
+import hashlib
 import threading
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import plan_authority
 from task_plan_schema import hash_task_plan
@@ -66,14 +68,23 @@ def _revision_bytes(previous: bytes | None, revision: dict[str, Any]) -> bytes:
     return old + (b'\n' if old and not old.endswith(b'\n') else b'') + line
 
 
-def _append_revision(area: Path, revision: dict[str, Any]) -> None:
+def _append_revision(area: Path, revision: dict[str, Any], *,
+                     on_written: Callable[[Path, str, bytes | None], None] | None = None) -> None:
     area = Path(area)
     area.mkdir(parents=True, exist_ok=True)
     revisions_path = area / REVISIONS_FILE
     previous = revisions_path.read_bytes() if revisions_path.exists() else None
-    temporary = revisions_path.with_name(f".{REVISIONS_FILE}.zhixue.tmp")
-    temporary.write_bytes(_revision_bytes(previous, revision))
-    temporary.replace(revisions_path)
+    content = _revision_bytes(previous, revision)
+    temporary = revisions_path.with_name(f".{REVISIONS_FILE}.zhixue-{uuid.uuid4().hex}.tmp")
+    try:
+        temporary.write_bytes(content)
+        if (revisions_path.read_bytes() if revisions_path.exists() else None) != previous:
+            raise ValueError("stale-vault-edit")
+        temporary.replace(revisions_path)
+        if on_written is not None:
+            on_written(revisions_path, hashlib.sha256(content).hexdigest(), previous)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def current_revision(area: Path) -> int:
@@ -112,15 +123,25 @@ def _restore_file(path: Path, previous: bytes | None) -> None:
 def _apply_and_record(area: Path, candidate: dict[str, Any], record: dict[str, Any]) -> None:
     vault_root = _vault_root(area)
     main_path = vault_root / plan_authority.PLAN_RELATIVE_PATH
-    previous = main_path.read_bytes() if main_path.exists() else None
+    previous = None
     log = Path(area) / REVISIONS_FILE
     previous_log = log.read_bytes() if log.exists() else None
-    plan_authority.apply_current_plan(vault_root, candidate, int(record["revision"]))
-    written = main_path.read_bytes()
+    written_hash = None
+
+    def capture_write(path: Path, digest: str, preimage: bytes | None) -> None:
+        nonlocal written_hash, previous
+        if path != main_path:
+            raise ValueError('plan-write-receipt-binding')
+        written_hash = digest
+        previous = preimage
+
+    plan_authority.apply_current_plan(vault_root, candidate, int(record["revision"]), on_written=capture_write)
+    if written_hash is None:
+        raise ValueError('plan-write-receipt-missing')
     try:
         _append_revision(area, record)
     except Exception:
-        if main_path.exists() and main_path.read_bytes() == written:
+        if main_path.exists() and hashlib.sha256(main_path.read_bytes()).hexdigest() == written_hash:
             _restore_file(main_path, previous)
         if log.exists() and log.read_bytes() == _revision_bytes(previous_log, record):
             _restore_file(log, previous_log)
@@ -284,6 +305,7 @@ def record_migrated_plan(
     revision: int,
     source: str,
     now: datetime | None = None,
+    *, on_written: Callable[[Path, str, bytes | None], None] | None = None,
 ) -> dict[str, Any]:
     """Make an explicitly applied legacy migration visible and restorable."""
     with PLAN_LOCK:
@@ -303,7 +325,7 @@ def record_migrated_plan(
             "undoTarget": None,
             "appliedAt": (now or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat(timespec="seconds"),
         }
-        _append_revision(area, record)
+        _append_revision(area, record, on_written=on_written)
         return record
 
 

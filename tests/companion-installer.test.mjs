@@ -6,6 +6,7 @@ import { spawn, spawnSync } from "node:child_process";
 import net from 'node:net';
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {withFixtureCleanup} from './helpers/fixture-cleanup.mjs';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const companionRoot = path.join(projectRoot, "companion");
@@ -22,12 +23,13 @@ test('published PowerShell scripts parse in the built-in installer host', {skip:
   assert.equal(result.status,0,result.stderr||result.stdout);assert.match(result.stdout,/BUILTIN_PARSE_OK/);
 });
 
-test('real EXE installs, starts bundled Python and upgrades a Unicode path without external Python', {skip:process.platform!=='win32',timeout:120000},async()=>{
+test('real EXE installs, starts bundled Python and upgrades a Unicode path without external Python', {skip:process.platform!=='win32',timeout:240000},async()=>{
   const sandbox=await mkdtemp(path.join(os.tmpdir(),'zhixue-real-exe-')),target=path.join(sandbox,'安装 用户'),exe=path.join(projectRoot,'public/downloads/Zhixue-Companion-Setup.exe');
   const environment={...process.env,LOCALAPPDATA:path.join(sandbox,'local-appdata'),PATH:path.join(process.env.SystemRoot,'System32'),PSModulePath:path.join(sandbox,'invalid inherited modules')};let child,launchError,stopped=Promise.resolve();
-  try{
-    const run=()=>spawnSync(exe,['--target',target,'--no-start','--skip-registration','--non-interactive'],{encoding:'utf8',windowsHide:true,env:environment,timeout:60000});
-    const installed=run();assert.equal(installed.status,0,installed.stderr||installed.stdout);
+  await withFixtureCleanup(async()=>{
+    // Cold offline install measured >60s; warm upgrades retain their original bound.
+    const run=(timeout=60000)=>spawnSync(exe,['--target',target,'--no-start','--skip-registration','--non-interactive'],{encoding:'utf8',windowsHide:true,env:environment,timeout});
+    const installed=run(120000);assert.ifError(installed.error);assert.equal(installed.status,0,installed.stderr||installed.stdout);
     const configPath=path.join(target,'config.local.json'),config=JSON.parse(await readFile(configPath,'utf8'));assert.equal(config.workspace_mode,'managed');assert.ok(config.learning_vault_root.startsWith(target));
     const port=await new Promise((resolve,reject)=>{const probe=net.createServer();probe.on('error',reject);probe.listen(0,'127.0.0.1',()=>{const value=probe.address().port;probe.close(()=>resolve(value));});});
     config.port=port;await writeFile(configPath,JSON.stringify(config));
@@ -36,8 +38,8 @@ test('real EXE installs, starts bundled Python and upgrades a Unicode path witho
     let health;for(let i=0;i<60;i++){if(launchError||child.exitCode!==null)break;try{const response=await fetch(`http://127.0.0.1:${port}/v1/health`,{signal:AbortSignal.timeout(500)});if(response.ok){health=await response.json();break;}}catch{/* Server may still be starting. */}await new Promise(resolve=>setTimeout(resolve,150));}
     assert.ok(health?.serverVersion?.startsWith('StudyLoopCompanion/'),launchError?.message??'Installed server did not start');assert.ok(health.capabilities.includes('paper-library-v1'));child.kill();await stopped;child=null;
     const beforeConfig=await readFile(configPath),databasePath=path.join(target,'data/study-loop.db'),beforeDatabase=await readFile(databasePath);
-    const upgraded=run();assert.equal(upgraded.status,0,upgraded.stderr||upgraded.stdout);assert.deepEqual(await readFile(configPath),beforeConfig);assert.deepEqual(await readFile(databasePath),beforeDatabase);
-  }finally{if(child){if(!launchError&&child.exitCode===null)child.kill();await stopped;}assert.ok(path.resolve(sandbox).startsWith(path.resolve(os.tmpdir())+path.sep));await rm(sandbox,{recursive:true,force:true});}
+    const upgraded=run();assert.ifError(upgraded.error);assert.equal(upgraded.status,0,upgraded.stderr||upgraded.stdout);assert.deepEqual(await readFile(configPath),beforeConfig);assert.deepEqual(await readFile(databasePath),beforeDatabase);
+  },async()=>{if(child){if(!launchError&&child.exitCode===null)child.kill();await stopped;}assert.ok(path.resolve(sandbox).startsWith(path.resolve(os.tmpdir())+path.sep));await rm(sandbox,{recursive:true,force:true});});
 });
 
 test("a freshly generated Companion archive contains every server dependency", { skip: process.platform !== "win32" }, async () => {
@@ -46,6 +48,7 @@ test("a freshly generated Companion archive contains every server dependency", {
     await cp(companionRoot, path.join(sandbox, "companion"), { recursive: true });
     await mkdir(path.join(sandbox, "scripts"), { recursive: true });
     await cp(path.join(projectRoot, "scripts", "package-companion.ps1"), path.join(sandbox, "scripts", "package-companion.ps1"));
+    await cp(path.join(projectRoot, "scripts", "companion-installer.cs"), path.join(sandbox, "scripts", "companion-installer.cs"));
     await cp(path.join(projectRoot, "scripts", "compile-companion-installer.ps1"), path.join(sandbox, "scripts", "compile-companion-installer.ps1"));
     await cp(path.join(projectRoot, "package.json"), path.join(sandbox, "package.json"));
     const published = path.join(sandbox, "public", "downloads");

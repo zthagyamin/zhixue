@@ -6,6 +6,8 @@ import { applyAttemptMutation, parseAttemptMutation, attemptId } from '../../dom
 import { attemptFingerprint, evaluationFingerprint } from './fingerprint.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import { requireCourseEvaluationProof } from '../course-proof/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../account-study-writer/index.ts';
 export class D1LearningAttemptStore implements LearningAttemptStorePort {
     private database: Pick<D1Database, 'prepare'>;
     constructor(database: Pick<D1Database, 'prepare'>) { this.database = database; }
@@ -30,7 +32,8 @@ export class D1LearningAttemptStore implements LearningAttemptStorePort {
         }>();
         return rows.results.map(row => JSON.parse(row.attempt_json) as LearningAttempt);
     }
-    async mutate(scope: AttemptScope, raw: AttemptMutation): Promise<AttemptReceipt> {
+    async mutate(scope: AttemptScope, raw: AttemptMutation, writerGrantId?: string): Promise<AttemptReceipt> {
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         const mutation = parseAttemptMutation(raw), b = mutation.binding;
         if (b.ownerId !== scope.userId || b.libraryId !== scope.libraryId)
             throw new Error('attempt-scope-mismatch');
@@ -64,18 +67,20 @@ export class D1LearningAttemptStore implements LearningAttemptStorePort {
             next.attempt!.formal!.authoritativeRecord = { attemptId: record.attemptId, roundId: record.roundId };
         }
         const saved = next.attempt!, values = [scope.userId, scope.libraryId, saved.attemptId];
+        const writer=studyWriterCondition(scope,writerGrantId);
         try {
             const logicalKey = saved.formal ? JSON.stringify([b.groupId, b.roundId, b.itemKey, b.contentHash]) : null;
             if (!current)
-                await this.q('INSERT INTO learning_attempts_v1(user_id,library_id,attempt_id,group_id,revision,attempt_json,formal_event_id,formal_logical_key,updated_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING', ...values, b.groupId, saved.revision, JSON.stringify(saved), saved.formal?.eventId ?? null, logicalKey, saved.updatedAt).run();
+                await this.q(`INSERT INTO learning_attempts_v1(user_id,library_id,attempt_id,group_id,revision,attempt_json,formal_event_id,formal_logical_key,updated_at) SELECT ?,?,?,?,?,?,?,?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING`, ...values, b.groupId, saved.revision, JSON.stringify(saved), saved.formal?.eventId ?? null, logicalKey, saved.updatedAt,...writer.bindings).run();
             else
-                await this.q('UPDATE learning_attempts_v1 SET revision=?,attempt_json=?,formal_event_id=?,formal_logical_key=?,updated_at=? WHERE user_id=? AND library_id=? AND attempt_id=? AND revision=?', saved.revision, JSON.stringify(saved), saved.formal?.eventId ?? null, logicalKey, saved.updatedAt, ...values, current.revision).run();
+                await this.q(`UPDATE learning_attempts_v1 SET revision=?,attempt_json=?,formal_event_id=?,formal_logical_key=?,updated_at=? WHERE user_id=? AND library_id=? AND attempt_id=? AND revision=? AND ${writer.sql}`, saved.revision, JSON.stringify(saved), saved.formal?.eventId ?? null, logicalKey, saved.updatedAt, ...values, current.revision,...writer.bindings).run();
         }
         catch (error) {
             if (error instanceof Error && /UNIQUE constraint failed/.test(error.message))
                 throw new Error('attempt-formal-event-conflict');
             throw error;
         }
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         const readback = await this.read(scope, mutation.attemptId);
         const operation = readback?.operations.find(row => row.operationId === mutation.operationId);
         if (!operation || operation.fingerprint !== saved.operations.at(-1)?.fingerprint)

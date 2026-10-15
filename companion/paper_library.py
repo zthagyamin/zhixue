@@ -22,6 +22,7 @@ LOCK=threading.RLock()
 EXCLUDED={'_system','_archive','backups','node_modules','__pycache__'}
 GENERATED={'paper-reading-note','zhixue-practice-state','learning-session','task-event','zhixue-assistance-summary'}
 MAX_BYTES=450000
+REGISTERED_DIRECTORY_BUDGET = 15000
 class PaperOperationError(ValueError):
     def __init__(self,message,no_write=False):super().__init__(message);self.no_write=no_write
 def digest(value):return hashlib.sha256(value if isinstance(value,bytes) else json.dumps(value,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
@@ -35,8 +36,9 @@ def relative(value,*,directory=False):
     return value
 
 class PaperLibrary:
-    def __init__(self,vault,database,owner,local_library,external=None,account_library=None):
+    def __init__(self,vault,database,owner,local_library,external=None,account_library=None,*,source_lookup=None):
         self.vault=Path(vault);_safe(self.vault,self.vault);self.database=Path(database);self.owner=owner;self.local_library=local_library;self.external=external;self.account_library=account_library
+        self._source_lookup = source_lookup
     def _external(self,source,revision=None,write=False):
         if not self.external:raise ValueError('paper-notion-not-connected')
         row=self.external._row(self.owner,source);selection=json.loads(row['selection_json'])
@@ -109,6 +111,119 @@ class PaperLibrary:
             if figures is not None:result['figures']=[{k:v for k,v in f.items() if k!='path'} for f in figures]
         except (ValueError,OSError,UnicodeError):result['figuresStatus']='unavailable'
         return result
+    def original_page(self, payload):
+        """Derive one physical PDF page from a version-bound, library-owned source."""
+        self._scope(payload)
+        if set(payload) - {'localLibraryId', 'accountLibraryId', 'source', 'page'}:
+            raise ValueError('paper-invalid-input')
+        if 'accountLibraryId' in payload and (not isinstance(payload['accountLibraryId'], str) or not payload['accountLibraryId'] or payload['accountLibraryId'] != self.account_library):
+            raise ValueError('paper-library-changed')
+        source = payload.get('source')
+        if not isinstance(source, dict) or source.get('kind') != 'vault':
+            raise ValueError('paper-original-page-unavailable')
+        if set(source) != {'kind', 'path', 'version'} or not isinstance(source['version'], str) or not re.fullmatch('[a-f0-9]{64}', source['version']):
+            raise ValueError('paper-invalid-input')
+        page = payload.get('page')
+        if type(page) is not int or not 1 <= page <= 200:
+            raise ValueError('paper-invalid-page')
+        rel = relative(source['path'])
+        path = _safe(self.vault, self.vault / rel)
+        if path.suffix.lower() != '.pdf':
+            raise ValueError('paper-original-page-unavailable')
+
+        def identity(info):
+            # Windows path stat and fstat expose different legacy ctime meanings.
+            # Birth time agrees across both; ctime is compared within each kind.
+            timestamp = getattr(info, 'st_birthtime_ns', None) if os.name == 'nt' else info.st_ctime_ns
+            return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, timestamp)
+
+        def opened_identity(stream):
+            import stat
+            try:
+                descriptor = stream.fileno()
+                if type(descriptor) is not int or descriptor < 0:
+                    raise ValueError('paper-source-unavailable')
+                info = os.fstat(descriptor)
+            except (AttributeError, OSError) as error:
+                raise ValueError('paper-source-unavailable') from error
+            if not stat.S_ISREG(info.st_mode) or not info.st_ino:
+                raise ValueError('paper-source-unavailable')
+            if os.name == 'nt':
+                # File identity alone must not authorize a handle resolved through
+                # a different Windows path. Query the opened OS handle itself.
+                import ctypes
+                import msvcrt
+                from ctypes import wintypes
+                kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+                final_path = kernel.GetFinalPathNameByHandleW
+                final_path.argtypes = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD]
+                final_path.restype = wintypes.DWORD
+                buffer = ctypes.create_unicode_buffer(32768)
+                length = final_path(msvcrt.get_osfhandle(descriptor), buffer, len(buffer), 0)
+                if not length or length >= len(buffer):
+                    raise OSError('paper-handle-path-unavailable')
+                resolved = buffer.value
+                if resolved.startswith('\\\\?\\UNC\\'):
+                    resolved = '\\\\' + resolved[8:]
+                elif resolved.startswith('\\\\?\\'):
+                    resolved = resolved[4:]
+                if os.path.normcase(resolved) != os.path.normcase(str(path)):
+                    raise ValueError('paper-source-changed')
+                _safe(self.vault, Path(resolved))
+            return identity(info), info.st_ctime_ns
+
+        def snapshot():
+            try:
+                _safe(self.vault, path)
+                before = path.stat()
+                if not path.is_file():
+                    raise ValueError('paper-source-unavailable')
+                if before.st_size > 20000000:
+                    raise ValueError('paper-material-too-large')
+                with path.open('rb') as stream:
+                    opened, opened_change = opened_identity(stream)
+                    if identity(before) != opened:
+                        raise ValueError('paper-source-changed')
+                    _safe(self.vault, path)
+                    raw = stream.read(20000001)
+                    read_identity, read_change = opened_identity(stream)
+                    _safe(self.vault, path)
+                    after = path.stat()
+                    if opened != read_identity or opened_change != read_change or read_identity != identity(after):
+                        raise ValueError('paper-source-changed')
+            except OSError as error:
+                raise ValueError('paper-source-unavailable') from error
+            if len(raw) > 20000000:
+                raise ValueError('paper-material-too-large')
+            if identity(before) != identity(after) or before.st_ctime_ns != after.st_ctime_ns or digest(raw) != source['version']:
+                raise ValueError('paper-source-changed')
+            return raw, identity(after)
+
+        raw, original_identity = snapshot()
+        from pypdf import PdfReader, PdfWriter
+        try:
+            reader = PdfReader(io.BytesIO(raw))
+            if reader.is_encrypted or not 1 <= len(reader.pages) <= 200:
+                raise ValueError('paper-pdf-unavailable')
+            if page > len(reader.pages):
+                raise ValueError('paper-invalid-page')
+            writer = PdfWriter()
+            writer.add_page(reader.pages[page - 1])
+            output = io.BytesIO()
+            writer.write(output)
+            asset = output.getvalue()
+        except Exception as error:
+            if isinstance(error, ValueError) and str(error) == 'paper-invalid-page':
+                raise
+            raise ValueError('paper-pdf-unavailable') from error
+        _, current_identity = snapshot()
+        if original_identity != current_identity:
+            raise ValueError('paper-source-changed')
+        if len(asset) > 20000000:
+            raise ValueError('paper-material-too-large')
+        return {'sourceVersion': source['version'], 'page': page, 'mime': 'application/pdf',
+                'data': base64.b64encode(asset).decode('ascii'), 'assetVersion': digest(asset)}
+
     def _figures(self,rel,version):
         registry=_safe(self.vault,self.vault/(relative(rel)+'.figures.json'))
         if not registry.exists():return None
@@ -178,23 +293,65 @@ class PaperLibrary:
         return {'assetId':f['assetId'],'sourceVersion':source['version'],'assetVersion':f['assetVersion'],'mime':mime,'data':base64.b64encode(raw).decode('ascii')}
     def _registered_source(self,key):
         """Resolve an opaque identity only among bounded, explicitly registered sources."""
-        visited=0
-        for base,dirs,names in os.walk(self.vault,followlinks=False):
-            safe_dirs=[]
-            for name in sorted(dirs):
-                if name.startswith('.') or name.casefold() in EXCLUDED:continue
-                try:_safe(self.vault,Path(base)/name);safe_dirs.append(name)
-                except (ValueError,OSError):pass
-            dirs[:]=safe_dirs
-            for name in sorted(names):
-                visited+=1
-                if visited>15000:raise ValueError('paper-source-unavailable')
-                if name.startswith('.') or not name.endswith('.figures.json'):continue
-                source=Path(base)/name[:-len('.figures.json')];rel=source.relative_to(self.vault).as_posix()
-                if digest(rel.encode())==key:
-                    relative(rel);_safe(self.vault,source)
-                    return rel
+        if self._source_lookup is not None:
+            _safe(self.vault, self.vault)
+            info = self.vault.stat()
+            root_identity = (info.st_dev, info.st_ino, getattr(info, 'st_birthtime_ns', None))
+            scope = (str(self.vault), root_identity, self.owner, self.local_library, self.account_library)
+            rel = self._source_lookup.resolve(scope, key, self._registered_sources)
+            relative(rel)
+            _safe(self.vault, self.vault / rel)
+            registry = _safe(self.vault, self.vault / (rel + '.figures.json'))
+            if not registry.is_file():
+                raise ValueError('paper-source-unavailable')
+            return rel
+        for identity, rel in self._registered_sources():
+            if identity == key:
+                _safe(self.vault, self.vault / rel)
+                return rel
         raise ValueError('paper-source-unavailable')
+
+    def _registered_sources(self):
+        """Bound file names and directory work while retaining the current prefix."""
+        visited = directory_work = 0
+        walker = os.walk(self.vault, followlinks=False)
+        try:
+            for base, dirs, names in walker:
+                directory_work += 1
+                safe_dirs = []
+                if directory_work < REGISTERED_DIRECTORY_BUDGET:
+                    for name in sorted(dirs):
+                        if directory_work >= REGISTERED_DIRECTORY_BUDGET:
+                            break
+                        directory_work += 1
+                        if name.startswith('.') or name.casefold() in EXCLUDED:
+                            continue
+                        try:
+                            _safe(self.vault, Path(base) / name)
+                            safe_dirs.append(name)
+                        except (ValueError, OSError):
+                            pass
+                dirs[:] = safe_dirs if directory_work < REGISTERED_DIRECTORY_BUDGET else []
+                # Exhausting directory work must not discard this directory's files.
+                for name in sorted(names):
+                    visited += 1
+                    if visited > 15000:
+                        return
+                    if name.startswith('.') or not name.endswith('.figures.json'):
+                        continue
+                    source = Path(base) / name[:-len('.figures.json')]
+                    rel = source.relative_to(self.vault).as_posix()
+                    try:
+                        relative(rel)
+                    except ValueError:
+                        continue
+                    yield digest(rel.encode()), rel
+                if directory_work >= REGISTERED_DIRECTORY_BUDGET:
+                    return
+        finally:
+            close = getattr(walker, 'close', None)
+            if close is not None:
+                close()
     def _scope(self,payload):
         if not isinstance(payload,dict) or payload.get('localLibraryId')!=self.local_library or (payload.get('accountLibraryId') and payload['accountLibraryId']!=self.account_library):raise ValueError('paper-library-changed')
     def _db(self):

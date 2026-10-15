@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { indexedDB, IDBDatabase } from 'fake-indexeddb';
 import { openD1 } from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import { AccountStudyStore } from '../db/account-study-store.ts';
 import { sealStudyItem, sealStudySnapshot } from '../app/account-study-content.ts';
 import { quizBody, snapshotBody } from './fixtures/account-study-fixtures.mjs';
@@ -43,6 +44,13 @@ async function d1Fixture(t, mode = 'recall') {
   const originalPort = { readAttempt: (scope, id) => attempts.read(scope, id), readItem: async () => f.item };
   return { ...f, ...db, source, store: new D1CourseEvidenceStore(db.binding, originalPort) };
 }
+for(const change of ['revoke','expire','replace-library'])test(`course evidence stays unchanged when device qualification moves at commit: ${change}`,async t=>{
+ const f=await d1Fixture(t),writer=await activateSyntheticWriter(f.binding,f.scope),before=f.sqlite.prepare('SELECT * FROM course_evidence_v1').all();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,f.scope,writer,change,'course_evidence_v1');
+ await assert.rejects(f.store.mutate(f.scope,f.bind,writer.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(f.sqlite.prepare('SELECT * FROM course_evidence_v1').all(),before);
+});
+
 test('D1 evidence CAS and durable idempotency preserve original attempts and scope', async t => {
   const f = await d1Fixture(t), before = JSON.stringify(f.original), second = { ...f.bind, operationId: 'second' };
   assert.equal(await f.store.supported(), true);

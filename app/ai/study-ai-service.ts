@@ -1,5 +1,9 @@
 // @ts-expect-error Node contract tests use explicit extensions.
 import {studyAIErrorCode} from './study-ai-errors.ts';
+// @ts-expect-error Node contract tests use explicit extensions.
+import {MAX_AI_STREAM_BYTES} from '../../src/domain/ai/index.ts';
+// @ts-expect-error Node contract tests use explicit extensions.
+import {readProviderText} from '../../src/infrastructure/ai/index.ts';
 import type {StudyAIChatRequest,StudyAIService,StudyAISettings,StudyAISettingsInput,StudyAIStreamEvent,StudyAIProvider,StudyAIScope,StudyAIMessage} from './study-ai-types';
 export type StudyAITransport=(action:'settings'|'configure'|'chat'|'models',value?:unknown,signal?:AbortSignal)=>Promise<unknown>;
 function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('ai-response-invalid');return value as Record<string,unknown>;}
@@ -8,8 +12,8 @@ async function decodeJson(value:unknown){if(value instanceof Response){if(!value
 export async function* decodeStudyAIStream(response:Response,signal:AbortSignal):AsyncGenerator<StudyAIStreamEvent>{
  if(!response.ok){await decodeJson(response);return;}
  if(!response.headers.get('content-type')?.includes('text/event-stream')){const v=object(await response.json()),result=object(v.result),trace=object(result.trace);if(typeof result.text!=='string')throw new Error('ai-response-invalid');signal.throwIfAborted();yield{type:'delta',text:result.text};yield{type:'done',model:String(trace.providerModel??trace.modelId),provider:trace.provider as StudyAIProvider};return;}
- if(!response.body)throw new Error('ai-stream-missing');const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='',done=false;const abort=()=>{void reader.cancel();};signal.addEventListener('abort',abort,{once:true});
- try{while(!done){signal.throwIfAborted();const chunk=await reader.read();signal.throwIfAborted();buffer+=decoder.decode(chunk.value,{stream:!chunk.done});if(buffer.length>262144)throw new Error('ai-stream-limit');let match:RegExpExecArray|null;while((match=/\r?\n\r?\n/.exec(buffer))){const block=buffer.slice(0,match.index);buffer=buffer.slice(match.index+match[0].length);const data=block.split(/\r?\n/).filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trimStart()).join('\n');if(!data)continue;const event=object(JSON.parse(data));if(event.type==='error')throw new Error(studyAIErrorCode(event.error));if(event.type==='delta'&&typeof event.text==='string')yield{type:'delta',text:event.text};else if(event.type==='done'){done=true;yield{type:'done',...(typeof event.model==='string'?{model:event.model}:{}),...(['deepseek','chatgpt'].includes(String(event.provider))?{provider:event.provider as StudyAIProvider}:{}),...(Number.isSafeInteger(event.usageTokens)?{usageTokens:event.usageTokens as number}:{})};break;}else throw new Error('ai-stream-invalid');}if(chunk.done&&!done)throw new Error('ai-stream-incomplete');}}
+ if(!response.body)throw new Error('ai-stream-missing');const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='',done=false,receivedBytes=0;const abort=()=>{void reader.cancel();};signal.addEventListener('abort',abort,{once:true});
+ try{while(!done){signal.throwIfAborted();const chunk=await reader.read();signal.throwIfAborted();receivedBytes+=chunk.value?.byteLength??0;if(receivedBytes>MAX_AI_STREAM_BYTES)throw new Error('ai-stream-limit');buffer+=decoder.decode(chunk.value,{stream:!chunk.done});if(buffer.length>262144)throw new Error('ai-stream-limit');let match:RegExpExecArray|null;while((match=/\r?\n\r?\n/.exec(buffer))){const block=buffer.slice(0,match.index);buffer=buffer.slice(match.index+match[0].length);const data=block.split(/\r?\n/).filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trimStart()).join('\n');if(!data)continue;const event=object(JSON.parse(data));if(event.type==='error')throw new Error(studyAIErrorCode(event.error));if(event.type==='delta'&&typeof event.text==='string')yield{type:'delta',text:event.text};else if(event.type==='done'){done=true;yield{type:'done',...(typeof event.model==='string'?{model:event.model}:{}),...(['deepseek','chatgpt'].includes(String(event.provider))?{provider:event.provider as StudyAIProvider}:{}),...(Number.isSafeInteger(event.usageTokens)?{usageTokens:event.usageTokens as number}:{})};break;}else throw new Error('ai-stream-invalid');}if(chunk.done&&!done)throw new Error('ai-stream-incomplete');}}
  finally{signal.removeEventListener('abort',abort);await reader.cancel().catch(()=>{});reader.releaseLock();}
 }
 export function createStudyAIService({request}:{request:StudyAITransport}):StudyAIService{return{
@@ -21,6 +25,11 @@ export function createStudyAIService({request}:{request:StudyAITransport}):Study
 };}
 export function createAccountStudyAIService(client:{aiWorkspaceRequest:StudyAITransport}):StudyAIService{return createStudyAIService({request:client.aiWorkspaceRequest});}
 export function createLocalStudyAIService(options:{baseUrl:string;token:string;libraryId:string;fetcher?:typeof fetch}):StudyAIService{return createStudyAIService({request:async(action,value,signal)=>{
+ if(action==='chat'){
+  const health=await(options.fetcher??fetch)(`${options.baseUrl.replace(/\/$/,'')}/v1/health`,{signal,redirect:'error'});
+  let data;try{data=JSON.parse(await readProviderText(health,{maxBytes:64000,maxChars:64000,limitError:'ai-companion-chat-upgrade-required',signal}));}catch{throw new Error('ai-companion-chat-upgrade-required');}
+  if(!health.ok||!Array.isArray(data?.capabilities)||!data.capabilities.includes('local-ai-chat-recovery-v1'))throw new Error('ai-companion-chat-upgrade-required');
+ }
  let request=value;
  // Older Companions accept exercise context only; fold safe page text into that supported shape.
  if(action==='chat'&&value&&typeof value==='object'){
@@ -28,7 +37,7 @@ export function createLocalStudyAIService(options:{baseUrl:string;token:string;l
   request={...original,context:{id:c.id,title:c.title,question:[c.question,c.selection&&`选中内容：${c.selection}`,c.pageText].filter(Boolean).join('\n\n').slice(0,4000),...(c.learnerAnswer?{learnerAnswer:c.learnerAnswer}:{}),...(c.code?{code:c.code}:{}),...(c.errors?{errors:c.errors}:{})}};
  }
  const body=action==='settings'?{}:action==='configure'?{settings:value}:action==='models'?{selection:value}:{request};
- const response=await(options.fetcher??fetch)(`${options.baseUrl.replace(/\/$/,'')}/v1/ai/${action}`,{method:'POST',signal,headers:{'Content-Type':'application/json','X-Study-Loop-Session':options.token},body:JSON.stringify({libraryId:options.libraryId,...body})});
+ const response=await(options.fetcher??fetch)(`${options.baseUrl.replace(/\/$/,'')}/v1/ai/${action}`,{method:'POST',signal,redirect:'error',headers:{'Content-Type':'application/json','X-Study-Loop-Session':options.token},body:JSON.stringify({libraryId:options.libraryId,...body})});
  if(action==='models'&&[404,501].includes(response.status))throw new Error('ai-companion-upgrade-required');return response;
 }});}
 export function studyAIHistoryKey(scope:StudyAIScope,provider:StudyAIProvider,conversation:string){return `study-ai-chat-v1:${JSON.stringify([scope.mode,scope.ownerId,scope.libraryId,provider,conversation])}`;}

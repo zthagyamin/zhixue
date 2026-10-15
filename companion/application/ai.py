@@ -8,6 +8,14 @@ from application.failures import CompanionFailure
 @dataclass(frozen=True)
 class LocalChat:
     events: Iterator[dict]
+    remaining: Callable[[], float] | None = None
+    cancel_prepared: Callable[[], None] | None = None
+
+
+@dataclass(frozen=True)
+class ChatTransport:
+    provider: Callable[[], Iterator[dict]]
+    executor: Any = None
 
 
 @dataclass(frozen=True)
@@ -25,6 +33,8 @@ class AiPorts:
     cached: Callable[[], dict]
     decorate: Callable[[dict], dict]
     save_legacy_settings: Callable[[str, Any], None]
+    begin_generation: Callable[[], Any] | None = None
+    commit_generation: Callable[[Any, dict], None] | None = None
 
 
 class AiApplication:
@@ -44,8 +54,12 @@ class AiApplication:
     def generate(self, payload: Any) -> dict:
         content = str(payload.get('content', ''))
         title = str(payload.get('title', '临时导入材料'))
+        ticket = self.ports.begin_generation() if self.ports.begin_generation else None
         result = self.ports.generate(content, '', title, '用户临时导入')
-        self.ports.set_cached(result)
+        if self.ports.commit_generation:
+            self.ports.commit_generation(ticket, result)
+        else:
+            self.ports.set_cached(result)
         return self.ports.decorate(result)
 
     def configured(self, owner: str, action: str, payload: Any) -> dict | LocalChat:

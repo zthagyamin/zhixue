@@ -5,17 +5,19 @@
 // migration contract: tables exist, the (user_id, event_id) uniqueness holds,
 // the same event id can coexist across users, and per-user data stays
 // isolated. API-layer classification (duplicates/conflicts/cursor) still
-// requires an authenticated browser session; see
-// docs/verification/2026-08-25-v0.7.1-acceptance.md section 1.
+// requires an authenticated browser session and separate API acceptance checks.
 //
 // Usage (requires Cloudflare authentication):
 //   set CLOUDFLARE_API_TOKEN=... (or run `wrangler login` once)
-//   node scripts/production-d1-smoke.mjs [--wrangler npx]
+//   node scripts/production-d1-smoke.mjs [--wrangler /path/to/wrangler]
+// The default (and legacy "npx" selection) uses the locked local Wrangler
+// through Node, without npm package discovery or a shell.
 //
 // The executor is injectable so the same steps run against a local SQLite
 // database in tests/production-d1-smoke.test.mjs.
 
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const TEST_USER_A = "smoke-user-a";
 const TEST_USER_B = "smoke-user-b";
@@ -119,11 +121,16 @@ export async function runSmoke(executor) {
 }
 
 function wranglerExecutor(wranglerCommand) {
+  const local = !wranglerCommand || wranglerCommand === "npx";
+  const executable = local ? process.execPath : wranglerCommand;
+  const prefix = local
+    ? [fileURLToPath(new URL("../node_modules/wrangler/bin/wrangler.js", import.meta.url))]
+    : [];
   return async (sql) => {
     const output = await new Promise((resolve, reject) => {
-      const child = spawn(wranglerCommand, [
+      const child = spawn(executable, [...prefix,
         "d1", "execute", "DB", "--remote", "--json", "--command", sql,
-      ], { stdio: ["ignore", "pipe", "pipe"] });
+      ], { stdio: ["ignore", "pipe", "pipe"], shell: false, windowsHide: true });
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (chunk) => { stdout += chunk; });
@@ -135,15 +142,28 @@ function wranglerExecutor(wranglerCommand) {
       });
     });
     const parsed = JSON.parse(output);
-    const results = Array.isArray(parsed) ? parsed : parsed.results ?? [];
-    return results;
+    const frames = Array.isArray(parsed) ? parsed : [parsed];
+    if (!frames.length) throw new Error("Wrangler returned no D1 response");
+    return frames.flatMap(frame => {
+      if (!frame || frame.success !== true || !Array.isArray(frame.results)) {
+        const message = Array.isArray(frame?.errors)
+          ? frame.errors.map(error => error?.message).filter(value => typeof value === "string").join("; ")
+          : "";
+        throw new Error(message || "Wrangler did not return successful D1 results");
+      }
+      return frame.results;
+    });
   };
 }
 
 function main() {
-  const wranglerCommand = process.argv.find((arg, index) => arg === "--wrangler" && process.argv[index + 1])
-    ? process.argv[process.argv.indexOf("--wrangler") + 1]
-    : "npx";
+  const option = process.argv.indexOf("--wrangler");
+  const wranglerCommand = option < 0 ? undefined : process.argv[option + 1];
+  if (option >= 0 && (!wranglerCommand || wranglerCommand.startsWith("--"))) {
+    console.error("--wrangler requires an executable");
+    process.exitCode = 2;
+    return;
+  }
   runSmoke(wranglerExecutor(wranglerCommand)).then((report) => {
     const passed = report.filter((step) => step.passed).length;
     console.log(JSON.stringify({ total: report.length, passed, report }, null, 2));

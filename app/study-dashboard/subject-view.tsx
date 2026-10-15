@@ -3,7 +3,7 @@ import {NonWordPluginHost,createNonWordContinuation,restorePendingAnswers,scopeF
 import { createNonWordQuestionSelection, bindNonWordNavigation, sourceUpdateNotice } from '../../src/features/nonword-study';
 import {practicedSubjectKeys,pendingSubjectKeys,isSubjectPassComplete,skipSubjectRound} from '../subject-round';
 import {DemoModeBadge} from "../demo-mode-badge";
-import {StudyGuidanceHelp} from '../study-guidance';
+import {StudyGuidanceHelp,StudyRoundGuidance} from '../study-guidance';
 import {StudySaveStatus} from '../study-save-status';
 import {ReviewContext} from "../review-context";
 import { useState } from "react";
@@ -235,7 +235,7 @@ function SubjectViewSession({model}:Props){
           const quickReview=isInitialReviewProbe({review:isDueWordReview&&(!accountLoaded||scopedAccountProgress?.historyReady===true),mode:actualPluginType,completedStage,itemKeys:reviewKeys,
             events:accountLoaded?[...accountEvents,...progressEvents]:progressEvents,
             boundary:accountLoaded||!taskScope?{kind:'day',day:currentDay}:reviewAnchor?{kind:'after',occurredAt:reviewAnchor}:null});
-          const currentStage = (actualPluginType === "calculation" || actualPluginType === "recall") ? 1 : actualPluginType==='three-stage'
+          const currentStage = (actualPluginType === "calculation" || actualPluginType === "recall" || completesSubjectItemAfterAttempt(currentItem,subject)) ? 1 : actualPluginType==='three-stage'
             ?reviewDisplayStage(completedStage,quickReview):Math.min(3,completedStage+1);
           const roundScope=getVisibleSubjectRound(subject.id).scope;
           const sourceItemId=learningDraftItemId(subject.id,itemProgressKey,currentItem);
@@ -331,7 +331,7 @@ function SubjectViewSession({model}:Props){
                   {isDemoMode&&<DemoModeBadge/>}
                   <h2>「{subject.name}」本组已完成</h2>
                   <p>{round.correctKeys.length===0&&round.resets===0?`这组 ${items.length} 项内容此前已完成。`:`本组 ${items.length} 项内容已完成。`}</p>
-                  <details className="study-guidance-help"><summary>本轮记录与操作说明</summary><p>本轮会话记录到 {round.resets} 次需重练作答；次数不代表掌握度。额外巩固不会改变已有进度或复习安排。</p><StudyGuidanceHelp kind={actualPluginType}/></details>
+                  <StudyRoundGuidance resets={round.resets} kind={actualPluginType} pendingEvaluation={Boolean(nonWordScope)}/>
                   <div>
                     {continueTodayButton}
                     <button disabled={model.practiceLoading} onClick={() => navigateToStudyTab("today")}>返回今日汇总</button>
@@ -366,7 +366,7 @@ function SubjectViewSession({model}:Props){
               source={<StudyItemSource item={currentItem} source={data.source} canOpenLocal={!accountLoaded&&Boolean(companionSession)&&syncState==='connected'} getObsidianUri={getObsidianUri} preferenceScope={JSON.stringify([workspaceId,accountLibraryId??data.localLibraryId??'local'])}/>}
               queue={<div className="word-stage-list">{items.map((item,index)=>{const key=resolveStudyItemProgressKey(item,index,uiProgress),stage=learningStages[key]||0;return <button key={key} type="button" className={index===idx?'active':''} onClick={()=>selectQuestion(index)}><span>{itemLabel(item,index)}</span>{(item.pluginType||item.type||subject.pluginType)==='three-stage'&&<b>{[1,2,3].map(step=><i key={step} className={stage>=step?'done':''}/>)}</b>}</button>;})}</div>}
               options={<>
-                <StudyGuidanceHelp kind={actualPluginType}/>
+                <StudyGuidanceHelp kind={actualPluginType} pendingEvaluation={Boolean(nonWordScope)}/>
                 <section aria-label="本题复习安排"><h3>本题复习安排</h3><ReviewContext temporary={isDemoMode} completedStage={actualPluginType==='three-stage'?completedStage:undefined} category={scopedTask?.category} due={uiProgress.fsrsData?.[itemProgressKey]?.due} recorded={draftAdapter.hasSavedFeedback?.()}/></section>
                 {(taskPlanningEnabled||accountLoaded) && <div className="mb-4 flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="学习范围">
                   <button className="rounded-lg border border-[var(--line)] px-3 py-2 focus-visible:outline-2" aria-pressed={Boolean(modulePlan)} onClick={()=>navigateToStudyTab('today')}>今日任务</button>

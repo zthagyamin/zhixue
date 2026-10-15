@@ -1,4 +1,5 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 
@@ -81,6 +82,74 @@ class SnapshotSchemaTests(unittest.TestCase):
         snapshots = snapshot_schema.approved_snapshots(self.vault)
         self.assertEqual(len(snapshots), 1)
         self.assertEqual(snapshots[0]["captureId"], "cap-2")
+
+    def test_opaque_ids_have_stable_distinct_filenames(self):
+        names = [snapshot_schema._safe_filename(value) for value in
+                 ('opaque:one', 'opaque?one', '普通捕获', 'CON')]
+        self.assertEqual(len(set(names)), len(names))
+        for name in names:
+            self.assertRegex(name, r'^capture-sha256-[a-f0-9]{64}\.json$')
+        self.assertEqual(snapshot_schema._safe_filename('cap-1'), 'cap-1.json')
+        self.assertEqual(snapshot_schema._safe_filename('opaque:one'), names[0])
+        self.assertNotEqual(snapshot_schema._safe_filename(names[0][:-5]), names[0])
+
+    def test_legacy_approved_filename_is_reused_without_duplicate(self):
+        dirs = snapshot_schema.ensure_sources_dirs(self.vault)
+        snapshot = snapshot_schema.build_snapshot({
+            'captureId': '课程-1', 'itemId': 'i', 'domain': 'course',
+            'sourceNote': 'note.md', 'stateRef': 'state.md', 'abilityId': 'a',
+            'contentFingerprint': 'old-fingerprint', 'pluginType': 'quiz', 'planRevision': 0,
+        })
+        path = dirs['approved'] / '1.json'
+        path.write_text(json.dumps(snapshot, ensure_ascii=False), encoding='utf-8')
+        self.assertEqual(snapshot_schema.write_approved_snapshot(self.vault, snapshot), path)
+        self.assertEqual(list(dirs['approved'].iterdir()), [path])
+        self.assertEqual(snapshot_schema.approved_snapshots(self.vault), [snapshot])
+        revised = {**snapshot, 'summary': 'updated synthetic material'}
+        self.assertEqual(snapshot_schema.write_approved_snapshot(self.vault, revised), path)
+        self.assertEqual(snapshot_schema.approved_snapshots(self.vault), [revised])
+
+    def test_legacy_cleaning_collision_preserves_the_other_capture(self):
+        dirs = snapshot_schema.ensure_sources_dirs(self.vault)
+        snapshot = snapshot_schema.build_snapshot({
+            'captureId': '课程-1', 'itemId': 'i', 'domain': 'course',
+            'sourceNote': 'note.md', 'stateRef': 'state.md', 'abilityId': 'a',
+            'contentFingerprint': 'old-fingerprint', 'pluginType': 'quiz', 'planRevision': 0,
+        })
+        legacy = dirs['approved'] / '1.json'
+        original = json.dumps(snapshot).encode('utf-8')
+        legacy.write_bytes(original)
+        other = {**snapshot, 'captureId': '讲义-1', 'itemId': 'other'}
+        target = snapshot_schema.write_approved_snapshot(self.vault, other)
+        self.assertNotEqual(target, legacy)
+        self.assertEqual(legacy.read_bytes(), original)
+        self.assertEqual(snapshot_schema.read_approved_snapshot(self.vault, target.name), other)
+
+    def test_long_opaque_identity_leaves_room_for_the_atomic_filename(self):
+        capture_id = 'ordinary-' + 'x' * 171
+        name = snapshot_schema._safe_filename(capture_id)
+        self.assertLessEqual(len(name), 105)
+        self.assertEqual(name, snapshot_schema._safe_filename(capture_id))
+
+    def test_approved_reader_preserves_legacy_status_compatibility(self):
+        dirs = snapshot_schema.ensure_sources_dirs(self.vault)
+        template = snapshot_schema.build_snapshot({
+            'captureId': 'legacy-status', 'itemId': 'i', 'domain': 'course',
+            'sourceNote': 'note.md', 'stateRef': 'state.md', 'abilityId': 'a',
+            'contentFingerprint': 'old-fingerprint', 'pluginType': 'quiz', 'planRevision': 0,
+        })
+        for status in (None, 'approved', 'pending', 'rejected'):
+            name = f'status-{status}.json'
+            snapshot = dict(template)
+            if status is not None:
+                snapshot['status'] = status
+            (dirs['approved'] / name).write_text(json.dumps(snapshot), encoding='utf-8')
+            if status in ('pending', 'rejected'):
+                with self.assertRaisesRegex(ValueError, 'snapshot-not-approved'):
+                    snapshot_schema.read_approved_snapshot(self.vault, name)
+            else:
+                self.assertEqual(snapshot_schema.read_approved_snapshot(self.vault, name), snapshot)
+        self.assertEqual(len(snapshot_schema.approved_snapshots(self.vault)), 2)
 
 
 if __name__ == "__main__":

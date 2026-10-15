@@ -3,6 +3,7 @@ import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {openD1,migrateD1} from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import {AccountStudyStore} from '../db/account-study-store.ts';
 import {AccountStudyAccessStore} from '../db/account-study-access-store.ts';
 import {sealAccountAssistance} from '../app/assistance-record.ts';
@@ -14,11 +15,21 @@ let api;try{api=await import('../db/account-assistance-store.ts');}catch(error){
 const owner={userId:'user-a',libraryId:'library-a'},now=()=>new Date('2026-09-01T00:00:00.000Z');
 async function setup(t){
   assert.equal(typeof api?.AccountAssistanceStore,'function');const {sqlite,binding}=await openD1();t.after(()=>sqlite.close());
-  const core=new AccountStudyStore(binding),access=new AccountStudyAccessStore(binding,now),store=new api.AccountAssistanceStore(binding,now);
+  // Historical receipt timestamps do not make an expired live grant usable.
+  const core=new AccountStudyStore(binding),access=new AccountStudyAccessStore(binding),store=new api.AccountAssistanceStore(binding,now);
   const secret=Buffer.alloc(32,6).toString('base64url');await access.register(owner.userId,{grantId:'writer-a',libraryId:owner.libraryId,tokenHash:createHash('sha256').update(secret).digest('hex'),label:'Synthetic',expectedProfileRevision:0,replaceLibrary:false});await access.activate(secret);
   await core.putSnapshot(owner,v.bundle,0);await core.appendRecord(owner,v.records[0]);
   return{sqlite,binding,core,access,store,record:await sealAccountAssistance(v.records[0],summary)};
 }
+for(const change of ['revoke','expire','replace-library'])test(`assistance receipt stays unchanged at a qualification change: ${change}`,async t=>{
+ const f=await setup(t);await f.store.append(owner,f.record);
+ const actor=await activateSyntheticWriter(f.binding,owner),before=f.sqlite.prepare('SELECT * FROM account_study_assistance_receipts').all();
+ const value=receipt(f.record,{receiptId:'qualification-assistance'});
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,owner,actor,change,'account_study_assistance_receipts');
+ await assert.rejects(f.store.appendReceipt(owner,value,actor.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(f.sqlite.prepare('SELECT * FROM account_study_assistance_receipts').all(),before);
+});
+
 test('summary append is isolated, immutable and does not modify learning events or projections',async t=>{
   const f=await setup(t),before=f.sqlite.prepare('SELECT * FROM account_study_records').all();
   const first=await f.store.append(owner,f.record);assert.equal(first.status,'accepted');assert.equal(first.durable,true);

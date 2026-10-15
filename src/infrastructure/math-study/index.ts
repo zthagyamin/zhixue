@@ -18,7 +18,7 @@ export {createNativeMathSourceCache} from './native-source-cache.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 export {nativeMathTask,attachNativeMathDriver} from './native-host-runtime.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
-import {providerRequest} from '../ai/index.ts';
+import {providerRequest,readProviderText} from '../ai/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {studyObject,studyCount} from '../../domain/sync/index.ts';
 type Options={enabled:boolean;key:string;model:string;provider?:StudyAIProvider;baseUrl?:string;fetcher?:typeof fetch;timeoutMs?:number};
@@ -29,10 +29,7 @@ const instruction:Record<PracticeAiKind,string>={
 };
 async function boundedReply(response:Response,signal:AbortSignal):Promise<string>{
     if(!response.body)throw Error('practice-ai-provider-error');
-    const reader=response.body.getReader(),decoder=new TextDecoder();let text='',bytes=0;
-    const abort=()=>{void reader.cancel().catch(()=>{});};signal.addEventListener('abort',abort,{once:true});
-    try{while(true){signal.throwIfAborted();const part=await reader.read();signal.throwIfAborted();if(part.done)break;bytes+=part.value.byteLength;if(bytes>65536)throw Error('practice-ai-output-limit');text+=decoder.decode(part.value,{stream:true});}return text+decoder.decode();}
-    finally{signal.removeEventListener('abort',abort);await reader.cancel().catch(()=>{});reader.releaseLock();}
+    return readProviderText(response,{maxBytes:65536,limitError:'practice-ai-output-limit',signal});
 }
 /** Credentials/configuration are inherited from the existing account provider adapter. */
 export function createPracticeAssistanceAi(options:Options):PracticeAiPort{

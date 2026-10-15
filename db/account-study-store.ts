@@ -10,6 +10,8 @@ import {canonicalizeJson} from '../app/study-event-v3.ts';
 import {requireCourseFormalProof} from '../src/infrastructure/course-proof/index.ts';
 // @ts-expect-error TS5097: Node tests use explicit TypeScript extensions.
 import {evaluationFingerprint} from '../src/infrastructure/learning-attempt/fingerprint.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../src/infrastructure/account-study-writer/index.ts';
 
 export type StudyScope={userId:string;libraryId:string};
 type Metadata={user_id:string;library_id:string;snapshot_id:string;revision:number;snapshot_hash:string;
@@ -48,7 +50,8 @@ export class AccountStudyStore {
     return await this.q('SELECT snapshot_id,revision FROM account_study_heads WHERE user_id=? AND library_id=?',...scopeArgs(scope))
       .first<{snapshot_id:string|null;revision:number}>()??{snapshot_id:null,revision:0};
   }
-  async beginSnapshot(scope:StudyScope,raw:unknown):Promise<void> {
+  async beginSnapshot(scope:StudyScope,raw:unknown,writerGrantId?:string):Promise<void> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const snapshot=await parseStudySnapshot(raw);scopedSnapshot(scope,snapshot);
     const args=scopeArgs(scope),header=headerJson(snapshot);
     const pages:ManifestPage[]=[];
@@ -56,15 +59,17 @@ export class AccountStudyStore {
       const refs=snapshot.items.slice(offset,offset+MANIFEST_PAGE);
       pages.push({page:offset/MANIFEST_PAGE,page_hash:await studyHash(refs),page_json:canonicalizeJson(refs)});
     }
+    const writer=studyWriterCondition(scope,writerGrantId);
     const queries=[
-      this.q('INSERT INTO account_study_libraries(user_id,library_id) VALUES (?,?) ON CONFLICT DO NOTHING',...args),
-      this.q('INSERT INTO account_study_heads(user_id,library_id,revision) VALUES (?,?,0) ON CONFLICT DO NOTHING',...args),
-      this.q('INSERT INTO account_study_snapshots(user_id,library_id,snapshot_id,revision,snapshot_hash,header_json,member_count,published) VALUES (?,?,?,?,?,?,?,0) ON CONFLICT DO NOTHING',
-        ...args,snapshot.snapshotId,snapshot.revision,snapshot.snapshotHash,header,snapshot.items.length),
+      this.q(`INSERT INTO account_study_libraries(user_id,library_id) SELECT ?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING`,...args,...writer.bindings),
+      this.q(`INSERT INTO account_study_heads(user_id,library_id,revision) SELECT ?,?,0 WHERE ${writer.sql} ON CONFLICT DO NOTHING`,...args,...writer.bindings),
+      this.q(`INSERT INTO account_study_snapshots(user_id,library_id,snapshot_id,revision,snapshot_hash,header_json,member_count,published) SELECT ?,?,?,?,?,?,?,0 WHERE ${writer.sql} ON CONFLICT DO NOTHING`,
+        ...args,snapshot.snapshotId,snapshot.revision,snapshot.snapshotHash,header,snapshot.items.length,...writer.bindings),
     ];
-    for(const page of pages) queries.push(this.q('INSERT INTO account_study_manifest_pages(user_id,library_id,snapshot_id,page,page_hash,page_json) SELECT ?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM account_study_snapshots WHERE user_id=? AND library_id=? AND snapshot_id=? AND snapshot_hash=?) ON CONFLICT DO NOTHING',
-      ...args,snapshot.snapshotId,page.page,page.page_hash,page.page_json,...args,snapshot.snapshotId,snapshot.snapshotHash));
+    for(const page of pages) queries.push(this.q(`INSERT INTO account_study_manifest_pages(user_id,library_id,snapshot_id,page,page_hash,page_json) SELECT ?,?,?,?,?,? WHERE ${writer.sql} AND EXISTS (SELECT 1 FROM account_study_snapshots WHERE user_id=? AND library_id=? AND snapshot_id=? AND snapshot_hash=?) ON CONFLICT DO NOTHING`,
+      ...args,snapshot.snapshotId,page.page,page.page_hash,page.page_json,...writer.bindings,...args,snapshot.snapshotId,snapshot.snapshotHash));
     await this.database.batch(queries);
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const saved=await this.metadata(scope,snapshot.snapshotId);
     if(!saved) throw new Error('study-storage-missing-snapshot');
     if(saved.snapshot_hash!==snapshot.snapshotHash||saved.member_count!==snapshot.items.length||saved.revision!==snapshot.revision
@@ -96,7 +101,8 @@ export class AccountStudyStore {
       : 'SELECT position,item_key,content_hash FROM account_study_snapshot_members WHERE user_id=? AND library_id=? AND snapshot_id=? AND position>=? ORDER BY position LIMIT ?';
     return (await this.q(query,...scopeArgs(scope),id,start,limit).all<Member>()).results;
   }
-  async stageSnapshotItems(scope:StudyScope,id:string,raw:unknown):Promise<void> {
+  async stageSnapshotItems(scope:StudyScope,id:string,raw:unknown,writerGrantId?:string):Promise<void> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     scopeArgs(scope);const meta=await this.metadata(scope,id);
     if(!meta) throw new Error('unknown-study-snapshot');
     if(!Array.isArray(raw)||raw.length<1||raw.length>PAGE_ITEMS) throw new Error('invalid-study-upload-page');
@@ -121,15 +127,17 @@ export class AccountStudyStore {
     }
     await this.checkPositions(await this.positionRows(scope,id,entries.map(entry=>entry.position)),entries,meta.published!==1);
     if(meta.published!==1) {
+      const writer=studyWriterCondition(scope,writerGrantId);
       const queries:D1PreparedStatement[]=[];
       for(const {position,item} of entries) {
-        queries.push(this.q('INSERT INTO account_study_item_versions(user_id,library_id,item_key,content_hash,item_json) VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING',
-          ...scopeArgs(scope),item.itemKey,item.contentHash,canonicalizeJson(item)));
-        queries.push(this.q('INSERT INTO account_study_snapshot_members(user_id,library_id,snapshot_id,position,item_key,content_hash) VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING',
-          ...scopeArgs(scope),id,position,item.itemKey,item.contentHash));
+        queries.push(this.q(`INSERT INTO account_study_item_versions(user_id,library_id,item_key,content_hash,item_json) SELECT ?,?,?,?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING`,
+          ...scopeArgs(scope),item.itemKey,item.contentHash,canonicalizeJson(item),...writer.bindings));
+        queries.push(this.q(`INSERT INTO account_study_snapshot_members(user_id,library_id,snapshot_id,position,item_key,content_hash) SELECT ?,?,?,?,?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING`,
+          ...scopeArgs(scope),id,position,item.itemKey,item.contentHash,...writer.bindings));
       }
       await this.database.batch(queries);
     }
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     await this.checkPositions(await this.positionRows(scope,id,entries.map(entry=>entry.position)),entries,false);
   }
   private async readManifest(scope:StudyScope,id:string,staging:boolean):Promise<StudySnapshot|null> {
@@ -147,17 +155,20 @@ export class AccountStudyStore {
     if(snapshot.libraryId!==scope.libraryId||snapshot.snapshotId!==id||snapshot.revision!==meta.revision) throw new Error('study-snapshot-integrity');
     return snapshot;
   }
-  async completeSnapshot(scope:StudyScope,id:string,expectedRevision:number):Promise<SnapshotResult> {
+  async completeSnapshot(scope:StudyScope,id:string,expectedRevision:number,writerGrantId?:string):Promise<SnapshotResult> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     studyCount(expectedRevision,'expected-revision');const snapshot=await this.readManifest(scope,id,true);
     if(!snapshot) throw new Error('unknown-study-snapshot');
     const before=await this.metadata(scope,id);
     if(before?.published===1) return {status:'duplicate',revision:(await this.head(scope)).revision};
     if(snapshot.revision!==expectedRevision+1) throw new Error('invalid-study-publication-revision');
+    const writer=studyWriterCondition(scope,writerGrantId);
     await this.database.batch([
-      this.q('UPDATE account_study_heads SET snapshot_id=?,revision=? WHERE user_id=? AND library_id=? AND revision=?',id,snapshot.revision,...scopeArgs(scope),expectedRevision),
-      this.q('UPDATE account_study_snapshots SET published=1 WHERE user_id=? AND library_id=? AND snapshot_id=? AND EXISTS (SELECT 1 FROM account_study_heads h WHERE h.user_id=? AND h.library_id=? AND h.snapshot_id=? AND h.revision=?)',
-        ...scopeArgs(scope),id,...scopeArgs(scope),id,snapshot.revision),
+      this.q(`UPDATE account_study_heads SET snapshot_id=?,revision=? WHERE user_id=? AND library_id=? AND revision=? AND ${writer.sql}`,id,snapshot.revision,...scopeArgs(scope),expectedRevision,...writer.bindings),
+      this.q(`UPDATE account_study_snapshots SET published=1 WHERE user_id=? AND library_id=? AND snapshot_id=? AND ${writer.sql} AND EXISTS (SELECT 1 FROM account_study_heads h WHERE h.user_id=? AND h.library_id=? AND h.snapshot_id=? AND h.revision=?)`,
+        ...scopeArgs(scope),id,...writer.bindings,...scopeArgs(scope),id,snapshot.revision),
     ]);
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const after=await this.metadata(scope,id),head=await this.head(scope);
     if(after?.published===1) return {status:'accepted',revision:head.revision};
     if(head.revision!==expectedRevision) return {status:'stale',revision:head.revision};
@@ -165,12 +176,12 @@ export class AccountStudyStore {
   }
   /** Small-bundle fast path. Larger libraries use separate bounded requests
    * for beginSnapshot, stageSnapshotItems and completeSnapshot. */
-  async putSnapshot(scope:StudyScope,raw:unknown,expectedRevision:number):Promise<SnapshotResult> {
+  async putSnapshot(scope:StudyScope,raw:unknown,expectedRevision:number,writerGrantId?:string):Promise<SnapshotResult> {
     const bundle=await validateStudyBundle(raw);scopedSnapshot(scope,bundle.snapshot);
     if(bundle.items.length>10) throw new Error('use-staged-snapshot-upload');
-    await this.beginSnapshot(scope,bundle.snapshot);
-    if(bundle.items.length) await this.stageSnapshotItems(scope,bundle.snapshot.snapshotId,bundle.items.map((item,position)=>({item,position})));
-    return this.completeSnapshot(scope,bundle.snapshot.snapshotId,expectedRevision);
+    await this.beginSnapshot(scope,bundle.snapshot,writerGrantId);
+    if(bundle.items.length) await this.stageSnapshotItems(scope,bundle.snapshot.snapshotId,bundle.items.map((item,position)=>({item,position})),writerGrantId);
+    return this.completeSnapshot(scope,bundle.snapshot.snapshotId,expectedRevision,writerGrantId);
   }
   async getSnapshot(scope:StudyScope,snapshotId?:string):Promise<StudySnapshot|null> {
     scopeArgs(scope);const id=snapshotId??(await this.head(scope)).snapshot_id;
@@ -200,7 +211,8 @@ export class AccountStudyStore {
       ||row.core_hash!==record.event.coreHash||row.envelope_hash!==record.envelopeHash||row.snapshot_id!==record.snapshotId) throw new Error('study-record-integrity');
     return {sequence:row.sequence,record};
   }
-  async appendRecord(scope:StudyScope,raw:unknown):Promise<{status:'accepted'|'duplicate'|'conflict';sequence:number;durable:boolean}> {
+  async appendRecord(scope:StudyScope,raw:unknown,writerGrantId?:string):Promise<{status:'accepted'|'duplicate'|'conflict';sequence:number;durable:boolean}> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     scopeArgs(scope);const record=await parseStudyRecord(raw);
     if(record.libraryId!==scope.libraryId) throw new Error('study-scope-mismatch');
     const old=await this.storedRecord(scope,record.event.eventId);
@@ -214,8 +226,10 @@ export class AccountStudyStore {
       if(!member) throw new Error('study-record-membership');const item=await parseStudyItem(JSON.parse(member.item_json));checkStudyRecordBinding(record,item);
       await requireCourseFormalProof(this.database,scope,item,record,evaluationFingerprint);
     }
-    const inserted=await this.q('INSERT INTO account_study_records(user_id,library_id,event_id,snapshot_id,core_hash,envelope_hash,record_json) VALUES (?,?,?,?,?,?,?) ON CONFLICT DO NOTHING RETURNING sequence',
-      ...scopeArgs(scope),record.event.eventId,record.snapshotId,record.event.coreHash,record.envelopeHash,canonicalizeJson(record)).all<{sequence:number}>();
+    const writer=studyWriterCondition(scope,writerGrantId);
+    const inserted=await this.q(`INSERT INTO account_study_records(user_id,library_id,event_id,snapshot_id,core_hash,envelope_hash,record_json) SELECT ?,?,?,?,?,?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING RETURNING sequence`,
+      ...scopeArgs(scope),record.event.eventId,record.snapshotId,record.event.coreHash,record.envelopeHash,canonicalizeJson(record),...writer.bindings).all<{sequence:number}>();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const saved=await this.storedRecord(scope,record.event.eventId);if(!saved) throw new Error('study-storage-missing-record');
     const checked=await this.recordFromRow(scope,saved),same=compareStudyRecord(checked.record,record)==='duplicate';
     return {status:!same?'conflict':inserted.results.length?'accepted':'duplicate',sequence:saved.sequence,durable:same};

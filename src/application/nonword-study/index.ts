@@ -18,6 +18,7 @@ export type NonWordHostScope = {
     snapshotId: string;
     itemKey: string;
     contentHash: string;
+    sourceConfirmationRequired?: boolean;
     groupId: string;
     roundId: string;
     cloud: boolean;
@@ -47,6 +48,9 @@ export interface NonWordLearningPort {
     readonly submitted?: boolean;
     readonly submittedHintLevel?: number;
     readonly answerRevealed?: boolean;
+    readonly sourcePending?: boolean;
+    readonly firstSelfRating?: 'again'|'hard'|'good'|'easy';
+    readonly firstOutcome?: NonWordOutcome;
     /** Returns identity only after this exact code has a durable submission. */
     prepareExecution?: (answer:string)=>Promise<import('../../domain/code-execution').CodeRunIdentity>;
     recordExecutionReport?: (report:import('../../domain/code-execution').CodeRunReportV1,output?:string)=>Promise<void>;
@@ -66,7 +70,9 @@ export interface NonWordLearningPort {
 }
 // @ts-expect-error TS5097: standalone Node contracts.
 export { createNonWordSession } from './session.ts';
-export type { AttemptRepository } from './session';
+export type { AttemptRepository, NonWordSourceAdmission } from './session';
+// @ts-expect-error TS5097: standalone Node contracts.
+export {isAttemptRevisionConflict} from './checkpoint-recovery.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 export { createNonWordRoundSession, validNonWordRoundMembers } from './round-session.ts';
 export type { RoundSourceMember, NonWordRoundScope, RoundTraversal, RoundCursorInput, NonWordRoundState } from './round-session';
@@ -79,5 +85,7 @@ export type { OriginalOfficialEvidence } from './reconcile';
 // @ts-expect-error TS5097: standalone Node contracts.
 export {createContinuationCoordinator} from './continuation.ts';
 export type {ContinuationGroup} from './continuation-storage';
+// @ts-expect-error TS5097: standalone Node contracts.
+export {parseContinuationNote} from './continuation-storage.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 export {createNonWordExecutionCoordinator,recordNonWordAuxiliary} from './execution.ts';

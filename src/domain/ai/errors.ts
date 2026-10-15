@@ -1,6 +1,8 @@
 import type {StudyAIProvider} from './types';
 
 export const STUDY_AI_ERRORS:Record<string,string>={
+ 'cloud-ai-destination':'云端仅支持已登记的 API 地址，请联系维护者登记或使用本机 Companion。',
+ 'cloud-ai-destination-config':'云端 API 地址登记暂不可用，请联系维护者。',
  'ai-model-name':'模型名称不是 API 标识。请从下拉列表选择模型，再保存。',
  'ai-provider-model':'提供商不支持此模型，或当前密钥无权使用它。请重新读取并选择模型。',
  'ai-provider-auth':'API 密钥无效或已失效，请检查密钥所属的提供商。',
@@ -33,8 +35,20 @@ export const STUDY_AI_ERRORS:Record<string,string>={
  'ai-settings-stale':'配置已更新，请重新读取后再试。',
  'ai-request-pending':'上一次请求仍在处理中，请稍候。',
  'ai-request-indeterminate':'上一次请求结果暂不明确，请稍后再试，避免重复调用。',
+ 'ai-request-conflict':'请求内容已变化，请重新打开对话。',
+ 'ai-chat-storage-unavailable':'回答暂未保存，请保留原请求，稍后核对。',
+ 'ai-chat-authority-changed':'连接授权已变更，请重新配对。',
+ 'ai-library-changed':'资料库已切换，请回到原资料库继续。',
+ 'ai-chat-recovery-invalid':'保存的请求暂不能读取，未重新发送。',
+ 'ai-chat-recovery-full':'这段对话记录已满，请新建对话。',
+ 'ai-chat-response-conflict':'恢复的回答不一致，已保留原文。',
+ 'ai-chat-execution-unverified':'上次执行状态尚未确认，已保留请求。',
+ 'ai-chat-execution-required':'执行状态暂不可用，已保留请求。',
+ 'ai-companion-chat-upgrade-required':'请更新 Companion 后再恢复对话。',
  'cloud-ai-base-url':'API 地址格式不正确，请填写兼容接口的基础地址。',
  'ai-provider-error':'回答未完成，请先运行连接测试查看原因。',
+ 'ai-stream-incomplete':'回答传输未完成，请核对已收到的内容和原请求。',
+ 'ai-stream-limit':'回答超出传输限制，请核对已收到的内容和原请求。',
  'cloud-ai-provider-error':'回答未完成，请先运行连接测试查看原因。',
 };
 export function studyAIErrorCode(error:unknown):string{

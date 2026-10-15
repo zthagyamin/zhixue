@@ -33,7 +33,7 @@ type State=import('./account-study-runtime').AccountPlanState;
 type Mutation={status?:string};type AiResponse={result:{selectedUnitIds:string[];optionalOrder:string[];message?:string}};
 type Execution={receipt:{operationId:string;status:'applied'|'blocked';proof?:{localRevision:number}}};
 export function AccountStudyConnection({client,loaded,onLoaded,onUseLocal,onRefresh,onRebuild,onAdoptLibrary,readStatus,canPair=true}:{client:Client;loaded:AccountStudyLoaded|null;onLoaded?:(value:AccountStudyLoaded|null)=>void;onUseLocal:()=>void;onRefresh?:()=>Promise<AccountStudyLoaded|null>;onRebuild?:()=>Promise<AccountStudyLoaded|null>;onAdoptLibrary?:()=>Promise<AccountStudyLoaded|null>;readStatus?:AccountLoadStatus;canPair?:boolean}){
-  const connection=useAccountConnection({client,status:()=>client.localStatus() as Promise<{links?:Array<{grantId:string;label:string;state:string;workerStatus:string}>}>,
+  const connection=useAccountConnection({client,status:()=>client.localStatus(),
     prepare:(label,options)=>client.prepare(label,options),start:id=>client.start(id),stop:id=>client.stop(id),
     read:async kind=>{
       if(kind==='adopt')return onAdoptLibrary?onAdoptLibrary():null;
@@ -41,22 +41,24 @@ export function AccountStudyConnection({client,loaded,onLoaded,onUseLocal,onRefr
       return onRefresh?onRefresh():client.load();
     },loaded:value=>{if(!onRefresh)onLoaded?.(value);},count:value=>value.bundle.items.length,replacementRequired:error=>error instanceof AccountLibraryReplacementRequired,
   });
-  const {label,setLabel,message,busy,replacement,grant,refresh,prepare}=connection;
+  const {label,setLabel,message,busy,replacement,grant,sync,refresh,prepare}=connection;
+  const recover=canPair&&sync?.action==='reauthorize',resume=canPair&&sync?.action==='resume',connect=canPair&&sync?.action==='connect';
   return <section className="border border-[var(--line)] bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5"><div><p className="text-[10px] uppercase tracking-widest font-black opacity-50 mb-2">Account study sync</p>
       <h3 className="font-serif text-2xl text-[var(--ink)]">同账号题库与后台写回</h3><p className="text-sm opacity-65 mt-2 max-w-2xl leading-relaxed">题目、计划与作答先进入账号空间；只有已授权的 Companion 能写回学科目录。机器凭据不进入浏览器。</p></div>
       <span className="study-connection-label">{readStatus?accountLoadLabel(readStatus):loaded?'账号资料已读取':'尚未连接账号题库'}</span></div>
     {readStatus&&<p className="study-meta">{accountLoadDetail(readStatus)}</p>}
     <div className="mt-6 flex flex-col sm:flex-row gap-3"><label className="sr-only" htmlFor="account-device-label">设备名称</label><input id="account-device-label" value={label} onChange={e=>setLabel(e.target.value)} maxLength={80} className="min-w-0 flex-1 px-4 py-3 rounded-xl border border-[var(--line)] bg-transparent" />
-      <button disabled={busy} onClick={()=>{if(!canPair||loaded)void refresh();else void prepare(false);}} className="px-5 py-3 rounded-xl bg-[var(--ink)] text-[var(--surface)] font-black active:scale-[.98] disabled:opacity-50 focus-visible:ring-2">{busy?'处理中…':loaded?'更新账号资料':'连接账号题库'}</button>
+      <button disabled={busy} onClick={()=>{if(recover)void prepare(false,true);else if(resume)void connection.resume();else if(connect)void prepare(false);else if(!canPair||loaded||sync?.action==='pair')void refresh();else void prepare(false);}} className="px-5 py-3 rounded-xl bg-[var(--ink)] text-[var(--surface)] font-black active:scale-[.98] disabled:opacity-50 focus-visible:ring-2">{busy?'处理中…':recover?'重新授权此机':resume?'继续后台同步':connect?'完成账号授权':loaded?'更新账号资料':'连接账号题库'}</button>
       <button disabled={busy} onClick={()=>void refresh()} className="px-5 py-3 rounded-xl border border-[var(--line)] font-bold active:scale-[.98] disabled:opacity-50 focus-visible:ring-2">刷新</button></div>
-    {replacement&&<button onClick={()=>void prepare(true)} className="mt-3 px-4 py-2 rounded-xl border border-[var(--orange)] text-[var(--orange)] font-bold text-sm">确认切换到这台电脑的学习库</button>}
+    {replacement&&<button disabled={busy} onClick={()=>void prepare(true)} className="mt-3 px-4 py-2 rounded-xl border border-[var(--orange)] text-[var(--orange)] font-bold text-sm">确认切换到这台电脑的学习库</button>}
+    {sync&&<div role="status" className="mt-4 text-sm text-[var(--ink)]"><p>{sync.message}</p>{sync.expiryNotice&&sync.expiresAt&&<p className="mt-1 opacity-65">{sync.expiryNotice}<time dateTime={sync.expiresAt}>{new Intl.DateTimeFormat(undefined,{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',timeZoneName:'short'}).format(new Date(sync.expiresAt))}</time></p>}</div>}
     {message&&<p role="status" className="mt-4 text-sm text-[var(--ink)] opacity-75">{message}</p>}
     {readStatus?.phase==='library-changed'&&onAdoptLibrary&&<button disabled={busy} onClick={()=>void connection.adopt()} className="mt-3 px-4 py-2 border border-[var(--line)] rounded-lg text-sm">使用账号当前关联的学习库</button>}
     {readStatus?.phase==='failed'&&onRebuild&&<button disabled={busy} onClick={()=>void connection.rebuild()} className="mt-3 px-4 py-2 border border-[var(--line)] rounded-lg text-sm">重新下载完整资料</button>}
     {canPair&&(loaded||readStatus?.phase!=='local')&&<button onClick={()=>{connection.cancel();onUseLocal();}} className="mt-4 mr-4 text-xs font-bold opacity-60 hover:opacity-100">切回本机 Companion 模式</button>}
-    {grant&&<button onClick={()=>void prepare(false,true)} className="mt-4 mr-4 text-xs font-bold opacity-60 hover:opacity-100">旧授权失效时重新授权此机</button>}
-    {grant&&<button disabled={busy} onClick={()=>void connection.stop()} className="mt-4 text-xs font-bold opacity-60 hover:opacity-100">停止本机后台同步</button>}
+    {canPair&&grant&&!recover&&sync?.action!=='pair'&&<button disabled={busy} onClick={()=>void prepare(false,true)} className="mt-4 mr-4 text-xs font-bold opacity-60 hover:opacity-100">重新授权此机</button>}
+    {canPair&&grant&&<button disabled={busy} onClick={()=>void connection.stop()} className="mt-4 text-xs font-bold opacity-60 hover:opacity-100">停止本机后台同步</button>}
   </section>;
 }
 

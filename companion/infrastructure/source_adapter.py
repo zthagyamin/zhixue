@@ -32,8 +32,9 @@ def create_source_application(services) -> SourceApplication:
     def configure(payload):
         runtime = services.get_note_source_runtime()
         with services.NOTE_SOURCE_LOCK, runtime.service.lock:
-            updated = companion_setup.configure_workspace(services.ROOT, payload, has_history=lambda: note_source_runtime.has_history(services.LOCAL_DATABASE_PATH.parent))
-            services.CONFIG.update(updated)
+            with companion_setup.CONFIGURATION_LOCK:
+                updated = companion_setup.configure_workspace(services.ROOT, payload, has_history=lambda: note_source_runtime.has_history(services.LOCAL_DATABASE_PATH.parent))
+                services.CONFIG.update(updated)
         return note_source_runtime.setup_status(services.ROOT)
 
     def write_notes(owner, payload):

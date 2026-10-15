@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHooks,loader,nodes,text,button,deferred,tick} from './helpers/causal-harness.mjs';
 
-function fixture({purpose='first',failSubmit=false,failAssess=false,failGrade=false,submitWait,noPort=false,restored}={}){
-  const hooks=createHooks(),calls=[],grades=[],assessments=[],moves=[];let submitted=false,submitFailures=Number(failSubmit),assessFailures=Number(failAssess),gradeFailures=Number(failGrade),swipe;
-  const lifecycle={ready:true,purpose,intent:'review',attemptId:'synthetic-card-attempt',get submitted(){return submitted;},
+function fixture({purpose='first',failSubmit=false,failAssess=false,failGrade=false,submitWait,noPort=false,restored,pendingOnAssess=false,pendingOnGrade=false,noGradeReceipt=false}={}){
+  const hooks=createHooks(),calls=[],grades=[],assessments=[],moves=[];let submitted=false,submitFailures=Number(failSubmit),assessFailures=Number(failAssess),gradeFailures=Number(failGrade),swipe,sourcePending=false;
+  const lifecycle={ready:true,purpose,intent:'review',attemptId:'synthetic-card-attempt',get submitted(){return submitted;},get sourcePending(){return sourcePending;},
     async submit(answer){calls.push(['submit',answer]);await submitWait?.promise;if(submitFailures-- >0)throw Error('synthetic answer save failure');submitted=true;},
-    async assess(outcome){calls.push(['assess',outcome.rating]);if(assessFailures-- >0)throw Error('synthetic assessment save failure');assessments.push(outcome);},
+    async assess(outcome){calls.push(['assess',outcome.rating]);if(assessFailures-- >0)throw Error('synthetic assessment save failure');assessments.push(outcome);sourcePending=pendingOnAssess||sourcePending;},
     async waitForReview(){assert.fail('explicit self-assessment is not an invented unknown verdict');},async continuePending(){assert.fail('explicit self-assessment does not use unknown continuation');},
     async startRemediation(){calls.push(['start-child']);},async finishRemediation(){moves.push('finish-child');},
   };
@@ -20,9 +20,9 @@ function fixture({purpose='first',failSubmit=false,failAssess=false,failGrade=fa
   if(restored?.flashcardSaved){submitted=true;store.commit(draft.begin(),()=>moves.push('formal'));}
   const data={itemId:'A',front:'$F = ma$ 中三个符号各表示什么？',back:'力 $F$ 等于质量 $m$ 与加速度 $a$ 的乘积。'};
   const props={data,context:{draft,...(noPort?{}:{nonWordLearning:lifecycle})},
-    async onGrade(rating,options){grades.push({rating,options});if(gradeFailures-- >0)throw Error('synthetic formal save failure');if(options?.deferAdvance){const ticket=draft.begin();if(ticket)store.commit(ticket,()=>moves.push('formal'));}}};
+    async onGrade(rating,options){grades.push({rating,options});if(gradeFailures-- >0)throw Error('synthetic formal save failure');if(pendingOnGrade){sourcePending=true;return;}if(noGradeReceipt)return;if(options?.deferAdvance){const ticket=draft.begin();if(ticket)store.commit(ticket,()=>moves.push('formal'));}}};
   const shell=load('app/plugins/plugin-flashcard.tsx').FlashcardPlugin.renderUI(props);hooks.mount(shell.type,shell.props);hooks.flush();
-  return {hooks,store,draft,calls,grades,assessments,moves,lifecycle,data,MathText,props:shell.props,swipe:()=>swipe,
+  return {hooks,store,draft,calls,grades,assessments,moves,lifecycle,data,MathText,props:shell.props,swipe:()=>swipe,setSourcePending:value=>{sourcePending=value;pendingOnAssess=value;},
     click:async(label)=>{const target=button(hooks.view(),label)||[...nodes(hooks.view())].find(node=>node.type==='button'&&text(node).startsWith(label));assert.ok(target,`Missing ${label}`);await target.props.onClick();await settle(hooks);}};
 }
 async function settle(hooks){for(let i=0;i<4;i++){hooks.flush();await tick();hooks.render();}}
@@ -117,4 +117,39 @@ for(const checkpointFails of [false,true])test(`a truly cold card resumes throug
   }
   await button(childHooks.view(),'继续').props.onClick();assert.deepEqual(calls,['again']);assert.equal(writes,0);assert.equal(state.formal.eventId,'existing-event');assert.equal(state.checkpoint.traversed,true);
   childHooks.unmount();parentHooks.unmount();
+});
+
+test('pending source preserves explicit oral self-assessment without a saved-formal continue state',async t=>{
+  const f=fixture({pendingOnAssess:true});t.after(()=>f.hooks.unmount());
+  await f.click('显示答案');await f.click('极易');
+  assert.equal(f.draft.read('flashcardRating',null),'easy');assert.equal(f.draft.read('isFlipped',false),true);
+  assert.equal(f.grades.length,0);assert.equal(f.draft.hasSavedFeedback(),false);
+  assert.equal(button(f.hooks.view(),'继续'),undefined);
+  assert.ok(button(f.hooks.view(),'重试保存自评'));assert.match(text(f.hooks.view()),/来源.*待核对|待核对.*来源/);
+  await f.click('重试保存自评');assert.equal(f.grades.length,0);
+  assert.equal(f.assessments.length,2);assert.equal(f.assessments[1].rating,'easy');
+});
+test('pending returned during formal save leaves selected self-assessment retryable',async t=>{
+  const f=fixture({pendingOnGrade:true});t.after(()=>f.hooks.unmount());
+  await f.click('显示答案');await f.click('忘记');
+  assert.equal(f.grades.length,1);assert.equal(f.draft.read('flashcardRating',null),'again');
+  assert.equal(button(f.hooks.view(),'继续'),undefined);assert.ok(button(f.hooks.view(),'重试保存自评'));
+  await f.click('重试保存自评');assert.equal(f.grades.length,1,'Pending source must be rechecked before another formal call.');
+});
+test('a void callback without saved formal feedback cannot lock the card as completed',async t=>{
+  const f=fixture({noGradeReceipt:true});t.after(()=>f.hooks.unmount());
+  await f.click('显示答案');await f.click('良好');
+  assert.equal(f.draft.hasSavedFeedback(),false);assert.equal(button(f.hooks.view(),'继续'),undefined);
+  assert.ok(button(f.hooks.view(),'重试保存自评'));assert.match(text(f.hooks.view()),/尚未.*保存|持久回执/);
+  await f.click('重试保存自评');assert.equal(f.grades.length,2);
+});
+
+test('reliable recheck saves the retained oral rating and consumes continuation only after feedback is durable',async t=>{
+  const f=fixture({pendingOnAssess:true});t.after(()=>f.hooks.unmount());
+  await f.click('显示答案');await f.click('极易');assert.equal(f.grades.length,0);
+  f.setSourcePending(false);await f.click('重试保存自评');
+  assert.deepEqual(f.assessments.map(value=>value.rating),['easy','easy']);
+  assert.deepEqual(f.grades,[{rating:'easy',options:{deferAdvance:true}}]);assert.equal(f.draft.hasSavedFeedback(),true);
+  assert.equal(f.draft.read('flashcardRating',null),'easy');
+  await f.click('继续');await f.click('继续');assert.deepEqual(f.moves,['formal']);
 });

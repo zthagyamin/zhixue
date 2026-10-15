@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, ContextManager
 import sqlite3
 import json
+import hashlib
 import secrets
 import index_gateway
 import learning_result
@@ -16,6 +17,7 @@ import state_projection
 from study_event_schema import ensure_study_v3_schema, validate_study_event_v3, STUDY_V3_SCHEMA_VERSION, STUDY_V3_RATINGS
 from infrastructure.native_common import _validate_local_context, _events_for_state, _restore_bytes
 from infrastructure.indexed_writer import IndexedStudyWriter
+from infrastructure.nonword_event_proof import verify_frozen_scope
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,7 @@ class NativeWritePorts:
     report_events: Callable[[date], list]
     relative_path: Callable[[Path], str]
     course_guard: Callable[..., Callable[[], None] | None] | None = None
+    source_guard: Callable[..., tuple] | None = None
 
 
 class NativeStudyWriter:
@@ -58,10 +61,29 @@ class NativeStudyWriter:
         ).fetchone()
         catalog = self.ports.gateway(vault_root)
         final_check = self.ports.course_guard(database, vault_root, account_id, event, catalog) if self.ports.course_guard else None
-        if frozen or (catalog["active"] and (not catalog.get("legacyCoexistence") or index_gateway.lookup_binding(catalog, event["item"]["key"]))):
+        source_route = None
+        if self.ports.source_guard:
+            source_check, source_route = self.ports.source_guard(database, vault_root, account_id, event, catalog, final_check)
+            if source_route and not frozen:
+                if local_context_raw is not None and not isinstance(local_context_raw, dict):
+                    raise ValueError('invalid-localContext')
+                presentation = {key: value for key, value in (local_context_raw or {}).items()
+                                if key in ('title', 'activityType', 'durationMin', 'weakPoints')}
+                source_route['context'] = {**_validate_local_context(presentation, vault_root),
+                                           **source_route['context']}
+            if source_check:
+                course_check = final_check
+                def final_check():
+                    if course_check:
+                        course_check()
+                    source_check()
+        frozen_route = json.loads(frozen[0]) if frozen else None
+        if frozen_route:
+            verify_frozen_scope(frozen_route, vault_root, account_id)
+        indexed_route = (frozen_route or source_route or {}).get('mode') == 'indexed'
+        if indexed_route or (not frozen_route and not source_route and catalog["active"] and (not catalog.get("legacyCoexistence") or index_gateway.lookup_binding(catalog, event["item"]["key"]))):
             with self.ports.lock:
-                return self.indexed.accept(database, vault_root, account_id, event, local_context_raw, catalog, frozen, write_to_vault, payload.get('attemptBinding'), final_check)
-        local_context = _validate_local_context(local_context_raw, vault_root)
+                return self.indexed.accept(database, vault_root, account_id, event, local_context_raw, catalog, frozen, write_to_vault, payload.get('attemptBinding'), final_check, source_route)
 
         now = self.ports.now().isoformat(timespec="seconds")
         existing = database.execute(
@@ -80,7 +102,7 @@ class NativeStudyWriter:
                     (account_id, event["eventId"]),
                 ).fetchone()
                 if projection is None or projection[0] == "applied":
-                    return {"status": "duplicate", "eventId": event["eventId"], "mappingStatus": "unmapped", "event": event, "projectionStatus": "applied"}
+                    return {"status": "duplicate", "eventId": event["eventId"], "mappingStatus": "unmapped", "event": event, "projectionStatus": "applied", "companionReceipt": {"durable": True, "eventId": event['eventId'], "projectionStatus": "applied"}}
                 # A retry is the same immutable event, using its original local mapping.
                 local_context = json.loads(existing[1]) if existing[1] else {}
             else:
@@ -92,6 +114,16 @@ class NativeStudyWriter:
                 # Keep the diagnostic counter when the caller rolls back its transaction.
                 database.commit()
                 raise ValueError("event-conflict")
+
+        controlled_route = frozen_route or source_route
+        if controlled_route:
+            local_context = controlled_route['context'] if frozen_route else _validate_local_context(controlled_route['context'], vault_root)
+        elif not existing:
+            local_context = _validate_local_context(local_context_raw, vault_root)
+        # A historical pending event uses the saved context above, never the
+        # caller's newly supplied target or a newly resolved source association.
+        if final_check:
+            final_check()
 
         mapping_status = "unmapped"
         state_handle: str | None = None
@@ -129,6 +161,9 @@ class NativeStudyWriter:
             "ON CONFLICT(account_id) DO UPDATE SET updated_at = excluded.updated_at",
             (account_id, now),
         )
+        if source_route and not existing:
+            database.execute('INSERT INTO study_event_bindings(account_id,event_id,binding_json) VALUES (?,?,?)',
+                             (account_id, event['eventId'], json.dumps(source_route, ensure_ascii=False)))
 
         event_day: date
         try:
@@ -152,6 +187,8 @@ class NativeStudyWriter:
         if mapping_status == "mapped":
             result["stateHandle"] = state_handle
         if not write_to_vault:
+            if final_check:
+                final_check()
             database.commit()
             result["companionReceipt"] = {"durable": True, "eventId": event["eventId"], "stateProjection": None}
             return result
@@ -167,9 +204,9 @@ class NativeStudyWriter:
         # STUDY_V3_RATINGS); the item key is the practice item identity the website
         # sends as event.item.key. Result cards are matched by itemId first, then
         # by stateRef, and mapped events are eligible.
-        review_card_path: str | None = None
+        review_card_path: str | None = controlled_route.get('reviewCardPath') if controlled_route else None
         rating = str(event.get("attempt", {}).get("rating", ""))
-        if rating in STUDY_V3_RATINGS:
+        if rating in STUDY_V3_RATINGS and controlled_route is None:
             # 主路径：mapped 事件按 stateRef + item.key 定位结果卡（.md / wikilink
             # 归一化在 result_card_for_state 内完成）。
             if mapping_status == "mapped":
@@ -203,24 +240,41 @@ class NativeStudyWriter:
         previous_review_card: bytes | None = None
         if review_card_path is not None and (vault_root / review_card_path).exists():
             previous_review_card = (vault_root / review_card_path).read_bytes()
+        # As in the indexed writer, only a completed write establishes a version
+        # we may roll back. A failure or an independent edit is not ownership.
+        written: dict[Path, bytes] = {}
+        written_hashes: dict[Path, str] = {}
+        backups = {log_path: previous_log, report_path: previous_report}
+        if state_path is not None:
+            backups[state_path] = previous_state
+        if review_card_path is not None:
+            backups[vault_root / review_card_path] = previous_review_card
         try:
             with self.ports.lock:
                 log_path.parent.mkdir(parents=True, exist_ok=True)
                 existing_events = self.ports.read_activity(event_day)
                 if not any(item.get("eventId") == event["eventId"] for item in existing_events):
+                    backups[log_path] = log_path.read_bytes() if log_path.exists() else None
                     with log_path.open("a", encoding="utf-8", newline="\n") as handle:
                         handle.write(json.dumps(vault_record, ensure_ascii=False, separators=(",", ":")) + "\n")
+                    written[log_path] = log_path.read_bytes()
+                    backups[report_path] = report_path.read_bytes() if report_path.exists() else None
                     rendered_report = self.ports.render_report(event_day, self.ports.report_events(event_day))
+                    if rendered_report == report_path:
+                        written[report_path] = report_path.read_bytes()
                     result["dailyReport"] = self.ports.relative_path(rendered_report)
                 if mapping_status == "mapped" and state_ref and ability_id:
                     ability_events = _events_for_state(database, account_id, state_ref)
+                    backups[state_path] = state_path.read_bytes()
                     projection = state_projection.project_mapped_events(
                         vault_root,
                         state_ref,
                         ability_id,
                         ability_events.get(ability_id, []),
                         ability_events=ability_events,
+                        expected_text=backups[state_path].decode('utf-8'),
                     )
+                    written[state_path] = state_path.read_bytes()
                     result["stateProjection"] = {
                         "status": projection.status,
                         "eventCount": projection.event_count,
@@ -233,9 +287,10 @@ class NativeStudyWriter:
                     review_card_text: str | None = None
                     review_card_full = vault_root / review_card_path
                     if review_card_full.exists():
+                        backups[review_card_full] = review_card_full.read_bytes()
                         review_card_text = review_card_full.read_text(encoding="utf-8")
                     try:
-                        review_queue.apply_result(
+                        review_result = review_queue.apply_result(
                             vault_root,
                             review_card_path,
                             {"name": review_entry_name},
@@ -244,6 +299,8 @@ class NativeStudyWriter:
                             expected_text=review_card_text,
                             event_id=event["eventId"],
                         )
+                        if not review_result.get('duplicate'):
+                            written_hashes[review_card_full] = review_result['writtenHash']
                     except ValueError as conflict:
                         if str(conflict) != "stale-vault-edit":
                             raise
@@ -254,15 +311,17 @@ class NativeStudyWriter:
                 "ON CONFLICT(account_id, event_id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at",
                 (account_id, event["eventId"], result["projectionStatus"], now),
             )
+            if final_check:
+                final_check()
             database.commit()
         except Exception:
             database.rollback()
-            _restore_bytes(log_path, previous_log)
-            _restore_bytes(report_path, previous_report)
-            if state_path is not None:
-                _restore_bytes(state_path, previous_state)
-            if review_card_path is not None and previous_review_card is not None:
-                _restore_bytes(vault_root / review_card_path, previous_review_card)
+            for path, own_version in written.items():
+                if path not in written_hashes and path.exists() and path.read_bytes() == own_version:
+                    _restore_bytes(path, backups[path])
+            for path, own_hash in written_hashes.items():
+                if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == own_hash:
+                    _restore_bytes(path, backups[path])
             raise
         result["companionReceipt"] = {
             "durable": True,

@@ -17,6 +17,7 @@ import {nativeMathClaimHash} from '../src/domain/math-study/index.ts';
 import {IDBFactory} from 'fake-indexeddb';
 import {createLocalPracticeEvidenceRepository} from '../src/infrastructure/practice-evidence/local.ts';
 import {createLocalAttemptRepository} from '../src/infrastructure/learning-attempt/index.ts';
+import {waitForObservation} from './helpers/causal-harness.mjs';
 globalThis.indexedDB=new IDBFactory();
 async function setup(){
  const f=await fixture(),repo=createLocalAttemptRepository(f.scope);await repo.hydrate({...f.attempt,submitted:null});
@@ -47,7 +48,10 @@ function mockTransport(f,{gate,cancel,wrongRevision}={}){
  const calls=[],claims=new Map(),barriers=[];
  const transport={supported:()=>true,capture:async()=>f.capture,readSource:async()=>f.capture,
   claim:async claim=>{claims.set(claim.attempt.attemptId,structuredClone(claim));return {schemaVersion:1,durable:true,attemptId:claim.attempt.attemptId,answerRevision:claim.attempt.submitted.answerRevision,captureId:claim.captureId,claimHash:await nativeMathClaimHash(claim)};},
-  recover:async()=>{throw Error('native-math-attempt-not-found');},
+  recover:async attemptId=>{
+   const claim=claims.get(attemptId);if(!claim)throw Error('native-math-attempt-not-found');
+   return {schemaVersion:1,durable:true,claim,results:[],formalBarrier:barriers.find(row=>row.attemptId===attemptId)??null};
+  },
   formal:async body=>{barriers.push(body);return {schemaVersion:1,durable:true,status:'barrier-saved',attemptId:body.attemptId,eventId:body.eventId,claimHash:await studyHash(body)};},
   evaluate:async request=>{calls.push(request);if(gate)await gate();if(cancel)cancel();const receipt={schemaVersion:1,durable:true,...request};delete receipt.mode;delete receipt.stepRevision;
    receipt.step={answerRevision:request.answerRevision,stepRevision:wrongRevision?99:request.stepRevision,stepId:f.support.step.stepId,sourceVersion:request.sourceVersion,status:'correct',source:'deterministic',explanation:'Saved value equals the immutable original intermediate value.'};
@@ -122,13 +126,13 @@ test('actual account second-device restores original/evidence before explicit se
 test('owner switch during delayed native step rejects feedback before diagnosis persistence',async()=>{
  const f=await setup();let current=true,release;const gate=new Promise(resolve=>{release=resolve;});
  const m=mockTransport(f,{gate:()=>gate}),runtime=createPendingMathStepRuntime({...f.options,current:()=>current,nativeMath:m.transport}),row=(await runtime.list()).rows[0];
- const pending=runtime.evaluate(row);while(!m.calls.length)await new Promise(resolve=>setTimeout(resolve,0));current=false;release();
+ const pending=runtime.evaluate(row);await Promise.race([pending,waitForObservation(async()=>new Promise(resolve=>setTimeout(resolve,0)),()=>m.calls.length>0,{label:'native step request before owner switch'})]);current=false;release();
  await assert.rejects(pending,/切换/);assert.equal((await f.evidence.listSavedDrafts())[0].calculation.diagnostic,undefined);assert.deepEqual(await f.repo.read('original'),f.original);
 });
 test('two IndexedDB peers cannot overwrite a completed source-bound diagnosis with late response',async()=>{
  const f=await setup();let release;const gate=new Promise(resolve=>{release=resolve;});
  const m=mockTransport(f,{gate:()=>gate}),runtime=createPendingMathStepRuntime({...f.options,nativeMath:m.transport}),row=(await runtime.list()).rows[0];
- const pending=runtime.evaluate(row);while(!m.calls.length)await new Promise(resolve=>setTimeout(resolve,0));
+ const pending=runtime.evaluate(row);await Promise.race([pending,waitForObservation(async()=>new Promise(resolve=>setTimeout(resolve,0)),()=>m.calls.length>0,{label:'native step request before peer update'})]);
  const peer=createLocalPracticeEvidenceRepository({ownerId:f.scope.userId,libraryId:f.scope.libraryId},{readAttempt:id=>f.repo.read(id),resolveSource:async()=>({binding:f.binding,calculation:f.support})});
  const diagnostic={answerRevision:1,stepRevision:1,stepId:f.support.step.stepId,sourceVersion:f.binding.contentHash,status:'correct',source:'deterministic',explanation:'Other device completed original step'};
  await peer.mutate({schemaVersion:1,attemptId:'original',binding:f.binding,operationId:'peer-complete',expectedRevision:row.evidence.revision,updatedAt:f.attempt.updatedAt,kind:'step-diagnostic',diagnostic});release();

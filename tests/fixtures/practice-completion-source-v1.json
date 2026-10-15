@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "documentType": "practice-completion-source-fixture",
+  "wordKeys": [
+    "word:w"
+  ],
+  "sources": [
+    {
+      "itemKey": "practice:p",
+      "subjectId": "course",
+      "sourceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "cases": [
+    {
+      "id": "current",
+      "key": "practice:p",
+      "proof": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected": true
+    },
+    {
+      "id": "old",
+      "key": "practice:p",
+      "proof": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "expected": false
+    },
+    {
+      "id": "missing",
+      "key": "practice:p",
+      "proof": null,
+      "expected": false
+    },
+    {
+      "id": "wrong-core",
+      "key": "practice:p",
+      "proof": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "wrongCore": true,
+      "expected": false
+    },
+    {
+      "id": "wrong-subject",
+      "key": "practice:p",
+      "proof": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "wrongSubject": true,
+      "expected": false
+    },
+    {
+      "id": "word",
+      "key": "word:w",
+      "proof": null,
+      "expected": true
+    }
+  ]
+}

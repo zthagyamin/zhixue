@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {isInitialReviewProbe,reviewDisplayStage,reviewSubmission} from '../src/domain/planning/word-review-probe.ts';
+import {completesSubjectItemAfterAttempt} from '../src/domain/planning/index.ts';
 import {attempt} from './fixtures/task-event-fixtures.mjs';
 import {wordBody} from './fixtures/account-study-fixtures.mjs';
 import {sealStudyItem} from '../app/account-study-content.ts';
@@ -23,7 +24,8 @@ function actualModuleReview(overrides={}){
     taskScope:{catalog:{subjects:[{subjectId:'vocab',words:[{itemKey:'word:tree',legacyKeys:[]}]}]}},
     subject:{id:'vocab'},itemProgressKey:'word:tree',scopedRound:{anchorEventId:'review-anchor',observedAt:'2026-09-24T18:00:00.000Z'},
     progressEvents:[],accountEvents:[],accountLoaded:null,scopedAccountProgress:null,currentDay:'2026-09-24',
-    actualPluginType:'three-stage',completedStage:0,isInitialReviewProbe,reviewDisplayStage,...overrides};
+    actualPluginType:'three-stage',completedStage:0,currentItem:{word:'tree',eventKind:'word'},
+    isInitialReviewProbe,reviewDisplayStage,completesSubjectItemAfterAttempt,...overrides};
   for(const name of ['plannedCategory','isDueWordReview','catalogWord','reviewKeys','reviewAnchor','quickReview','currentStage'])
     env[name]=dashboardValue(name,env);
   return env;

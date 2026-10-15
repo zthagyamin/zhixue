@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from unittest import mock
 from pathlib import Path
 import sys
+from contextlib import contextmanager
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "companion"))
@@ -99,6 +101,45 @@ class CaptureFlowTests(unittest.TestCase):
     def test_route_capture_rejects_invalid_evidence(self) -> None:
         with self.assertRaisesRegex(ValueError, "evidence"):
             capture_store.route_capture(self.vault, self.db, make_capture("cap-4", "maybe"))
+
+    def test_processed_capture_rejects_changed_retry_without_plan_write(self):
+        capture = make_capture('processed-fixture')
+        result = capture_store.route_capture(self.vault, self.db, capture)
+        original_plan = self.plan_path.read_bytes()
+        original_row = self.db.execute('SELECT * FROM codex_captures WHERE capture_id=?', (capture['captureId'],)).fetchone()
+        with self.assertRaisesRegex(ValueError, 'capture-conflict'):
+            capture_store.route_capture(self.vault, self.db, {**capture, 'evidence': 'speculative'})
+        self.assertEqual(self.plan_path.read_bytes(), original_plan)
+        self.assertEqual(self.db.execute('SELECT * FROM codex_captures WHERE capture_id=?', (capture['captureId'],)).fetchone(), original_row)
+        self.assertEqual(capture_store.route_capture(self.vault, self.db, capture), result)
+
+    def test_opaque_capture_writes_only_the_derived_candidate_name(self):
+        import snapshot_schema
+        capture = make_capture('ordinary:opaque', 'speculative')
+        self.assertEqual(capture_store.route_capture(self.vault, self.db, capture)['status'], 'candidate')
+        files = list((self.vault / 'sources/pending').iterdir())
+        self.assertEqual([path.name for path in files], [snapshot_schema._safe_filename(capture['captureId'])])
+        self.assertFalse(list((self.vault / 'sources/approved').iterdir()))
+
+    def test_real_capture_route_retains_the_first_candidate_on_conflict(self):
+        import routes_sources
+        @contextmanager
+        def database():
+            yield self.db
+        services = SimpleNamespace(source_path=lambda _key: self.vault, local_database=database)
+        replies = []
+        handler = SimpleNamespace(send_json=lambda *args: replies.append(args))
+        capture = make_capture('route-fixture', 'speculative')
+        routes_sources.post_capture(handler, services, '/v1/capture', 'synthetic', capture)
+        self.assertEqual(replies[0][0], 200)
+        self.assertEqual(replies[0][1]['status'], 'candidate')
+        path = self.vault / 'sources/pending/route-fixture.json'
+        original = path.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'capture-conflict'):
+            routes_sources.post_capture(handler, services, '/v1/capture', 'synthetic', {**capture, 'contentFingerprint': 'changed'})
+        self.assertEqual(len(replies), 1)
+        self.assertEqual(path.read_bytes(), original)
+        self.assertNotIn('zhx-word-pooling', self.plan_path.read_text(encoding='utf-8'))
 
 
 if __name__ == "__main__":

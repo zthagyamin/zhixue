@@ -20,3 +20,14 @@ test('uncertain saves retain their immutable request while confirmed no-write ca
  const options={client,expected:{localLibraryId:'local'},selection:'obsidian',directory:'notes'};
  await assert.rejects(savePaperNote(session,DEMO_PAPER_ALEXNET,options));assert.ok(session.snapshot().draft.pendingNote);uncertain=false;await assert.rejects(savePaperNote(session,DEMO_PAPER_ALEXNET,options));assert.equal(requests[0].requestId,requests[1].requestId);assert.equal(session.snapshot().draft.pendingNote,undefined);
 });
+
+test('ambiguous or newline-terminated Notion receipts keep the original pending save',async()=>{
+ for(const location of [{url:'https://www.notion.so/'+ 'a'.repeat(32)+'\n'},
+   {url:'https://www.notion.so/'+ 'a'.repeat(32),path:'notes/ambiguous.md'}]){
+  globalThis.indexedDB=new IDBFactory();const session=await openPaperDraft('qa-note-location-'+JSON.stringify(location),'local',DEMO_PAPER_ALEXNET);await session.flush();
+  const client={catalog:async()=>({localLibraryId:'local',destinations:[{kind:'notion',sourceId:'source-a',sourceRevision:1}]}),
+    save:async p=>({requestId:p.requestId,localLibraryId:'local',kind:'notion',status:'written',...location})};
+  await assert.rejects(savePaperNote(session,DEMO_PAPER_ALEXNET,{client,expected:{localLibraryId:'local'},selection:'source-a',directory:''}),/保存回执不完整/);
+  assert.ok(session.snapshot().draft.pendingNote);assert.equal(session.snapshot().draft.noteReceipt,undefined);
+ }
+});

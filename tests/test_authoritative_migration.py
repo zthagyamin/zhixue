@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import tempfile
 import unittest
 import threading
@@ -137,6 +138,171 @@ class AuthoritativeMigrationTests(unittest.TestCase):
         result = authoritative_migration.apply(self.vault, second["previewId"], now=self.now)
         self.assertEqual(result["status"], "no-op")
         self.assertIsNone(result["backupId"])
+
+    def migration_with_existing_constraints(self):
+        constraints = self.vault / constraint_area.CONSTRAINT_RELATIVE_PATH
+        constraints.parent.mkdir(parents=True, exist_ok=True)
+        constraints.write_text("# Constraints\nOriginal user explanation.\n", encoding="utf-8")
+        result = authoritative_migration.apply(
+            self.vault, authoritative_migration.preview(self.vault)["previewId"], now=self.now
+        )
+        backup = self.vault / authoritative_migration.MIGRATION_BACKUP_ROOT / result["backupId"]
+        manifest = json.loads((backup / "manifest.json").read_text(encoding="utf-8"))
+        current = {record["relativePath"]: (self.vault / record["relativePath"]).read_bytes()
+                   for record in manifest["files"]}
+        return result, backup, manifest, current
+
+    def assert_migration_targets_unchanged(self, current):
+        actual = {relative: (self.vault / relative).read_bytes()
+                  if (self.vault / relative).exists() else None for relative in current}
+        self.assertEqual(actual, current)
+
+    def test_corrupted_backup_is_rejected_before_any_target_is_restored(self):
+        result, backup, manifest, current = self.migration_with_existing_constraints()
+        last = manifest["files"][-1]
+        (backup / "files" / last["relativePath"]).write_bytes(b"corrupted backup")
+        with self.assertRaisesRegex(ValueError, "migration-backup-integrity"):
+            authoritative_migration.rollback(self.vault, result["backupId"])
+        self.assert_migration_targets_unchanged(current)
+
+    def test_missing_late_backup_does_not_partially_restore_prior_targets(self):
+        result, backup, manifest, current = self.migration_with_existing_constraints()
+        (backup / "files" / manifest["files"][-1]["relativePath"]).unlink()
+        with self.assertRaisesRegex(ValueError, "migration-backup-incomplete"):
+            authoritative_migration.rollback(self.vault, result["backupId"])
+        self.assert_migration_targets_unchanged(current)
+
+    def test_invalid_late_target_does_not_partially_restore_prior_targets(self):
+        result, backup, manifest, current = self.migration_with_existing_constraints()
+        manifest["files"].append({"relativePath": "../outside.md", "existed": False, "sha256": None})
+        (backup / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "migration-path-outside-vault"):
+            authoritative_migration.rollback(self.vault, result["backupId"])
+        self.assert_migration_targets_unchanged(current)
+
+    def test_nonfile_late_target_is_rejected_before_prior_targets_are_restored(self):
+        result, backup, manifest, current = self.migration_with_existing_constraints()
+        blocked = self.vault / "blocked-directory"
+        blocked.mkdir()
+        manifest["files"].append({"relativePath": blocked.name, "existed": False, "sha256": None})
+        (backup / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "migration-target-not-file"):
+            authoritative_migration.rollback(self.vault, result["backupId"])
+        self.assert_migration_targets_unchanged(current)
+        self.assertTrue(blocked.is_dir())
+
+    def test_restore_uses_verified_bytes_when_a_backup_changes_during_restore(self):
+        result, backup, manifest, _current = self.migration_with_existing_constraints()
+        late = manifest["files"][-1]["relativePath"]
+        backup_file = backup / "files" / late
+        expected = backup_file.read_bytes()
+        write = Path.write_bytes
+
+        def mutate_later_backup(path, content):
+            if path == self.plan:
+                write(backup_file, b"later unverified bytes")
+            return write(path, content)
+
+        with mock.patch.object(Path, "write_bytes", new=mutate_later_backup):
+            restored = authoritative_migration.rollback(self.vault, result["backupId"])
+        self.assertEqual(restored["status"], "rolled-back")
+        self.assertEqual((self.vault / late).read_bytes(), expected)
+
+    def test_backup_hash_matches_copied_edit_and_failed_apply_restores_that_edit(self):
+        original = self.plan.read_bytes()
+        edited = original + b"\nIndependent edit during backup.\n"
+        copy = authoritative_migration.shutil.copy2
+
+        def edit_before_copy(source, destination):
+            if source == self.plan:
+                self.plan.write_bytes(edited)
+            return copy(source, destination)
+
+        with mock.patch.object(authoritative_migration.shutil, "copy2", side_effect=edit_before_copy), \
+                mock.patch.object(constraint_area, "write_constraints", side_effect=RuntimeError("fixture-apply-failure")):
+            with self.assertRaisesRegex(RuntimeError, "fixture-apply-failure"):
+                authoritative_migration.apply(
+                    self.vault, authoritative_migration.preview(self.vault)["previewId"], now=self.now
+                )
+        self.assertEqual(self.plan.read_bytes(), edited)
+        backup_root = self.vault / authoritative_migration.MIGRATION_BACKUP_ROOT
+        manifest_path = next(backup_root.glob("*/manifest.json"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        for record in manifest["files"]:
+            if record["existed"]:
+                saved = manifest_path.parent / "files" / record["relativePath"]
+                self.assertEqual(record["sha256"], hashlib.sha256(saved.read_bytes()).hexdigest())
+
+    def migration_constraint_conflict(self, action):
+        note = self.vault / constraint_area.CONSTRAINT_RELATIVE_PATH
+        note.parent.mkdir(parents=True, exist_ok=True)
+        if action != "create":
+            note.write_bytes(b"# Original constraint explanation\n")
+        edited = b"# Independent constraint editor change\n"
+        write = Path.write_text
+
+        def change_during_staging(path, text, *args, **kwargs):
+            result = write(path, text, *args, **kwargs)
+            if path.name.startswith("." + note.name + ".zhixue") and path.suffix == ".tmp":
+                if action == "delete":
+                    note.unlink()
+                else:
+                    note.write_bytes(edited)
+            return result
+
+        with mock.patch.object(Path, "write_text", new=change_during_staging):
+            with self.assertRaisesRegex(ValueError, "stale-vault-edit"):
+                authoritative_migration.apply(
+                    self.vault, authoritative_migration.preview(self.vault)["previewId"], now=self.now)
+        if action == "delete":
+            self.assertFalse(note.exists())
+        else:
+            self.assertTrue(note.exists())
+            self.assertEqual(note.read_bytes(), edited)
+        self.assertIsNone(plan_authority.read_current_plan(self.vault))
+
+    def test_failed_migration_preserves_external_constraint_edit(self):
+        self.migration_constraint_conflict("edit")
+
+    def test_failed_migration_does_not_recreate_deleted_constraints(self):
+        self.migration_constraint_conflict("delete")
+
+    def test_failed_migration_preserves_newly_created_constraints(self):
+        self.migration_constraint_conflict("create")
+
+    def test_failed_migration_restores_the_actual_plan_write_preimage(self):
+        edited = self.plan.read_bytes() + b"\nEditor change after backup, before actual plan write.\n"
+        backup = authoritative_migration._backup
+
+        def edit_after_backup(*args, **kwargs):
+            result = backup(*args, **kwargs)
+            self.plan.write_bytes(edited)
+            return result
+
+        with mock.patch.object(authoritative_migration, "_backup", side_effect=edit_after_backup), \
+                mock.patch.object(constraint_area, "write_constraints", side_effect=RuntimeError("fixture-later-failure")):
+            with self.assertRaisesRegex(RuntimeError, "fixture-later-failure"):
+                authoritative_migration.apply(
+                    self.vault, authoritative_migration.preview(self.vault)["previewId"], now=self.now)
+        self.assertEqual(self.plan.read_bytes(), edited)
+
+    def test_failed_migration_preserves_independent_edits_to_completed_plan_and_history(self):
+        observed = {}
+        history = self.vault / authoritative_migration.INTEGRATION_ROOT / plan_area.PLAN_SUBFOLDER / plan_area.REVISIONS_FILE
+
+        def edit_completed_targets(*_args, **_kwargs):
+            observed["plan"] = self.plan.read_bytes() + b"\nIndependent plan edit after write.\n"
+            observed["history"] = history.read_bytes() + b'{"revision":77,"decision":"rejected"}\n'
+            self.plan.write_bytes(observed["plan"])
+            history.write_bytes(observed["history"])
+            raise ValueError("stale-vault-edit")
+
+        with mock.patch.object(constraint_area, "write_constraints", side_effect=edit_completed_targets):
+            with self.assertRaisesRegex(ValueError, "stale-vault-edit"):
+                authoritative_migration.apply(
+                    self.vault, authoritative_migration.preview(self.vault)["previewId"], now=self.now)
+        self.assertEqual(self.plan.read_bytes(), observed["plan"])
+        self.assertEqual(history.read_bytes(), observed["history"])
 
     def test_missing_legacy_plan_does_not_create_empty_migration_backups(self) -> None:
         self.legacy.unlink()

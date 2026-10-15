@@ -1,4 +1,26 @@
 // Active-writer fixtures use today's clock: receipt SQL checks expiry against SQLite 'now'.
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
+
+for(const phase of ['insert','repair-applied','repair-blocked'])for(const change of ['revoke','expire','replace-library'])test(`content receipt ${phase} leaves state and finals unchanged at ${change}`,async t=>{
+ const f=await setup(t),operationId='qualification-decision';f.sqlite=f.binding.sqlite;
+ await f.store.decide(f.scope,{operationId,factsHash:f.facts.factsHash,candidateId:f.candidate.candidateId,contentHash:f.candidate.contentHash,decision:'approved'});
+ const actor=await activateSyntheticWriter(f.binding,f.scope),final=f.sqlite.prepare('SELECT * FROM account_study_content_decision_finals').get();
+ const status=phase==='repair-blocked'?'blocked':'applied';
+ const value={schemaVersion:1,receiptId:'qualification-content',operationId,candidateId:f.candidate.candidateId,contentHash:f.candidate.contentHash,decision:'approved',status,
+  ...(status==='blocked'?{reason:'source-change-stale'}:{proofHash:'e'.repeat(64)})};
+ if(phase!=='insert'){
+  await f.store.appendReceipt(f.scope,value,actor.grantId);
+  // Simulate the existing recoverable window after receipt persistence but before state repair.
+  f.sqlite.prepare("UPDATE account_study_content_decisions SET status='pending' WHERE operation_id=?").run(operationId);
+  if(status==='blocked')f.sqlite.prepare('INSERT INTO account_study_content_decision_finals(user_id,library_id,candidate_id,content_hash,operation_id,decision) VALUES (?,?,?,?,?,?)')
+   .run(final.user_id,final.library_id,final.candidate_id,final.content_hash,final.operation_id,final.decision);
+ }
+ const tables=['account_study_content_decisions','account_study_content_decision_finals','account_study_content_decision_receipts'];
+ const snapshot=()=>Object.fromEntries(tables.map(table=>[table,f.sqlite.prepare(`SELECT * FROM ${table}`).all()])),before=snapshot();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,f.scope,actor,change,phase==='insert'?'account_study_content_decision_receipts':'account_study_content_decisions');
+ await assert.rejects(f.store.appendReceipt(f.scope,value,actor.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(snapshot(),before);
+});
 import assert from 'node:assert/strict';import test from 'node:test';import {createHash} from 'node:crypto';import {openD1} from './helpers/sqlite-d1.mjs';import {AccountStudyContentDecisionStore} from '../db/account-study-content-decision-store.ts';import {AccountStudyAccessStore} from '../db/account-study-access-store.ts';import {AccountStudyPlanStore} from '../db/account-study-plan-store.ts';import {AccountStudyStore} from '../db/account-study-store.ts';import {sealStudyItem,sealStudySnapshot} from '../app/account-study-content.ts';import {wordBody,snapshotBody} from './fixtures/account-study-fixtures.mjs';import {toCloudPlanningCatalog,sealCloudPlanningFacts} from '../app/account-study-planning.ts';import {vocabularyInput} from './fixtures/task-plan-input.mjs';
 async function setup(t){const {sqlite,binding}=await openD1();t.after(()=>sqlite.close());const scope={userId:'user-a',libraryId:'library-a'};await binding.prepare('INSERT INTO learning_accounts(user_id) VALUES (?)').bind(scope.userId).run();const items=[await sealStudyItem(wordBody())],snapshot=await sealStudySnapshot(snapshotBody(items)),study=new AccountStudyStore(binding);await study.putSnapshot(scope,{snapshot,items},0);const plans=new AccountStudyPlanStore(binding),{catalog}=await toCloudPlanningCatalog(vocabularyInput(0).catalog,{snapshot,items});await plans.putCatalog(scope,catalog);const candidate={candidateId:'candidate-source-one',kind:'modified',label:'Lesson.md',oldLabel:'Old Lesson.md',contentHash:'c'.repeat(64)},facts=await sealCloudPlanningFacts({schemaVersion:1,libraryId:scope.libraryId,snapshotId:snapshot.snapshotId,catalogHash:catalog.catalogHash,observedAt:'2026-09-01T00:00:00.000Z',nativePlanRevision:0,sourceReviews:[],captureReviews:[],legacyEvents:[],legacyTaskEvents:[],contentCandidates:[candidate],historyComplete:true});await plans.putFacts(scope,facts);return{binding,scope,store:new AccountStudyContentDecisionStore(binding),facts,candidate};}
 test('content decision binds the exact path-free candidate and is idempotent',async t=>{const {store,scope,facts,candidate}=await setup(t),input={operationId:'decision-operation-one',factsHash:facts.factsHash,candidateId:candidate.candidateId,contentHash:candidate.contentHash,decision:'approved'};const first=await store.decide(scope,input);assert.equal(first.status,'accepted');assert.equal((await store.decide(scope,input)).status,'duplicate');await assert.rejects(store.decide(scope,{...input,operationId:'decision-changed',contentHash:'d'.repeat(64)}),/unknown-content-candidate/);assert.equal((await store.list(scope,0,20)).operations[0].candidateId,candidate.candidateId);});

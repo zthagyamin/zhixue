@@ -195,6 +195,8 @@ export function createPythonSandboxWorker(): SandboxPort {
                 // A closed report is normalized here and again in the client; all other worker fields are dropped.
                 const report = normalizeCodeRunReport(data.report);
                 const safe = {
+                    ...(data.type === 'ready' && data.scientificWarmup === true && ['numpy','pandas'].includes(data.scientificLibraries)
+                        ? { scientificWarmup: true, scientificLibraries: data.scientificLibraries } : {}),
                     type: data.type, report: data.report === undefined ? undefined : report ?? null, id: Number.isSafeInteger(data.id) ? data.id : undefined,
                     output: typeof data.output === 'string' ? data.output.slice(0, 20000) : '',
                     result: typeof data.result === 'string' ? data.result.slice(0, 20000) : null,

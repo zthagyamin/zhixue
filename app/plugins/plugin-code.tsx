@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import {CodeEditor} from '../components/code-editor';
 import {useLearningDraftState} from '../learning-draft';
 import {useAssistance,useAssistanceDisplay} from '../assistance-display';
-import { StudyPlugin, PluginRenderProps } from "./registry";
+import { StudyPlugin, PluginRenderProps,type FSRSRating } from "./registry";
 import { usePyodide } from "../hooks/use-pyodide";
 import {CodeRewriteLauncher} from '../../src/features/remediation';
 import {codeRunFailure,formatCodeFailureFeedback} from '../../src/domain/remediation';
@@ -61,7 +61,7 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
       setPanel('result');setResultKind(saved.latest.status==='passed'?'passed':saved.latest.outcome==='student-error'?'failed':saved.latest.outcome);
       setCodeState(saved.latest.status==='passed'?'passed':'coding');
       if(saved.firstState){setFirstRunKind(saved.firstState.status);setFirstNeedsReview(saved.firstState.status==='pending');setFirstOutput(saved.firstState.explanation);}
-    }).catch(()=>{});return()=>{active=false;};},[lifecycle?.practice,setTestOutput,setCodeState,setFirstRunKind,setFirstNeedsReview,setResultKind]);
+    }).catch(()=>{});return()=>{active=false;};},[lifecycle?.practice,setTestOutput,setCodeState,setFirstRunKind,setFirstNeedsReview,setFirstOutput,setResultKind]);
     useReportStudyAIItem(context,{question:data.prompt,code,errors:[...(runtimeError?[String(runtimeError)]:[]),...(testOutput?[`上次运行输出（当前代码可能已编辑）：${testOutput}`]:[])]});
     useAssistanceDisplay(assistance,'reference-answer','code-reference',codeState==='gave_up'&&Boolean((data.solutionCode||data.explanation||'').trim()));
     useAssistanceDisplay(assistance,'answer-feedback',testOutputId,Boolean(testOutput)&&!isTesting);
@@ -119,6 +119,17 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
       }
     };
 
+    const markFirstSourcePending = () => {
+      setFirstRunKind('pending');setFirstNeedsReview(true);
+      setFirstOutput('本次运行结果和原代码已保留；首轮来源仍待核对，不计正式成绩。');
+    };
+    const saveNonWordFormal = async (rating:FSRSRating) => {
+      await onGrade(rating,{deferAdvance:true});
+      if(lifecycle?.sourcePending){markFirstSourcePending();return false;}
+      if(!context?.draft?.hasSavedFeedback?.())throw Error('正式结果尚未取得持久回执，原代码与运行结果保留，请重试保存。');
+      return true;
+    };
+
     const handleNonWordRunTests = async (mode:'tests'|'trial'='tests') => {
       if(mode==='trial'){await handleRunTests(mode);return;}
       if(!lifecycle?.ready||!isReady||isTesting||nonWordRunLock.current||context?.draft?.isPending?.()||(!data.testCode?.trim()&&!data.learningSupport))return;
@@ -163,8 +174,11 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
           if(outcome.status==='undetermined')await lifecycle.waitForReview(outcome.explanation);
           else await lifecycle.assess(outcome);
           if(epoch!==runEpoch.current)return;
-          setFirstRunKind(outcome.status==='undetermined'?'pending':outcome.status==='correct'?'correct':'incorrect');
-          setFirstNeedsReview(outcome.status==='undetermined');setFirstOutput(outcome.explanation);
+          if(outcome.status!=='undetermined'&&!lifecycle.sourcePending&&lifecycle.firstOutcome)outcome=lifecycle.firstOutcome;
+          const pending=outcome.status==='undetermined'||lifecycle.sourcePending===true;
+          setFirstRunKind(pending?'pending':outcome.status==='correct'?'correct':'incorrect');
+          setFirstNeedsReview(pending);setFirstOutput(lifecycle.sourcePending
+            ?'本次运行结果和原代码已保留；首轮来源仍待核对，不计正式成绩。':outcome.explanation);
           if(outcome.status==='incorrect')setFailedOnce(true);
         }else{
           if(!lifecycle.recordRemediation)throw Error('当前入口未提供补练保存，首轮结果已保留。');
@@ -173,7 +187,8 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
         }
         setTestOutput(details);setTestOutputId(crypto.randomUUID());setResultKind(kind);
         setCodeState(outcome.status==='correct'?'passed':'coding');
-        if(resolvesFirst&&outcome.status==='incorrect'&&lifecycle.purpose==='first')await onGrade('again',{deferAdvance:true});
+        if(resolvesFirst&&(outcome.status==='incorrect'||outcome.status==='partial')&&lifecycle.purpose==='first'&&!lifecycle.sourcePending)
+          await saveNonWordFormal(outcome.rating??(outcome.status==='partial'?'hard':'again'));
       }catch(reason){if(epoch===runEpoch.current){setResultKind('save-error');setFlowError(reason instanceof Error?reason.message:'答案尚未可靠保存。');}}
       finally{if(epoch===runEpoch.current){setElapsed(Math.round(performance.now()-started));setIsTesting(false);}nonWordRunLock.current=false;}
     };
@@ -187,8 +202,12 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
           if(epoch!==runEpoch.current)return;
           await lifecycle.assess({status:'incorrect',source:'self-assess',rating:'again',explanation:'尚未独立完成，主动查看参考解答。'});
           if(epoch!==runEpoch.current)return;
-          setFirstCode(code);setFirstRunKind('forgotten');setFirstNeedsReview(false);setFailedOnce(true);
-          if(lifecycle.purpose==='first')await onGrade('again',{deferAdvance:true});
+          setFirstCode(code);setFailedOnce(true);
+          if(lifecycle.sourcePending)markFirstSourcePending();
+          else {
+            setFirstRunKind('forgotten');setFirstNeedsReview(false);
+            if(lifecycle.purpose==='first')await saveNonWordFormal('again');
+          }
         }
         if(epoch===runEpoch.current)setCodeState('gave_up');
       }catch(reason){if(epoch===runEpoch.current)setFlowError(reason instanceof Error?reason.message:'答案尚未可靠保存。');}
@@ -200,10 +219,11 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
       nonWordRunLock.current=true;setFlowError('');
       try{
         if(lifecycle.purpose==='remediation'){await lifecycle.finishRemediation?.();nonWordContinued.current=true;return;}
-        if(firstNeedsReview||firstRunKind==='pending'){await lifecycle.continuePending();nonWordContinued.current=true;return;}
+        if(lifecycle.sourcePending||firstNeedsReview||firstRunKind==='pending'){await lifecycle.continuePending();nonWordContinued.current=true;return;}
         if(context?.draft?.hasSavedFeedback?.()){nonWordContinued.current=context.draft.continueAfterFeedback?.()===true;return;}
-        if(firstRunKind==='correct'){await onGrade('good');nonWordContinued.current=true;}
-        else if(firstRunKind==='incorrect'||firstRunKind==='forgotten')await onGrade('again',{deferAdvance:true});
+        if(firstRunKind==='correct'){
+          if(await saveNonWordFormal('good'))nonWordContinued.current=context?.draft?.continueAfterFeedback?.()===true;
+        }else if(firstRunKind==='incorrect'||firstRunKind==='forgotten')await saveNonWordFormal(lifecycle.firstOutcome?.rating??'again');
       }catch(reason){setFlowError(reason instanceof Error?reason.message:'继续前的保存尚未完成。');}
       finally{nonWordRunLock.current=false;}
     };
@@ -222,6 +242,9 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
     const diagnostic=lifecycle&&['failed','unknown','test-error','environment-error'].includes(resultKind)&&testOutput
       ?formatCodeFailureFeedback({message:testOutput,...(executionReport?{report:executionReport}:{})},{testCode:data.testCode}):null;
     const currentFault=diagnostic&&(diagnostic.exception||diagnostic.location)?diagnostic.summary:null;
+    const publicStatus=firstNeedsReview||lifecycle?.sourcePending?'公开测试通过 · 首轮仍待核对':
+        ['incorrect','forgotten'].includes(firstRunKind)?lifecycle?.purpose==='remediation'
+          ?'公开测试通过 · 首轮仍需复习':'公开测试通过 · 仍需修改':'公开测试通过';
     const showFirstFault=lifecycle&&firstOutput&&['incorrect','pending'].includes(firstRunKind)
       &&!(panel==='result'&&currentFault&&firstOutput.includes(currentFault));
     const sourceItem=context?.nonWordScope?.courseReference?.item;
@@ -308,7 +331,7 @@ export const CodePlugin: StudyPlugin<CodeChallengeData> = {
             </div>
             {panel==='tests'&&<>{data.learningSupport?<div className="space-y-3">{data.learningSupport.cases.map(test=><div key={test.id} className="text-sm"><p className="font-mono break-words">函数：{test.functionName} · 输入：{JSON.stringify(test.args)}{test.kwargs&&Object.keys(test.kwargs).length?` · 命名参数：${JSON.stringify(test.kwargs)}`:''}</p><p className="font-mono break-words">预期：{JSON.stringify(test.expected)}</p></div>)}</div>:<pre className="text-xs whitespace-pre-wrap break-words p-3 bg-zinc-50 dark:bg-zinc-950 rounded">{data.testCode?.trim()||'尚未提供有效测试，只能试运行。'}</pre>}</>}
             {panel==='input'&&<><label htmlFor="code-stdin" className="text-sm">标准输入（每行一项，最多 10000 字）</label><textarea id="code-stdin" value={stdin} maxLength={10000} onChange={event=>setStdin(event.target.value)} readOnly={isTesting} rows={4} className="w-full border border-zinc-300 dark:border-zinc-700 rounded p-3 font-mono text-sm bg-transparent mt-2"/><p className="text-xs text-zinc-500 mt-2">只运行你的代码；这里的输入不改变题目测试，也不生成通关记录。</p></>}
-            {panel==='result'&&<div role="status"><p className="text-sm font-bold mb-2">{{running:'正在运行',passed:'题目测试通过',trial:'试运行完成（未判通关）',cancelled:'已停止',timeout:'运行超时',failed:'程序或断言未通过',unknown:'执行结果未知 · 未能判定','test-error':'题目测试异常 · 未能判定','environment-error':'执行环境异常 · 未能判定','save-error':'保存尚未完成'}[resultKind]||'尚未运行'}{elapsed!==null?` · ${elapsed} ms`:''}</p>{currentFault?<p className="whitespace-pre-wrap break-words">{currentFault}</p>:lifecycle&&resultKind==='failed'?<p>程序或公开断言未通过，首轮结果保持不变。</p>:null}{lifecycle?<details><summary>查看运行详情</summary><pre className="text-sm whitespace-pre-wrap break-words max-h-72 overflow-auto">{testOutput||'运行后在这里查看结果。'}</pre></details>:<pre className="text-sm whitespace-pre-wrap break-words max-h-72 overflow-auto">{testOutput||'运行后在这里查看结果。'}</pre>}</div>}
+            {panel==='result'&&<div role="status"><p className="text-sm font-bold mb-2">{lifecycle&&resultKind==='passed'?publicStatus:{running:'正在运行',passed:'题目测试通过',trial:'试运行完成（未判通关）',cancelled:'已停止',timeout:'运行超时',failed:'程序或断言未通过',unknown:'执行结果未知 · 未能判定','test-error':'题目测试异常 · 未能判定','environment-error':'执行环境异常 · 未能判定','save-error':'保存尚未完成'}[resultKind]||'尚未运行'}{elapsed!==null?` · ${elapsed} ms`:''}</p>{currentFault?<p className="whitespace-pre-wrap break-words">{currentFault}</p>:lifecycle&&resultKind==='failed'?<p>程序或公开断言未通过，首轮结果保持不变。</p>:null}{lifecycle?<details><summary>查看运行详情</summary><pre className="text-sm whitespace-pre-wrap break-words max-h-72 overflow-auto">{testOutput||'运行后在这里查看结果。'}</pre></details>:<pre className="text-sm whitespace-pre-wrap break-words max-h-72 overflow-auto">{testOutput||'运行后在这里查看结果。'}</pre>}</div>}
             <div className="flex gap-3 flex-wrap mt-4">
               <button type="button" disabled={!isReady||isTesting||codeState==='passed'} onClick={()=>lifecycle?handleNonWordRunTests('trial'):handleRunTests('trial')} className="study-secondary-action disabled:opacity-50">试运行当前代码</button>
               {isTesting&&<button type="button" onClick={cancel} className="study-secondary-action">停止运行</button>}

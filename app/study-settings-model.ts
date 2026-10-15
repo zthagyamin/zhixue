@@ -44,10 +44,10 @@ export function countSettingsPractice(events:ReadonlyArray<{eventId:string;event
 }
 
 export type PendingSettingsSummary={total:number;uploads:number;writebacks:number;assistance:number};
-type PendingSnapshot={complete:boolean;pending:{coreUploads:string[];coreWritebacks:string[];recovery:string[];assistance:string[];tasks:string[];legacyQueues:boolean};payload:{workspaceRecords:ReadonlyArray<{kind:string;value:unknown}>}};
+type PendingSnapshot={complete:boolean;pending:{coreUploads:string[];coreWritebacks:string[];recovery:string[];assistance:string[];tasks:string[];nonword?:string[];legacyQueues:boolean};payload:{workspaceRecords:ReadonlyArray<{kind:string;value:unknown}>}};
 export function settingsPendingSummary(value:PendingSnapshot):PendingSettingsSummary|null{
   if(!value.complete)return null;
-  const p=value.pending,uploads=new Set([...p.coreUploads,...p.recovery,...p.tasks]);
+  const p=value.pending,uploads=new Set([...p.coreUploads,...p.recovery,...p.tasks,...p.nonword??[]]);
   const legacy=value.payload.workspaceRecords.filter(row=>row.kind==='pending-activities'||row.kind==='cloud-outbox');
   let legacyEntries=0;
   for(const row of legacy){

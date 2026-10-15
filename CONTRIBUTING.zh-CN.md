@@ -73,3 +73,7 @@ Fork [zthagyamin/zhixue](https://github.com/zthagyamin/zhixue)，创建描述性
 ## 许可证
 
 仅提交你有权按项目 [MIT](LICENSE)提供的贡献，明确标注第三方内容及兼容条款。MIT 不覆盖用户导入材料，也不自动重新许可第三方依赖，见[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+## 公开同步
+
+后续同步必须遵守[公开边界](docs/open-source.md)和机器可读规则。暂存前执行公开门禁；保护样例、基线、许可声明和例外的变动须在 PR 中说明内容及来源审查，不得导入私有历史或批量重算哈希绕过失败。

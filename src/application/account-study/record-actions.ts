@@ -10,7 +10,7 @@ import { accountValue as json } from './result.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import { parseStudyRecord, studyObject, studyCount } from '../../domain/sync/index.ts';
 export async function executeRecordAction(body: Record<string, unknown>, auth: Authenticated, context: AccountContext): Promise<AccountReply> {
-    const { deps, requireRole, scope } = context;
+    const { deps, requireRole, deviceWriter, scope } = context;
     const p = auth.principal, action = body.action, parseStudySnapshot = deps.parseSnapshot, parseStudyItem = deps.parseItem;
     if (typeof action !== 'string' || !['begin-snapshot', 'stage-items', 'complete-snapshot', 'append-records'].includes(action))
         throw new ApiFailure(400, 'unsupported-action');
@@ -21,7 +21,7 @@ export async function executeRecordAction(body: Record<string, unknown>, auth: A
     if (action === 'begin-snapshot') {
         fields(body, ['action', 'snapshot'], ['libraryId']);
         const owner = await scope(p, body.libraryId), snapshot = await validated(() => parseStudySnapshot(body.snapshot));
-        await (await deps.getStudyStore()).beginSnapshot(owner, snapshot);
+        await (await deps.getStudyStore()).beginSnapshot(owner, snapshot, deviceWriter(p));
         return json({ accepted: true });
     }
     if (action === 'stage-items') {
@@ -34,12 +34,12 @@ export async function executeRecordAction(body: Record<string, unknown>, auth: A
             studyCount(entry.position, 'position');
             return { position: entry.position, item: await parseStudyItem(entry.item) };
         })));
-        await (await deps.getStudyStore()).stageSnapshotItems(await scope(p, body.libraryId), id(body.snapshotId, 'snapshot'), entries);
+        await (await deps.getStudyStore()).stageSnapshotItems(await scope(p, body.libraryId), id(body.snapshotId, 'snapshot'), entries, deviceWriter(p));
         return json({ accepted: true });
     }
     if (action === 'complete-snapshot') {
         fields(body, ['action', 'snapshotId', 'expectedRevision'], ['libraryId']);
-        return json(await (await deps.getStudyStore()).completeSnapshot(await scope(p, body.libraryId), id(body.snapshotId, 'snapshot'), count(body.expectedRevision, 'expected-revision')));
+        return json(await (await deps.getStudyStore()).completeSnapshot(await scope(p, body.libraryId), id(body.snapshotId, 'snapshot'), count(body.expectedRevision, 'expected-revision'), deviceWriter(p)));
     }
     fields(body, ['action', 'records'], ['libraryId']);
     if (!Array.isArray(body.records) || body.records.length < 1 || body.records.length > 5)
@@ -52,7 +52,7 @@ export async function executeRecordAction(body: Record<string, unknown>, auth: A
         try {
             if (record.provenanceMode === 'task')
                 await (await deps.getPlanStore()).validateTaskRecord(owner, record);
-            const result = await store.appendRecord(owner, record);
+            const result = await store.appendRecord(owner, record, p.kind === 'device' ? deviceWriter(p) : undefined);
             results.push({ eventId: record.event.eventId, ...result, ...(result.durable ? { receipt: { schemaVersion: 1, libraryId: owner.libraryId, eventId: record.event.eventId,
                         envelopeHash: record.envelopeHash, target: 'cloud', status: 'acked', revision: result.sequence } } : {}) });
         }

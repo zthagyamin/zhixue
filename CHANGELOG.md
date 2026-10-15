@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.2] — selective public maintenance
+
+- Improve authorization, persistence, retry and local-service recovery while retaining original attempts and pending evaluation.
+- Add account paper-workspace storage and recovery foundations; focused paper/flashcard UI follows separately.
+- Enforce the reviewed public distribution policy and preserve the independent public baseline, examples and notices.
+- See [scope and compatibility](docs/releases/v1.42.2.md). This source update does not deploy the website or install Companion.
+
 ## [1.41.1] — initial public beta
 
 - Publish a clean source snapshot with MIT licensing and bilingual user/developer documentation.

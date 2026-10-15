@@ -10,6 +10,8 @@ import {validPlanDay} from '../app/task-plan-types.ts';
 import type {StudyRecordEnvelope} from '../app/account-study-record';
 // @ts-expect-error TS5097: Node contract tests execute explicit TypeScript extensions.
 import {parsePlanExecutionReceipt,type PlanExecutionReceipt} from '../app/account-study-plan-execution.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../src/infrastructure/account-study-writer/index.ts';
 
 type D1=Pick<D1Database,'prepare'|'batch'>;
 type Scope={userId:string;libraryId:string};
@@ -30,14 +32,17 @@ export class AccountStudyPlanStore {
   private database:D1;
   constructor(database:D1){this.database=database;}
   private q(sql:string,...bindings:unknown[]){return this.database.prepare(sql).bind(...bindings);}
-  async putCatalog(scope:Scope,raw:unknown):Promise<'accepted'|'duplicate'> {
+  async putCatalog(scope:Scope,raw:unknown,writerGrantId?:string):Promise<'accepted'|'duplicate'> {
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const args=scopeArgs(scope),catalog=await parseCloudPlanningCatalog(raw);
     if(catalog.libraryId!==scope.libraryId) throw new Error('study-scope-mismatch');
     const published=await this.q('SELECT published FROM account_study_snapshots WHERE user_id=? AND library_id=? AND snapshot_id=?',...args,catalog.snapshotId).first<number>('published');
     if(published!==1) throw new Error('unknown-study-snapshot');
     const existing=await this.q('SELECT catalog_hash,catalog_json FROM account_study_planning_catalogs WHERE user_id=? AND library_id=? AND (snapshot_id=? OR catalog_hash=?)',...args,catalog.snapshotId,catalog.catalogHash).first<{catalog_hash:string;catalog_json:string}>();
     if(existing){const same=existing.catalog_hash===catalog.catalogHash&&canonicalizeJson(await parseCloudPlanningCatalog(JSON.parse(existing.catalog_json)))===canonicalizeJson(catalog);if(!same)throw new Error('study-planning-catalog-conflict');return 'duplicate';}
-    await this.q('INSERT INTO account_study_planning_catalogs(user_id,library_id,snapshot_id,source_hash,catalog_hash,catalog_json) VALUES(?,?,?,?,?,?)',...args,catalog.snapshotId,catalog.sourceHash,catalog.catalogHash,canonicalizeJson(catalog)).run();
+    const writer=studyWriterCondition(scope,writerGrantId);
+    await this.q(`INSERT INTO account_study_planning_catalogs(user_id,library_id,snapshot_id,source_hash,catalog_hash,catalog_json) SELECT ?,?,?,?,?,? WHERE ${writer.sql}`,...args,catalog.snapshotId,catalog.sourceHash,catalog.catalogHash,canonicalizeJson(catalog),...writer.bindings).run();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const saved=await this.getCatalog(scope,catalog.snapshotId);if(!saved||saved.catalogHash!==catalog.catalogHash)throw new Error('study-planning-catalog-storage-failed');return 'accepted';
   }
   async getCatalog(scope:Scope,snapshotId:string):Promise<CloudPlanningCatalogV1|null>{
@@ -49,12 +54,15 @@ export class AccountStudyPlanStore {
     const catalog=row?await this.getCatalog(scope,row.snapshot_id):null;if(!catalog)throw new Error('unknown-planning-source');return catalog;
   }
   async getCatalogByHash(scope:Scope,catalogHash:string):Promise<CloudPlanningCatalogV1|null>{try{return await this.catalogForHash(scope,catalogHash);}catch(error){if(error instanceof Error&&error.message==='unknown-planning-source')return null;throw error;}}
-  async putFacts(scope:Scope,raw:unknown):Promise<'accepted'|'duplicate'>{
+  async putFacts(scope:Scope,raw:unknown,writerGrantId?:string):Promise<'accepted'|'duplicate'>{
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     const args=scopeArgs(scope),facts=await parseCloudPlanningFacts(raw);if(facts.libraryId!==scope.libraryId)throw new Error('study-scope-mismatch');
     const catalog=await this.getCatalog(scope,facts.snapshotId);if(!catalog||catalog.catalogHash!==facts.catalogHash)throw new Error('unknown-planning-catalog');
     const old=await this.q('SELECT facts_json FROM account_study_planning_facts WHERE user_id=? AND library_id=? AND facts_hash=?',...args,facts.factsHash).first<{facts_json:string}>();
     if(old){if(canonicalizeJson(await parseCloudPlanningFacts(JSON.parse(old.facts_json)))!==canonicalizeJson(facts))throw new Error('planning-facts-conflict');return 'duplicate';}
-    await this.q('INSERT INTO account_study_planning_facts(user_id,library_id,snapshot_id,catalog_hash,facts_hash,observed_at,facts_json) VALUES(?,?,?,?,?,?,?)',...args,facts.snapshotId,facts.catalogHash,facts.factsHash,facts.observedAt,canonicalizeJson(facts)).run();
+    const writer=studyWriterCondition(scope,writerGrantId);
+    await this.q(`INSERT INTO account_study_planning_facts(user_id,library_id,snapshot_id,catalog_hash,facts_hash,observed_at,facts_json) SELECT ?,?,?,?,?,?,? WHERE ${writer.sql}`,...args,facts.snapshotId,facts.catalogHash,facts.factsHash,facts.observedAt,canonicalizeJson(facts),...writer.bindings).run();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     if(!(await this.getFacts(scope,facts.snapshotId,facts.factsHash)))throw new Error('planning-facts-storage-failed');return 'accepted';
   }
   async getFacts(scope:Scope,snapshotId:string,factsHash?:string):Promise<CloudPlanningFactsV1|null>{
@@ -101,22 +109,27 @@ export class AccountStudyPlanStore {
     return {sequence:row.sequence,receipt,writerGrantId:row.writer_grant_id,receivedAt:row.received_at};
   }
   async claimExecution(scope:Scope,operationId:string,writerGrantId:string):Promise<{status:'accepted'|'duplicate';operationId:string;leaseUntil:string}>{
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
+    const writer=studyWriterCondition(scope,writerGrantId);
     const args=scopeArgs(scope);studyId(operationId,'operation');studyId(writerGrantId,'grant');const operation=await this.operation(scope,operationId);
     if(!operation||!['approve','restore'].includes(operation.action))throw new Error('unknown-plan-execution-operation');
     if(!await this.q("SELECT grant_id FROM account_study_grants WHERE user_id=? AND library_id=? AND grant_id=? AND state='active' AND expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now')",...args,writerGrantId).first())throw new Error('study-writer-required');
-    await this.q("INSERT INTO account_study_plan_claims(user_id,library_id,operation_id,writer_grant_id,state,lease_until) SELECT ?,?,?,?,'claimed','9999-12-31T23:59:59.999Z' WHERE NOT EXISTS (SELECT 1 FROM account_study_plan_operations WHERE user_id=? AND library_id=? AND action='cancel' AND predecessor_operation_id=?) ON CONFLICT DO NOTHING",...args,operationId,writerGrantId,...args,operationId).run();
+    await this.q(`INSERT INTO account_study_plan_claims(user_id,library_id,operation_id,writer_grant_id,state,lease_until) SELECT ?,?,?,?,'claimed','9999-12-31T23:59:59.999Z' WHERE NOT EXISTS (SELECT 1 FROM account_study_plan_operations WHERE user_id=? AND library_id=? AND action='cancel' AND predecessor_operation_id=?) AND ${writer.sql} ON CONFLICT DO NOTHING`,...args,operationId,writerGrantId,...args,operationId,...writer.bindings).run();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
     let saved=await this.q('SELECT writer_grant_id,state,lease_until FROM account_study_plan_claims WHERE user_id=? AND library_id=? AND operation_id=?',...args,operationId).first<{writer_grant_id:string;state:string;lease_until:string}>();
     if(!saved){if(await this.q("SELECT operation_id FROM account_study_plan_operations WHERE user_id=? AND library_id=? AND action='cancel' AND predecessor_operation_id=?",...args,operationId).first())throw new Error('plan-operation-cancelled');throw new Error('plan-operation-in-flight');}
-    if(saved.writer_grant_id!==writerGrantId){await this.q("UPDATE account_study_plan_claims SET writer_grant_id=? WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=? AND state IN ('claimed','completed','blocked') AND NOT EXISTS (SELECT 1 FROM account_study_grants old WHERE old.grant_id=account_study_plan_claims.writer_grant_id AND old.state='active' AND old.expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now')) AND (SELECT count(*) FROM account_study_grants current WHERE current.user_id=? AND current.library_id=? AND current.state='active' AND current.expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now'))=1",writerGrantId,...args,operationId,saved.writer_grant_id,...args).run();saved=await this.q('SELECT writer_grant_id,state,lease_until FROM account_study_plan_claims WHERE user_id=? AND library_id=? AND operation_id=?',...args,operationId).first<{writer_grant_id:string;state:string;lease_until:string}>();}
+    if(saved.writer_grant_id!==writerGrantId){await this.q(`UPDATE account_study_plan_claims SET writer_grant_id=? WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=? AND state IN ('claimed','completed','blocked') AND NOT EXISTS (SELECT 1 FROM account_study_grants old WHERE old.grant_id=account_study_plan_claims.writer_grant_id AND old.state='active' AND old.expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now')) AND (SELECT count(*) FROM account_study_grants current WHERE current.user_id=? AND current.library_id=? AND current.state='active' AND current.expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now'))=1 AND ${writer.sql}`,writerGrantId,...args,operationId,saved.writer_grant_id,...args,...writer.bindings).run();await requireCurrentStudyWriter(this.database,scope,writerGrantId);saved=await this.q('SELECT writer_grant_id,state,lease_until FROM account_study_plan_claims WHERE user_id=? AND library_id=? AND operation_id=?',...args,operationId).first<{writer_grant_id:string;state:string;lease_until:string}>();}
     if(!saved||saved.writer_grant_id!==writerGrantId)throw new Error('plan-operation-in-flight');return{status:saved.state==='claimed'?'accepted':'duplicate',operationId,leaseUntil:saved.lease_until};
   }
   async appendExecution(scope:Scope,raw:unknown,writerGrantId:string):Promise<{status:'accepted'|'duplicate'|'conflict';execution:StoredPlanExecution}>{
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
+    const writer=studyWriterCondition(scope,writerGrantId);
     const args=scopeArgs(scope),receipt=parsePlanExecutionReceipt(raw);studyId(writerGrantId,'grant');
     const opRow=await this.operation(scope,receipt.operationId);if(!opRow||!opRow.plan_json||!['approve','restore'].includes(opRow.action))throw new Error('unknown-plan-execution-operation');
     const operation=await this.operationWire(scope,opRow);if(!operation.plan||operation.plan.cloudPlanHash!==receipt.cloudPlanHash)throw new Error('plan-execution-binding');
     const active=await this.q("SELECT grant_id FROM account_study_grants WHERE user_id=? AND library_id=? AND grant_id=? AND state='active' AND expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now')",...args,writerGrantId).first();if(!active)throw new Error('study-writer-required');
     const hash=await studyHash(receipt),sameId=await this.q('SELECT payload_hash FROM account_study_plan_execution_receipts WHERE user_id=? AND library_id=? AND receipt_id=?',...args,receipt.receiptId).first<string>('payload_hash'),claim=await this.q("SELECT writer_grant_id,state FROM account_study_plan_claims WHERE user_id=? AND library_id=? AND operation_id=?",...args,receipt.operationId).first<{writer_grant_id:string;state:string}>();
-    if(sameId){if(!claim||claim.writer_grant_id!==writerGrantId||!['claimed','completed','blocked'].includes(claim.state))throw new Error('plan-execution-claim-required');const execution=await this.latestExecution(scope,receipt.operationId);if(!execution)throw new Error('plan-execution-integrity');if(sameId===hash)await this.q("UPDATE account_study_plan_claims SET state=?,lease_until=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=?",receipt.status==='applied'?'completed':'blocked',...args,receipt.operationId,writerGrantId).run();return {status:sameId===hash?'duplicate':'conflict',execution};}
+    if(sameId){if(!claim||claim.writer_grant_id!==writerGrantId||!['claimed','completed','blocked'].includes(claim.state))throw new Error('plan-execution-claim-required');const execution=await this.latestExecution(scope,receipt.operationId);if(!execution)throw new Error('plan-execution-integrity');if(sameId===hash)await this.q(`UPDATE account_study_plan_claims SET state=?,lease_until=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=? AND ${writer.sql}`,receipt.status==='applied'?'completed':'blocked',...args,receipt.operationId,writerGrantId,...writer.bindings).run();await requireCurrentStudyWriter(this.database,scope,writerGrantId);return {status:sameId===hash?'duplicate':'conflict',execution};}
     const before=await this.latestExecution(scope,receipt.operationId);
     if(before?.receipt.status==='applied'){
       const prior={...before.receipt} as Partial<PlanExecutionReceipt>,next={...receipt} as Partial<PlanExecutionReceipt>;delete prior.receiptId;delete next.receiptId;
@@ -129,8 +142,9 @@ export class AccountStudyPlanStore {
       const expected=predecessor?.receipt.status==='applied'?predecessor.receipt.proof!.localRevision:operation.predecessorOperationId?null:operation.plan.nativeBaseRevision;
       if(expected===null)throw new Error('plan-predecessor-pending');if(receipt.proof!.localRevision!==expected+1)throw new Error('plan-execution-revision');
     }
-    await this.q("INSERT INTO account_study_plan_execution_receipts(user_id,library_id,receipt_id,operation_id,cloud_plan_hash,status,payload_hash,payload_json,writer_grant_id) SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM account_study_grants WHERE user_id=? AND library_id=? AND grant_id=? AND state='active' AND expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now')) AND NOT EXISTS (SELECT 1 FROM account_study_plan_execution_receipts WHERE user_id=? AND library_id=? AND operation_id=? AND status='applied')",...args,receipt.receiptId,receipt.operationId,receipt.cloudPlanHash,receipt.status,hash,canonicalizeJson(receipt),writerGrantId,...args,writerGrantId,...args,receipt.operationId).run();
-    const execution=await this.latestExecution(scope,receipt.operationId);if(!execution)throw new Error('plan-execution-storage-failed');if(execution.receipt.receiptId===receipt.receiptId)await this.q("UPDATE account_study_plan_claims SET state=?,lease_until=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=?",receipt.status==='applied'?'completed':'blocked',...args,receipt.operationId,writerGrantId).run();return {status:execution.receipt.receiptId===receipt.receiptId?'accepted':'conflict',execution};
+    await this.q(`INSERT INTO account_study_plan_execution_receipts(user_id,library_id,receipt_id,operation_id,cloud_plan_hash,status,payload_hash,payload_json,writer_grant_id) SELECT ?,?,?,?,?,?,?,?,? WHERE ${writer.sql} AND NOT EXISTS (SELECT 1 FROM account_study_plan_execution_receipts WHERE user_id=? AND library_id=? AND operation_id=? AND status='applied')`,...args,receipt.receiptId,receipt.operationId,receipt.cloudPlanHash,receipt.status,hash,canonicalizeJson(receipt),writerGrantId,...writer.bindings,...args,receipt.operationId).run();
+    await requireCurrentStudyWriter(this.database,scope,writerGrantId);
+    const execution=await this.latestExecution(scope,receipt.operationId);if(!execution)throw new Error('plan-execution-storage-failed');if(execution.receipt.receiptId===receipt.receiptId)await this.q(`UPDATE account_study_plan_claims SET state=?,lease_until=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE user_id=? AND library_id=? AND operation_id=? AND writer_grant_id=? AND ${writer.sql}`,receipt.status==='applied'?'completed':'blocked',...args,receipt.operationId,writerGrantId,...writer.bindings).run();await requireCurrentStudyWriter(this.database,scope,writerGrantId);return {status:execution.receipt.receiptId===receipt.receiptId?'accepted':'conflict',execution};
   }
   async listExecutions(scope:Scope,after:number,limit:number,through?:number):Promise<{executions:StoredPlanExecution[];nextCursor:number|null;through:number}>{
     const args=scopeArgs(scope);studyCount(after,'execution-cursor');studyCount(limit,'execution-limit',1);if(limit>20)throw new Error('invalid-execution-limit');

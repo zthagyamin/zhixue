@@ -271,3 +271,12 @@ export const accountStudyAssistanceReceipts=sqliteTable('account_study_assistanc
 },t=>[uniqueIndex('account_study_assistance_receipt_id_uq').on(t.userId,t.libraryId,t.receiptId),index('account_study_assistance_receipt_cursor_idx').on(t.userId,t.libraryId,t.sequence),
   index('account_study_assistance_receipt_summary_idx').on(t.userId,t.libraryId,t.summaryId,t.sequence),
   foreignKey({columns:[t.userId,t.libraryId,t.summaryId],foreignColumns:[accountStudyAssistance.userId,accountStudyAssistance.libraryId,accountStudyAssistance.summaryId]})]);
+
+export const paperReadingWorkspacesV1=sqliteTable('paper_reading_workspaces_v1',{
+  userId:text('user_id').notNull(),
+  libraryId:text('library_id').notNull(),
+  unitId:text('unit_id').notNull(),
+  revision:integer('revision').notNull(),
+  workspaceJson:text('workspace_json').notNull(),
+},t=>[primaryKey({columns:[t.userId,t.libraryId,t.unitId]}),
+  foreignKey({columns:[t.userId,t.libraryId],foreignColumns:[accountStudyLibraries.userId,accountStudyLibraries.libraryId]}).onDelete('cascade')]);

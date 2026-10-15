@@ -1,14 +1,14 @@
 // Test-only localhost proxy and temporary Companion. No installed runtime or real vault access.
 import http from 'node:http';
-import {mkdtemp,mkdir,copyFile,readdir,writeFile,readFile} from 'node:fs/promises';
+import {mkdtemp,mkdir,copyFile,writeFile,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {createAccountPreview} from '../tests/fixtures/account-preview.mjs';
 import {previewEnvironment,previewHtml} from '../tests/fixtures/preview-environment.mjs';
 import {nativePreviewRead} from '../tests/fixtures/native-preview-read.mjs';
 import {createPythonPreviewAssets,rewriteRuntimeUrls} from '../tests/fixtures/python-preview-runtime.mjs';
+import {copyCompanionPreviewSources,startCompanionPreview,watchCompanionPreview} from '../tests/helpers/companion-preview.mjs';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const reuseIndex=process.argv.indexOf('--reuse-root'),reuse=reuseIndex>=0?path.resolve(process.argv[reuseIndex+1]):null;
 const proxyOnly=process.argv.includes('--proxy-only');
@@ -28,15 +28,13 @@ if(reuse && (path.dirname(reuse)!==path.resolve(tmpdir()) || !path.basename(reus
 const root=reuse??await mkdtemp(path.join(tmpdir(),'zhixue-task-plan-browser-')),companion=path.join(root,'companion'),vault=path.join(root,'vault');
 if(!proxyOnly&&mode==='local') {
   await mkdir(path.join(companion,'data'),{recursive:true});await mkdir(vault,{recursive:true});
-  for(const name of await readdir(path.join(repo,'companion'))) if(name.endsWith('.py')) await copyFile(path.join(repo,'companion',name),path.join(companion,name));
-  for(const name of ['version.json','data/seed.json']) await copyFile(path.join(repo,'companion',name),path.join(companion,name));
+  await copyCompanionPreviewSources(repo,companion);
   await copyFile(path.join(repo,'scripts/task-plan-browser-fixture.py'),path.join(companion,'fixture.py'));
   await writeFile(path.join(companion,'config.json'),JSON.stringify({learning_vault_root:vault,study_loop_integration_root:'_System/Integrations/Study Loop',allowed_origins:[`http://localhost:${port}`,`http://127.0.0.1:${port}`],port:companionPort}));
 }
 const env=previewEnvironment(process.env,Boolean(reuse));
-const child=proxyOnly||mode==='account'?null:spawn(process.env.GATEWAY_TEST_PYTHON||(process.env.PYTHON || 'python'),['-X','utf8','-B',path.join(companion,'fixture.py')],{cwd:companion,env,stdio:['ignore','pipe','pipe'],windowsHide:true});
-child?.stdout.on('data',chunk=>process.stdout.write(String(chunk).split('\n').filter(line=>!/(Pairing code|一次性配对码)/i.test(line)).join('\n')));
-child?.stderr.pipe(process.stderr);
+const fixtureOutput={write:chunk=>process.stdout.write(String(chunk).split('\n').filter(line=>!/(Pairing code|一次性配对码)/i.test(line)).join('\n'))};
+const child=proxyOnly||mode==='account'?null:await startCompanionPreview(process.env.GATEWAY_TEST_PYTHON||(process.env.PYTHON || 'python'),['-X','utf8','-B',path.join(companion,'fixture.py')],{cwd:companion,env,readyText:'Disposable task-plan Companion ready.',stdout:fixtureOutput});
 const emptyProgress={answered:0,correct:0,itemStages:{},fsrsData:{}},events=new Map();
 const account=mode==='account'?await createAccountPreview({origin,scenario,userId:`preview-${path.basename(root)}`,longReading:process.argv.includes('--long-material'),syntheticAi:process.argv.includes('--ai-fixture'),manyReviews:process.argv.includes('--many-reviews')}):null;
 const readNativeHistory=nativePreviewRead(events,account?.userId??'task-plan-browser-fixture');
@@ -90,5 +88,6 @@ const proxy=http.createServer(async(req,res)=>{
     else res.end(Buffer.from(await upstream.arrayBuffer()));
   }catch(error){res.writeHead(502);res.end(String(error));}
 });
+const detachChild=watchCompanionPreview(child,proxy);
 proxy.listen(port,'127.0.0.1',()=>console.log(`Isolated ${mode} study preview: ${origin}/study\nScenario: ${account?scenario:'temporary Companion'}\nFixture directory: ${root}`));
-for(const signal of ['SIGINT','SIGTERM']) process.on(signal,()=>{child?.kill();proxy.close(()=>{account?.close();process.exit(0);});});
+for(const signal of ['SIGINT','SIGTERM']) process.on(signal,()=>{detachChild();child?.kill();proxy.close(()=>{account?.close();process.exit(0);});});

@@ -17,7 +17,7 @@ export function LongTermAIPlanner({spec,subjects,planningStart,active,disabled,o
  useLayoutEffect(()=>{identityRef.current=identity;return invalidate;},[identity,invalidate]);
  const ready=Boolean(workspace&&settings?.enabled&&settings.configured&&settings.model&&settings.serverAvailable!==false);
  async function generate(){
-  if(!workspace||!settings||!ready||!goal.trim()||busy||disabled)return;
+  if(request.current||!active||identityRef.current!==identity||!workspace||!settings||!ready||!goal.trim()||busy||disabled)return;
   const token=++epoch.current,stamp=currentSourceStamp(),born=identity;
   const controller=new AbortController();request.current=controller;setRequestState({identity,token});onBusyChange?.(true);setMessage('正在根据你的目标和资料数量建议节奏…');
   try{

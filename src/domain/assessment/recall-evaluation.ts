@@ -40,6 +40,10 @@ export function validateRecallEvaluation(raw: unknown, criteria: readonly Recall
         coverage = recallCoverage(criteria, alignment.matchedPointIds);
         if (status === 'complete' && coverage.missingMandatory.length)
             throw Error('recall-evaluation-missing-mandatory');
+        // Optional points may be omitted, but zero matches contradict complete.
+        // Use matched IDs, not a rounded percentage or a keyword threshold.
+        if (status === 'complete' && !coverage.matched.length)
+            throw Error('recall-evaluation-no-matched-points');
     }
     else if (result.matchedPointIds !== undefined || result.missedPointIds !== undefined) {
         // Do not accept invented alignment even when this old item has no rubric.

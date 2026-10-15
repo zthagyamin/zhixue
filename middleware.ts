@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { safeRelativeReturnPath } from './src/domain/auth-return';
 
 export function middleware(request: NextRequest) {
   // Only apply mock login in development
   if (process.env.NODE_ENV === "development") {
     // If user tries to hit the login endpoint, automatically redirect them with auth cookies
     if (request.nextUrl.pathname.startsWith("/signin-with-chatgpt")) {
-      const returnTo = request.nextUrl.searchParams.get("return_to") || "/study";
+      const returnTo = safeRelativeReturnPath(request.nextUrl.searchParams.get("return_to") || "/study");
       const response = NextResponse.redirect(new URL(returnTo, request.url));
       // Set a fake cookie to remember we're "logged in" locally
       response.cookies.set("local-dev-mock-auth", "1");
@@ -14,7 +15,7 @@ export function middleware(request: NextRequest) {
     }
 
     if (request.nextUrl.pathname.startsWith("/signout-with-chatgpt")) {
-      const returnTo = request.nextUrl.searchParams.get("return_to") || "/";
+      const returnTo = safeRelativeReturnPath(request.nextUrl.searchParams.get("return_to") || "/");
       const response = NextResponse.redirect(new URL(returnTo, request.url));
       response.cookies.delete("local-dev-mock-auth");
       return response;

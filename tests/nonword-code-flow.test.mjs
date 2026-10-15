@@ -5,12 +5,13 @@ import {createLearningDraftStore} from '../app/learning-draft-store.ts';
 import {createSubjectGradeHandler} from '../src/features/study-attempt/index.ts';
 
 const error=(name,extra={})=>Object.assign(new Error('Traceback: synthetic implementation details'),{name,...extra});
-function fixture({outcomes=[{output:'ok',assertionsPassed:2}],purpose='first',submitWait,failSubmit=false}={}){
+function fixture({outcomes=[{output:'ok',assertionsPassed:2}],purpose='first',submitWait,failSubmit=false,pendingOnAssess=false,pendingOnGrade=false,noGradeReceipt=false,canonicalOutcome}={}){
   const hooks=createHooks(),calls=[],grades=[],children=[],assessments=[],moves=[];
-  let submitted=false,original,failures=failSubmit?1:0;
-  const lifecycle={ready:true,purpose,intent:'review',get submitted(){return submitted;},
+  let submitted=false,original,failures=failSubmit?1:0,sourcePending=false;
+  const lifecycle={ready:true,purpose,intent:'review',get submitted(){return submitted;},get sourcePending(){return sourcePending;},
+    get firstOutcome(){return assessments.length?canonicalOutcome:undefined;},
     async submit(answer){calls.push(['submit',answer]);await submitWait?.promise;if(failures-- >0)throw Error('disk failed');if(submitted&&answer!==original)throw Error('original mutated');submitted=true;original=answer;},
-    async assess(outcome){calls.push(['assess',outcome.status]);assessments.push(outcome);},
+    async assess(outcome){calls.push(['assess',outcome.status]);assessments.push(outcome);sourcePending=pendingOnAssess;},
     async waitForReview(reason){calls.push(['pending',reason]);},async continuePending(){moves.push('pending');},
     async recordRemediation(answer,outcome){children.push({answer,outcome});},async startRemediation(){calls.push(['start-child']);},async finishRemediation(){moves.push('finish-child');},
   };
@@ -22,14 +23,24 @@ function fixture({outcomes=[{output:'ok',assertionsPassed:2}],purpose='first',su
   const store=load('app/learning-draft-store.ts').createLearningDraftStore('code-flow'),draft=store.adapter('A','code:1');
   const data={topic:'Python',prompt:'Return a + b without changing the provided inputs.',initialCode:'bad',testCode:'assert add(1, 2) == 3',solutionCode:'REFERENCE_SOLUTION',explanation:'Return the sum.'};
   hooks.mount(load('app/plugins/plugin-code.tsx').CodePlugin.renderUI,{data,context:{draft,nonWordLearning:lifecycle},
-    onGrade(rating,options){grades.push({rating,options});if(options?.deferAdvance){const ticket=draft.begin();if(ticket)store.commit(ticket,()=>moves.push('formal'));}}});
+    onGrade(rating,options){grades.push({rating,options});if(pendingOnGrade){sourcePending=true;return;}if(noGradeReceipt)return;if(options?.deferAdvance){const ticket=draft.begin();if(ticket)store.commit(ticket,()=>moves.push('formal'));}}});
   hooks.flush();
-  return {hooks,store,draft,lifecycle,runner,calls,grades,children,assessments,moves,data,original:()=>original,
+  return {hooks,store,draft,lifecycle,runner,calls,grades,children,assessments,moves,data,original:()=>original,setSourcePending:value=>{sourcePending=value;pendingOnAssess=value;},
     click:async(label)=>{const target=button(hooks.view(),label)||[...nodes(hooks.view())].find(node=>node.type==='button'&&text(node).endsWith(label));assert.ok(target,`Missing ${label}`);await target.props.onClick();await settle(hooks);},
     run:async()=>{const target=[...nodes(hooks.view())].find(node=>node.type==='button'&&text(node).includes('运行测试'));assert.ok(target);await target.props.onClick();await settle(hooks);},
     edit:async(value)=>{const editor=[...nodes(hooks.view())].find(node=>node.props.onChange&&Object.hasOwn(node.props,'readOnly')&&Object.hasOwn(node.props,'value'));assert.ok(editor);editor.props.onChange(value);await settle(hooks);}};
 }
 async function settle(hooks){for(let i=0;i<4;i++){hooks.flush();await tick();hooks.render();}}
+
+test('remediation public pass reports the retained first review need without demanding another current-code change',async()=>{
+ const f=fixture({purpose:'remediation',canonicalOutcome:{status:'incorrect',source:'deterministic',rating:'again',explanation:'Original first check failed.'}});
+ try{
+  await f.run();
+  assert.match(text(f.hooks.view()),/公开测试通过 · 首轮仍需复习/);
+  assert.doesNotMatch(text(f.hooks.view()),/公开测试通过 · 仍需修改/);
+  assert.equal(f.assessments[0].status,'correct');assert.equal(f.grades.length,0);
+ }finally{f.hooks.unmount();}
+});
 
 test('guided code feedback directs the learner to the shared independent step without an inert formal continue button',async()=>{
   const f=fixture({purpose:'guided'});await f.run();
@@ -42,6 +53,15 @@ test('code snapshot is reliably submitted before public tests execute',async()=>
   await f.run();assert.equal(f.calls.filter(call=>call[0]==='submit').length,1);
   wait.resolve();await running;assert.deepEqual(f.calls.filter(call=>['submit','run','assess'].includes(call[0])).map(call=>call[0]),['submit','run','assess']);
   assert.equal(f.original(),'bad');assert.equal(f.assessments[0].status,'correct');assert.equal(f.grades.length,0);f.hooks.unmount();
+});
+
+for(const [status,rating] of [['incorrect','again'],['partial','hard']])test('public checks do not hide the stored AI '+status+' outcome',async()=>{
+ const f=fixture({canonicalOutcome:{status,source:'model',rating,explanation:'Missing the source requirement for negative inputs.'}});
+ try{
+  await f.run();assert.equal(f.draft.read('firstRunKind',''),'incorrect');assert.equal(f.draft.read('codeState',''),'coding');
+  assert.match(f.draft.read('firstTestOutput',''),/negative inputs/);
+  assert.equal(f.grades[0].rating,rating);assert.match(text(f.hooks.view()),/公开测试通过 · 仍需修改/);
+ }finally{f.hooks.unmount();}
 });
 test('first attributed error saves again once; repaired public-test success belongs to a child',async()=>{
   const f=fixture({outcomes:[error('PythonError',{executionPhase:'program'}),{output:'ok',assertionsPassed:1}]});await f.run();
@@ -109,4 +129,122 @@ test('the production subject host honors explicit code deferral and continues th
   });
   grade('again',{deferAdvance:true});await submissions[0];assert.equal(advances,0);assert.equal(draft.hasSavedFeedback(),true);
   assert.equal(draft.continueAfterFeedback(),true);assert.equal(draft.continueAfterFeedback(),false);assert.equal(advances,1);
+});
+
+test('controlled-source pending keeps public-test success separate from the first formal result',async t=>{
+  const f=fixture({pendingOnAssess:true});t.after(()=>f.hooks.unmount());await f.run();
+  assert.equal(f.original(),'bad');assert.equal(f.draft.read('firstRunKind',''),'pending');
+  assert.equal(f.draft.read('firstNeedsReview',false),true);assert.equal(f.grades.length,0);
+  assert.match(text(f.hooks.view()),/待核对/);
+  await f.click('保留待核对结果，继续');assert.deepEqual(f.moves,['pending']);assert.equal(f.grades.length,0);
+});
+test('controlled-source pending does not save an attributed error or explicit give-up as a formal again',async t=>{
+  const errorFixture=fixture({pendingOnAssess:true,outcomes:[error('PythonError',{executionPhase:'program'})]});
+  const giveUp=fixture({pendingOnAssess:true});t.after(()=>{errorFixture.hooks.unmount();giveUp.hooks.unmount();});
+  await errorFixture.run();assert.equal(errorFixture.grades.length,0);
+  assert.equal(errorFixture.draft.read('firstRunKind',''),'pending');
+  await giveUp.click('查看题解');assert.equal(giveUp.original(),'bad');assert.equal(giveUp.grades.length,0);
+  assert.equal(giveUp.draft.read('firstNeedsReview',false),true);
+});
+test('a void formal callback with no durable feedback remains retryable instead of consuming continue',async t=>{
+  const f=fixture({noGradeReceipt:true});t.after(()=>f.hooks.unmount());await f.run();
+  await f.click('继续');await f.click('继续');
+  assert.equal(f.grades.length,2);assert.equal(f.moves.length,0);
+  assert.match(text(f.hooks.view()),/尚未.*保存|持久回执/);
+});
+test('source becoming pending during formal callback does not consume official continuation',async t=>{
+  const f=fixture({pendingOnGrade:true});t.after(()=>f.hooks.unmount());await f.run();
+  await f.click('继续');assert.equal(f.grades.length,1);assert.equal(f.moves.length,0);
+  assert.equal(f.draft.read('firstNeedsReview',false),true);
+  await f.click('保留待核对结果，继续');assert.deepEqual(f.moves,['pending']);
+});
+
+test('actual host lifecycle persists source-pending code reports and oral ratings without an official callback',async t=>{
+  const {IDBFactory}=await import('fake-indexeddb');
+  globalThis.indexedDB=new IDBFactory();
+  const {createNonWordRuntime,recoveryFields,rawAnswer,restoredFields,evaluationPhase}=await import('../src/infrastructure/nonword-study/index.ts');
+  const {attachPracticeDriver}=await import('../src/infrastructure/practice-evidence/index.ts');
+  const {waitForObservation}=await import('./helpers/causal-harness.mjs');
+  for(const mode of ['code','flashcard'])await t.test(mode,async t=>{
+    const parent=createHooks(),child=createHooks(),parentLoad=loader(parent.api);
+    let rendered,driver,formalCalls=0;
+    t.after(()=>{child.unmount();parent.unmount();});
+    const scope={workspaceId:'account:pending-'+mode,ownerId:'pending-'+mode,libraryId:'synthetic-library',
+      snapshotId:'synthetic-source',itemKey:'practice:'+mode,contentHash:'a'.repeat(64),groupId:'synthetic-group',
+      roundId:'source-pending-round',cloud:false,sourceConfirmationRequired:true};
+    const draft=parentLoad('app/learning-draft-store.ts').createLearningDraftStore(scope.workspaceId).adapter(mode,mode);
+    const createDriver=async(purpose,intent,parentAttemptId,instanceId)=>{
+      const runtime=await createNonWordRuntime(scope,mode,{purpose,intent,parentAttemptId,instanceId,
+        sourceAdmission:async attempt=>{
+          assert.equal(attempt.submitted.answer,mode==='code'?'def f():\n  return 1':'');
+          return {status:'pending',reason:'可信来源已登记，专用评价仍待核对。',reasonCode:'no-reference'};
+        }});
+      const base={runtime,restore:()=>restoredFields(runtime.session.snapshot(),mode),
+        fields:values=>recoveryFields(mode,values),answer:values=>rawAnswer(mode,values),
+        phase:()=>evaluationPhase(runtime.session.snapshot()),verifiedCore:async()=>null,
+        source:{review:async()=>{},beforeFormal:()=>assert.fail('Pending cannot claim source evidence.')}};
+      driver=mode==='code'?await attachPracticeDriver(base,runtime):base;return driver;
+    };
+    parent.mount(parentLoad('src/features/nonword-study/host.tsx').NonWordStudyHost,{
+      bindingKey:JSON.stringify(scope),mode,draft,reference:'Synthetic approved reference.',recallConfigured:false,
+      sourceConfirmationRequired:true,createDriver,renderPlugin:(draft,lifecycle,grade)=>{
+        rendered={draft,lifecycle,grade};return null;},
+      onGrade:async()=>{formalCalls++;},resumeFormal:()=>assert.fail('Pending cannot continue formally.'),
+      continuePending:()=>{},renderMath:value=>value});
+    async function settleParent(){
+      for(let i=0;i<5;i++){await settle(parent);
+        const slot=[...nodes(parent.view())].find(node=>node.props.renderPlugin&&node.props.lifecycle&&node.props.draft);
+        if(slot&&typeof slot.type==='function')slot.type(slot.props);
+      }
+    }
+    await waitForObservation(settleParent,()=>Boolean(rendered?.lifecycle.ready),{label:'real '+mode+' source-pending host'});
+    const runner={isReady:true,error:null,retry(){},cancel(){},
+      async runPython(code,_capture,_input,_tests,options){
+        assert.equal(code,'def f():\n  return 1');
+        return {output:'synthetic public assertion passed',assertionsPassed:1,
+          report:{schemaVersion:1,runId:1,identity:options.identity,status:'passed',phase:'tests',outcome:'success',
+            assertionsPassed:1,assertionsExecuted:1,mapping:{prefixLineCount:0,originalLineCount:2}}};
+      }};
+    const childLoad=loader(child.api,{'app/hooks/use-pyodide.ts':{usePyodide:()=>runner},
+      'app/ai/use-report-study-ai-item.ts':{useReportStudyAIItem(){}},'app/study-guidance.tsx':{StudyGuidance:()=>null},
+      'app/assistance-display.tsx':{useAssistance:()=>({submit(){}}),useAssistanceDisplay(){}},
+      'app/components/code-editor.tsx':{CodeEditor:()=>null},'app/math-text.tsx':{MathText:()=>null},
+      'src/features/remediation/index.ts':{CodeRewriteLauncher:()=>null,CandidateLauncher:()=>null},
+      'app/use-study-swipe.ts':{useStudySwipe:()=>({})}},{addEventListener(){},removeEventListener(){}});
+    const props={data:mode==='code'?{topic:'Synthetic',prompt:'Return one',initialCode:'def f():\n  return 1',
+      testCode:'assert f() == 1',solutionCode:'def f():\n  return 1',explanation:'Return one'}:
+      {itemId:'synthetic-card',front:'Recall one fact',back:'Synthetic source fact'},
+      context:{draft:rendered.draft,nonWordLearning:rendered.lifecycle},onGrade:rendered.grade};
+    if(mode==='code')child.mount(childLoad('app/plugins/plugin-code.tsx').CodePlugin.renderUI,props);
+    else{const shell=childLoad('app/plugins/plugin-flashcard.tsx').FlashcardPlugin.renderUI(props);child.mount(shell.type,shell.props);}
+    child.flush();
+    if(mode==='code'){
+      await [...nodes(child.view())].find(node=>node.type==='button'&&text(node).includes('运行测试')).props.onClick();
+    }else{
+      await [...nodes(child.view())].find(node=>node.type==='button'&&text(node).startsWith('显示答案')).props.onClick();await settle(child);
+      await [...nodes(child.view())].find(node=>node.type==='button'&&text(node).startsWith('极易')).props.onClick();
+    }
+    await settle(child);await settleParent();
+    const saved=driver.runtime.session.snapshot();
+    assert.equal(saved.evaluation.status,'pending');assert.equal(saved.formal,null);assert.equal(formalCalls,0);
+    assert.equal(saved.submitted.answer,mode==='code'?'def f():\n  return 1':'');
+    assert.equal(rendered.lifecycle.sourcePending,true);assert.match(text(child.view()),/待核对/);
+    if(mode==='code'){
+      assert.equal(rendered.draft.read('firstRunKind',''),'pending');
+      assert.equal(driver.runtime.practice.snapshot().execution.first.status,'passed');
+      assert.ok(button(child.view(),'保留待核对结果，继续'));
+    }else{
+      assert.equal(rendered.draft.read('flashcardRating',null),'easy');
+      assert.equal(button(child.view(),'继续'),undefined);assert.ok(button(child.view(),'重试保存自评'));
+    }
+  });
+});
+
+test('a pending original run remains editable and can recover its formal feedback after reliable recheck',async t=>{
+  const f=fixture({pendingOnAssess:true,outcomes:[{output:'first public run',assertionsPassed:1},{output:'retry public run',assertionsPassed:1}]});
+  t.after(()=>f.hooks.unmount());await f.run();assert.equal(f.draft.read('firstRunKind',''),'pending');
+  assert.equal([...nodes(f.hooks.view())].find(node=>node.props.onChange&&Object.hasOwn(node.props,'readOnly')).props.readOnly,false);
+  f.setSourcePending(false);await f.run();assert.equal(f.draft.read('firstRunKind',''),'correct');
+  await f.click('继续');await f.click('继续');assert.equal(f.grades.length,1);assert.deepEqual(f.moves,['formal']);
+  assert.equal(f.original(),'bad');assert.equal(f.children.length,0);
 });

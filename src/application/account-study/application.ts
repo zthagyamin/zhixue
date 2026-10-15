@@ -25,6 +25,8 @@ import {executePracticeEvidenceAction} from '../practice-evidence/index.ts';
 import {executeMathStudyAction,executeMathMappingAction} from '../math-study/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {executeCodeHintAction} from '../code-study/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {executePaperReadingAction} from '../paper-reading/index.ts';
 export function createAccountStudyApplication(deps: AccountStudyDependencies) {
     const context = createAccountContext(deps);
     return { get: (params: Record<string, string>, auth: Authenticated) => readAccountAction(params, auth, context),
@@ -33,7 +35,7 @@ export function createAccountStudyApplication(deps: AccountStudyDependencies) {
             delete body.expectedUserId;
             if (typeof body.action !== 'string')
                 throw new ApiFailure(400, 'action-required');
-            return await executeMathMappingAction(body,auth,context) ?? await executeMathStudyAction(body,auth,context,signal) ?? await executeCodeHintAction(body,auth,context,signal) ?? await executePracticeEvidenceAction(body,auth,context) ?? await executeCourseAction(body,auth,context,signal) ?? await executeAttemptAction(body, auth, context) ?? await executeAccessAction(body, auth, context) ?? await executeAssistanceAction(body, auth, context) ??
+            return await executePaperReadingAction(body,auth,context,signal) ?? await executeMathMappingAction(body,auth,context) ?? await executeMathStudyAction(body,auth,context,signal) ?? await executeCodeHintAction(body,auth,context,signal) ?? await executePracticeEvidenceAction(body,auth,context) ?? await executeCourseAction(body,auth,context,signal) ?? await executeAttemptAction(body, auth, context) ?? await executeAccessAction(body, auth, context) ?? await executeAssistanceAction(body, auth, context) ??
                 await executePlanningAction(body, auth, context) ?? await executeAiAction(body, auth, context, signal) ?? await executeRecordAction(body, auth, context);
         } };
 }

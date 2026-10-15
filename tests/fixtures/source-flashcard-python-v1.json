@@ -1,0 +1,1183 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "Python SourceAdmissionStore with RegisteredExerciseResolver, actual temporary registered Markdown and SQLite; public read via post_nonword_source.",
+  "generationMethod": "Instantiate tests.test_nonword_self_assessment.SelfAssessmentTests; capture its registered flashcard query; submit an empty revealed oral answer; self_assess, evaluate, claim and public read for again/hard/good/easy; serialize public DTOs before cleaning the temporary vault. No model, network or V3 writer.",
+  "cases": [
+    {
+      "rating": "again",
+      "query": {
+        "itemKey": "practice:original-cards:cards:q1",
+        "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+        "presentation": {
+          "prompt": "Recall one source fact",
+          "front": "Recall one source fact",
+          "back": "Source fact",
+          "questionType": "flashcard"
+        }
+      },
+      "capture": {
+        "schemaVersion": 1,
+        "status": "confirmed",
+        "durable": true,
+        "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "originalBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "item": {
+          "back": "Source fact",
+          "front": "Recall one source fact",
+          "prompt": "Recall one source fact",
+          "questionType": "flashcard"
+        },
+        "eventKind": "due",
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        }
+      },
+      "submission": {
+        "attemptId": "flashcard-again",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "answer": "",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "purpose": "first",
+        "parentAttemptId": null,
+        "assistance": "observed",
+        "answerRevealed": true
+      },
+      "submitReceipt": {
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "attemptId": "flashcard-again",
+        "answerRevision": 1,
+        "submissionHash": "750dfde07930a396aca6e3450579b8681ac471f769e2831ee767be26e0d67c07",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "savedAt": "2026-10-10T10:00:00+00:00"
+      },
+      "selfAssessmentRequest": {
+        "schemaVersion": 1,
+        "attemptId": "flashcard-again",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "rating": "again"
+      },
+      "selfAssessmentReceipt": {
+        "schemaVersion": 1,
+        "durable": true,
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "again",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "selfAssessmentHash": "6881264bad9f7ccb50b9c557d8f898137cebcdd17092e561b88c867a32cd54c1"
+      },
+      "evaluateRequest": {
+        "attemptId": "flashcard-again",
+        "requestId": "source-flashcard-again"
+      },
+      "evaluation": {
+        "schemaVersion": 1,
+        "durable": true,
+        "requestId": "source-flashcard-again",
+        "attemptId": "flashcard-again",
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "answerRevision": 1,
+        "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "status": "resolved",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "again",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "correct": false,
+        "outcome": "incorrect",
+        "explanation": "用户主动自评为忘记。",
+        "evaluationHash": "be29acc87965123ed661575aeb02935a4e60c8635a8e68cd5e13f2df4a0dfa47"
+      },
+      "claimRequest": {
+        "attemptId": "flashcard-again",
+        "eventId": "source-flashcard-formal-again",
+        "rating": "again"
+      },
+      "claimReceipt": {
+        "schemaVersion": 1,
+        "status": "accepted",
+        "durable": true,
+        "claim": {
+          "schemaVersion": 1,
+          "attemptId": "flashcard-again",
+          "eventId": "source-flashcard-formal-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "evaluationHash": "be29acc87965123ed661575aeb02935a4e60c8635a8e68cd5e13f2df4a0dfa47",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "rating": "again",
+          "correct": false,
+          "occurredAt": "2026-10-10T09:00:00.000Z",
+          "eventKind": "due"
+        },
+        "claimHash": "4da746db7ffac1607130403c1628ef12a699f7959581c881fc97326779ea68be"
+      },
+      "readReceipt": {
+        "submission": {
+          "answer": "",
+          "answerRevealed": true,
+          "answerRevision": 1,
+          "assistance": "observed",
+          "attemptId": "flashcard-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "parentAttemptId": null,
+          "purpose": "first",
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "evaluation": {
+          "schemaVersion": 1,
+          "durable": true,
+          "requestId": "source-flashcard-again",
+          "attemptId": "flashcard-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "status": "resolved",
+          "selfAssessment": {
+            "answerRevision": 1,
+            "attemptId": "flashcard-again",
+            "binding": {
+              "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+              "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+              "itemKey": "practice:original-cards:cards:q1",
+              "libraryId": "library-a",
+              "ownerId": "owner-a"
+            },
+            "rating": "again",
+            "schemaVersion": 1,
+            "submittedAt": "2026-10-10T09:00:00.000Z"
+          },
+          "correct": false,
+          "outcome": "incorrect",
+          "explanation": "用户主动自评为忘记。",
+          "evaluationHash": "be29acc87965123ed661575aeb02935a4e60c8635a8e68cd5e13f2df4a0dfa47"
+        },
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "saved",
+          "durable": true,
+          "attemptId": "flashcard-again",
+          "answerRevision": 1,
+          "submissionHash": "750dfde07930a396aca6e3450579b8681ac471f769e2831ee767be26e0d67c07",
+          "submittedAt": "2026-10-10T09:00:00.000Z",
+          "savedAt": "2026-10-10T10:00:00+00:00"
+        },
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "activeRequestId": "source-flashcard-again",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-again",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "again",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        }
+      }
+    },
+    {
+      "rating": "hard",
+      "query": {
+        "itemKey": "practice:original-cards:cards:q1",
+        "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+        "presentation": {
+          "prompt": "Recall one source fact",
+          "front": "Recall one source fact",
+          "back": "Source fact",
+          "questionType": "flashcard"
+        }
+      },
+      "capture": {
+        "schemaVersion": 1,
+        "status": "confirmed",
+        "durable": true,
+        "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "originalBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "item": {
+          "back": "Source fact",
+          "front": "Recall one source fact",
+          "prompt": "Recall one source fact",
+          "questionType": "flashcard"
+        },
+        "eventKind": "due",
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        }
+      },
+      "submission": {
+        "attemptId": "flashcard-hard",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "answer": "",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "purpose": "first",
+        "parentAttemptId": null,
+        "assistance": "observed",
+        "answerRevealed": true
+      },
+      "submitReceipt": {
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "attemptId": "flashcard-hard",
+        "answerRevision": 1,
+        "submissionHash": "71def515dfdc053a0401ba10942df880c53a920b4ddcf82c9349e8f22eaf35d9",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "savedAt": "2026-10-10T10:00:00+00:00"
+      },
+      "selfAssessmentRequest": {
+        "schemaVersion": 1,
+        "attemptId": "flashcard-hard",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "rating": "hard"
+      },
+      "selfAssessmentReceipt": {
+        "schemaVersion": 1,
+        "durable": true,
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "hard",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "selfAssessmentHash": "16109bfa3e20c7e6e04fccc8801d53eeb4d76f3c19f501f4ef2bf31c82d7c028"
+      },
+      "evaluateRequest": {
+        "attemptId": "flashcard-hard",
+        "requestId": "source-flashcard-hard"
+      },
+      "evaluation": {
+        "schemaVersion": 1,
+        "durable": true,
+        "requestId": "source-flashcard-hard",
+        "attemptId": "flashcard-hard",
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "answerRevision": 1,
+        "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "status": "resolved",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "hard",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "correct": false,
+        "outcome": "partial",
+        "explanation": "用户主动自评为困难。",
+        "evaluationHash": "ad313337ab2aa534c03027f58cb3021bfb8b41af0fcf953f61e4787238bf2c5d"
+      },
+      "claimRequest": {
+        "attemptId": "flashcard-hard",
+        "eventId": "source-flashcard-formal-hard",
+        "rating": "hard"
+      },
+      "claimReceipt": {
+        "schemaVersion": 1,
+        "status": "accepted",
+        "durable": true,
+        "claim": {
+          "schemaVersion": 1,
+          "attemptId": "flashcard-hard",
+          "eventId": "source-flashcard-formal-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "evaluationHash": "ad313337ab2aa534c03027f58cb3021bfb8b41af0fcf953f61e4787238bf2c5d",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "rating": "hard",
+          "correct": false,
+          "occurredAt": "2026-10-10T09:00:00.000Z",
+          "eventKind": "due"
+        },
+        "claimHash": "8441fa6cf6e43846ba39051c389faca3b227e6465548462dad58b3537de9a490"
+      },
+      "readReceipt": {
+        "submission": {
+          "answer": "",
+          "answerRevealed": true,
+          "answerRevision": 1,
+          "assistance": "observed",
+          "attemptId": "flashcard-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "parentAttemptId": null,
+          "purpose": "first",
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "evaluation": {
+          "schemaVersion": 1,
+          "durable": true,
+          "requestId": "source-flashcard-hard",
+          "attemptId": "flashcard-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "status": "resolved",
+          "selfAssessment": {
+            "answerRevision": 1,
+            "attemptId": "flashcard-hard",
+            "binding": {
+              "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+              "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+              "itemKey": "practice:original-cards:cards:q1",
+              "libraryId": "library-a",
+              "ownerId": "owner-a"
+            },
+            "rating": "hard",
+            "schemaVersion": 1,
+            "submittedAt": "2026-10-10T09:00:00.000Z"
+          },
+          "correct": false,
+          "outcome": "partial",
+          "explanation": "用户主动自评为困难。",
+          "evaluationHash": "ad313337ab2aa534c03027f58cb3021bfb8b41af0fcf953f61e4787238bf2c5d"
+        },
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "saved",
+          "durable": true,
+          "attemptId": "flashcard-hard",
+          "answerRevision": 1,
+          "submissionHash": "71def515dfdc053a0401ba10942df880c53a920b4ddcf82c9349e8f22eaf35d9",
+          "submittedAt": "2026-10-10T09:00:00.000Z",
+          "savedAt": "2026-10-10T10:00:00+00:00"
+        },
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "activeRequestId": "source-flashcard-hard",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-hard",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "hard",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        }
+      }
+    },
+    {
+      "rating": "good",
+      "query": {
+        "itemKey": "practice:original-cards:cards:q1",
+        "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+        "presentation": {
+          "prompt": "Recall one source fact",
+          "front": "Recall one source fact",
+          "back": "Source fact",
+          "questionType": "flashcard"
+        }
+      },
+      "capture": {
+        "schemaVersion": 1,
+        "status": "confirmed",
+        "durable": true,
+        "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "originalBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "item": {
+          "back": "Source fact",
+          "front": "Recall one source fact",
+          "prompt": "Recall one source fact",
+          "questionType": "flashcard"
+        },
+        "eventKind": "due",
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        }
+      },
+      "submission": {
+        "attemptId": "flashcard-good",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "answer": "",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "purpose": "first",
+        "parentAttemptId": null,
+        "assistance": "observed",
+        "answerRevealed": true
+      },
+      "submitReceipt": {
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "attemptId": "flashcard-good",
+        "answerRevision": 1,
+        "submissionHash": "70dc0aa79c7999fb7cb64d9e90331746181c78c7ead5610aee603e0d3317aec2",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "savedAt": "2026-10-10T10:00:00+00:00"
+      },
+      "selfAssessmentRequest": {
+        "schemaVersion": 1,
+        "attemptId": "flashcard-good",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "rating": "good"
+      },
+      "selfAssessmentReceipt": {
+        "schemaVersion": 1,
+        "durable": true,
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "good",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "selfAssessmentHash": "ed1c36753b784b740dbe6992dd743165296d579a4e1b9b9bd117c377275b5a6b"
+      },
+      "evaluateRequest": {
+        "attemptId": "flashcard-good",
+        "requestId": "source-flashcard-good"
+      },
+      "evaluation": {
+        "schemaVersion": 1,
+        "durable": true,
+        "requestId": "source-flashcard-good",
+        "attemptId": "flashcard-good",
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "answerRevision": 1,
+        "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "status": "resolved",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "good",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "correct": true,
+        "outcome": "correct",
+        "explanation": "用户主动自评为良好。",
+        "evaluationHash": "c01f575b420617fc4b5669b8c05192ae7ee746098389c4f715d85201d7c09817"
+      },
+      "claimRequest": {
+        "attemptId": "flashcard-good",
+        "eventId": "source-flashcard-formal-good",
+        "rating": "good"
+      },
+      "claimReceipt": {
+        "schemaVersion": 1,
+        "status": "accepted",
+        "durable": true,
+        "claim": {
+          "schemaVersion": 1,
+          "attemptId": "flashcard-good",
+          "eventId": "source-flashcard-formal-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "evaluationHash": "c01f575b420617fc4b5669b8c05192ae7ee746098389c4f715d85201d7c09817",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "rating": "good",
+          "correct": true,
+          "occurredAt": "2026-10-10T09:00:00.000Z",
+          "eventKind": "due"
+        },
+        "claimHash": "2f9cf26fd71c16a8cac1dbb26125edaf28b59d9edfe95844b35dc22554a580e7"
+      },
+      "readReceipt": {
+        "submission": {
+          "answer": "",
+          "answerRevealed": true,
+          "answerRevision": 1,
+          "assistance": "observed",
+          "attemptId": "flashcard-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "parentAttemptId": null,
+          "purpose": "first",
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "evaluation": {
+          "schemaVersion": 1,
+          "durable": true,
+          "requestId": "source-flashcard-good",
+          "attemptId": "flashcard-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "status": "resolved",
+          "selfAssessment": {
+            "answerRevision": 1,
+            "attemptId": "flashcard-good",
+            "binding": {
+              "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+              "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+              "itemKey": "practice:original-cards:cards:q1",
+              "libraryId": "library-a",
+              "ownerId": "owner-a"
+            },
+            "rating": "good",
+            "schemaVersion": 1,
+            "submittedAt": "2026-10-10T09:00:00.000Z"
+          },
+          "correct": true,
+          "outcome": "correct",
+          "explanation": "用户主动自评为良好。",
+          "evaluationHash": "c01f575b420617fc4b5669b8c05192ae7ee746098389c4f715d85201d7c09817"
+        },
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "saved",
+          "durable": true,
+          "attemptId": "flashcard-good",
+          "answerRevision": 1,
+          "submissionHash": "70dc0aa79c7999fb7cb64d9e90331746181c78c7ead5610aee603e0d3317aec2",
+          "submittedAt": "2026-10-10T09:00:00.000Z",
+          "savedAt": "2026-10-10T10:00:00+00:00"
+        },
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "activeRequestId": "source-flashcard-good",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-good",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "good",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        }
+      }
+    },
+    {
+      "rating": "easy",
+      "query": {
+        "itemKey": "practice:original-cards:cards:q1",
+        "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+        "presentation": {
+          "prompt": "Recall one source fact",
+          "front": "Recall one source fact",
+          "back": "Source fact",
+          "questionType": "flashcard"
+        }
+      },
+      "capture": {
+        "schemaVersion": 1,
+        "status": "confirmed",
+        "durable": true,
+        "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "originalBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "item": {
+          "back": "Source fact",
+          "front": "Recall one source fact",
+          "prompt": "Recall one source fact",
+          "questionType": "flashcard"
+        },
+        "eventKind": "due",
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        }
+      },
+      "submission": {
+        "attemptId": "flashcard-easy",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "answer": "",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "purpose": "first",
+        "parentAttemptId": null,
+        "assistance": "observed",
+        "answerRevealed": true
+      },
+      "submitReceipt": {
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "attemptId": "flashcard-easy",
+        "answerRevision": 1,
+        "submissionHash": "294307b9bfdc777735097d040cde1fb1b300ea67c496d0d212ddd2af004fe4bd",
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "savedAt": "2026-10-10T10:00:00+00:00"
+      },
+      "selfAssessmentRequest": {
+        "schemaVersion": 1,
+        "attemptId": "flashcard-easy",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "answerRevision": 1,
+        "submittedAt": "2026-10-10T09:00:00.000Z",
+        "rating": "easy"
+      },
+      "selfAssessmentReceipt": {
+        "schemaVersion": 1,
+        "durable": true,
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "easy",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "selfAssessmentHash": "53d81871772eb97fee96ea3bd062a182f26b849bf91d940cde4cb86155fbc074"
+      },
+      "evaluateRequest": {
+        "attemptId": "flashcard-easy",
+        "requestId": "source-flashcard-easy"
+      },
+      "evaluation": {
+        "schemaVersion": 1,
+        "durable": true,
+        "requestId": "source-flashcard-easy",
+        "attemptId": "flashcard-easy",
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+        "answerRevision": 1,
+        "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+        "status": "resolved",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "easy",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "correct": true,
+        "outcome": "correct",
+        "explanation": "用户主动自评为极易。",
+        "evaluationHash": "f38bc733ba2aadea56e2efedbf68b20cbcca3594765b9b68d5de384f9218a99f"
+      },
+      "claimRequest": {
+        "attemptId": "flashcard-easy",
+        "eventId": "source-flashcard-formal-easy",
+        "rating": "easy"
+      },
+      "claimReceipt": {
+        "schemaVersion": 1,
+        "status": "accepted",
+        "durable": true,
+        "claim": {
+          "schemaVersion": 1,
+          "attemptId": "flashcard-easy",
+          "eventId": "source-flashcard-formal-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "evaluationHash": "f38bc733ba2aadea56e2efedbf68b20cbcca3594765b9b68d5de384f9218a99f",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "rating": "easy",
+          "correct": true,
+          "occurredAt": "2026-10-10T09:00:00.000Z",
+          "eventKind": "due"
+        },
+        "claimHash": "52b3f8378fc12df9cab3b69b835dcdbcabd47a1dcf4128d96445c38e3bbf8f8b"
+      },
+      "readReceipt": {
+        "submission": {
+          "answer": "",
+          "answerRevealed": true,
+          "answerRevision": 1,
+          "assistance": "observed",
+          "attemptId": "flashcard-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "parentAttemptId": null,
+          "purpose": "first",
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "binding": {
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+          "itemKey": "practice:original-cards:cards:q1",
+          "libraryId": "library-a",
+          "ownerId": "owner-a"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-cards:cards:q1",
+          "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+          "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+        },
+        "evaluation": {
+          "schemaVersion": 1,
+          "durable": true,
+          "requestId": "source-flashcard-easy",
+          "attemptId": "flashcard-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "sourceBinding": {
+            "ownerId": "owner-a",
+            "libraryId": "library-a",
+            "itemKey": "practice:original-cards:cards:q1",
+            "contentHash": "6d832dd6fa57604a7b8433d90363f9675dafcbd2b18535e8b53ca643ee07a744",
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f"
+          },
+          "sourceCaptureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+          "answerRevision": 1,
+          "answerHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+          "status": "resolved",
+          "selfAssessment": {
+            "answerRevision": 1,
+            "attemptId": "flashcard-easy",
+            "binding": {
+              "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+              "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+              "itemKey": "practice:original-cards:cards:q1",
+              "libraryId": "library-a",
+              "ownerId": "owner-a"
+            },
+            "rating": "easy",
+            "schemaVersion": 1,
+            "submittedAt": "2026-10-10T09:00:00.000Z"
+          },
+          "correct": true,
+          "outcome": "correct",
+          "explanation": "用户主动自评为极易。",
+          "evaluationHash": "f38bc733ba2aadea56e2efedbf68b20cbcca3594765b9b68d5de384f9218a99f"
+        },
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "saved",
+          "durable": true,
+          "attemptId": "flashcard-easy",
+          "answerRevision": 1,
+          "submissionHash": "294307b9bfdc777735097d040cde1fb1b300ea67c496d0d212ddd2af004fe4bd",
+          "submittedAt": "2026-10-10T09:00:00.000Z",
+          "savedAt": "2026-10-10T10:00:00+00:00"
+        },
+        "schemaVersion": 1,
+        "status": "saved",
+        "durable": true,
+        "activeRequestId": "source-flashcard-easy",
+        "selfAssessment": {
+          "answerRevision": 1,
+          "attemptId": "flashcard-easy",
+          "binding": {
+            "captureId": "source-capture:2cba2e1e19322ec3b127b1a19554035cd527e3a8c598ce88c60fbe18018e232f",
+            "contentHash": "ca3fd870e3fac470ef5a512d6a35afff5f1495cb946356ef7e3132cd92989b88",
+            "itemKey": "practice:original-cards:cards:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "rating": "easy",
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        }
+      }
+    }
+  ]
+}

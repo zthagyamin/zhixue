@@ -6,7 +6,7 @@
 
 Zhixue is a learning workspace for course study, vocabulary, programming, mathematics, and paper reading. It connects selected personal materials to practice, records what you actually attempted, and helps you revisit weak points. Your Obsidian vault or connected source remains the home of the original material; the website is the learning interface.
 
-**Public beta · source baseline 1.41.1.** Engineering checks and isolated browser tests do not establish teaching effectiveness or reliable AI grading on arbitrary materials. The hosted website can advance independently of a checkout; check its displayed version.
+**Public beta · source 1.42.2 · maintenance selection.** Engineering checks and isolated browser tests do not establish teaching effectiveness or reliable AI grading on arbitrary materials. The hosted website can advance independently of a checkout; check its displayed version.
 
 ## Start small
 

@@ -23,7 +23,7 @@ async function hostFixture({semantic=false,lose=false,gate,mutateResult}={}){
   if(url.endsWith('/source/capture')||url.endsWith('/source/read'))return reply({schemaVersion:1,durable:true,capture:f.capture});
   if(url.endsWith('/read')){
    const claim=claims.get(body.attemptId);if(!claim)return {ok:false,status:400,json:async()=>({error:'native-math-attempt-not-found'})};
-   return reply({schemaVersion:1,durable:true,claim,results:[],formalBarrier:null});
+   return reply({schemaVersion:1,durable:true,claim,results:[],formalBarrier:barriers.find(value=>value.attemptId===body.attemptId)??null});
   }
   if(url.endsWith('/claim')){
    if(body.action==='formal'){barriers.push(body);return reply({schemaVersion:1,durable:true,status:'barrier-saved',attemptId:body.attemptId,eventId:body.eventId,claimHash:await studyHash(body)});}
@@ -101,6 +101,20 @@ test('known linked formal identity sends only a barrier and explicit step remain
  await assert.rejects(p.calculation.evaluate('final'),/formal-existing-result/);
  assert.equal((await p.calculation.evaluate('step')).step.status,'correct');
  assert.equal(h.calls.some(c=>c.url.includes('/events')),false);
+});
+
+test('math host saves its source-bound admission before the official writer and keeps that barrier immutable after linking',async()=>{
+ const h=await hostFixture(),p=h.driver.runtime.practice;
+ await h.runtime.session.submit('4');await p.calculation.evaluate('final');
+ await h.runtime.session.assess({status:'correct',source:'deterministic',explanation:'checked',rating:'good'});
+ await h.runtime.session.reserve('good');
+ assert.equal(typeof h.driver.beforeFormal,'function');
+ await h.driver.beforeFormal();
+ assert.equal(h.barriers.length,1);assert.equal(h.runtime.session.snapshot().formal.status,'claimed');
+ const admission=structuredClone(h.barriers[0]);assert.equal(admission.coreHash,undefined);
+ await h.runtime.session.link('e'.repeat(64));await h.driver.runtime.afterWrite();
+ assert.ok(h.barriers.every(value=>JSON.stringify(value)===JSON.stringify(admission)));
+ assert.equal(h.claims.values().next().value.attempt.submitted.answer,'4');
 });
 test('wrong returned step ID is rejected before controlled diagnostic persistence',async()=>{
  const h=await hostFixture({mutateResult:r=>{if(r.step)r.step.stepId='different';}}),p=h.driver.runtime.practice;

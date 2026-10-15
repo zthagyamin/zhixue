@@ -4,7 +4,7 @@ import {createAccountProviderServices} from '../src/infrastructure/account-study
 function fixture(){
  const calls=[],scope={userId:'synthetic',libraryId:'library'},settings={revision:3,enabled:true,provider:'deepseek',model:'synthetic-chat',baseUrl:'https://model.example/v1',providers:{deepseek:{baseUrl:'https://model.example/v1'},chatgpt:{baseUrl:'https://alternate.example/v1'}}};
  const store={getSettings:async owner=>{calls.push(['settings',owner]);return settings;},providerKey:async(...args)=>{calls.push(['key',...args]);return'synthetic-only-key';}};
- const services=createAccountProviderServices({store:()=>store,configuration:()=>({enabled:true,configured:true,defaultModel:'default-synthetic'}),fetcher:async(url,request)=>{calls.push(['fetch',url,request.headers.Authorization]);return Response.json({data:[{id:'synthetic-chat'}]});}});
+ const services=createAccountProviderServices({store:()=>store,configuration:()=>({enabled:true,configured:true,defaultModel:'default-synthetic',allowedOrigins:['https://model.example','https://alternate.example','https://different.example']}),fetcher:async(url,request)=>{calls.push(['fetch',url,request.headers.Authorization]);return Response.json({data:[{id:'synthetic-chat'}]});}});
  return{calls,scope,settings,services,selection:{provider:'deepseek',baseUrl:settings.baseUrl,expectedRevision:3}};
 }
 test('provider construction rejects a stale revision before reading a credential',async()=>{

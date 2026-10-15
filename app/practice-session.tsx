@@ -166,8 +166,9 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
   const sessionEpoch=useRef(0),ended=useRef(false);
   const invalidateVariant=()=>{variantRequest.current.epoch++;variantRequest.current.busy=false;setVariantLoading(false);};
   useLayoutEffect(()=>{
-    sessionEpoch.current++;ended.current=false;variantRequest.current.epoch++;variantRequest.current.busy=false;
-    return()=>{sessionEpoch.current++;ended.current=true;variantRequest.current.epoch++;variantRequest.current.busy=false;};
+    const epoch=sessionEpoch,request=variantRequest.current;
+    epoch.current++;ended.current=false;request.epoch++;request.busy=false;
+    return()=>{epoch.current++;ended.current=true;request.epoch++;request.busy=false;};
   },[items,sourceClient]);
   useLayoutEffect(()=>{
     const request=variantRequest.current;let active=true;
@@ -288,7 +289,8 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
   };
 
   const advanceRef=useRef(advance);
-  useLayoutEffect(()=>{advanceRef.current=advance;},[advance]);
+  // Keep the latest committed callback; advance already changed on every render.
+  useLayoutEffect(()=>{advanceRef.current=advance;});
 
   const handleGrade = async (rating: FSRSRating,options?:PluginGradeOptions) => {
     const deferAdvance=Boolean(activeItem&&['calculation','recall','code','quiz','flashcard'].includes(activeItem.questionType))&&options?.deferAdvance===true;
@@ -442,7 +444,7 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
       {saveError&&<p role="status" className="study-source-update-note">{saveError}</p>}
       {attempts>0&&<p role="status" className="study-source-update-note">即时重练 · 不计入正式记录。{activeItem?.questionType==='quiz'?'这里只重排原选项':'这里仍是原题'}，不代表新情境迁移；本轮统计保留首次结果。</p>}
       <details className="study-inline-options"><summary>学习选项</summary><StudyPluginOptionsSlot/>
-      <StudyGuidanceHelp kind={adaptedPlugin?.id}/>
+      <StudyGuidanceHelp kind={adaptedPlugin?.id} pendingEvaluation={Boolean(activeNonWordScope && activeItem && isNonWordOriginal(activeItem.questionType,activeItem))}/>
       {activeItem&&<ReviewContext {...reviewContextFor?.(activeItem)} temporary={temporary||attempts>0} recorded={Boolean(draftAdapter?.hasSavedFeedback?.())||phase==='explained'}/>}
       <details className="study-practice-order"><summary>练习顺序 · {order==='focus'?'按学科连续':'混合挑战'}</summary><label>后续题目顺序<select aria-label="后续题目顺序" value={order} disabled={Boolean(roundBinding)||drafts.isPending()||index>=list.length-1} onChange={event=>changeOrder(event.target.value==='mixed'?'mixed':'focus')}><option value="focus">按学科连续</option><option value="mixed">混合挑战</option></select></label><p>{roundBinding?'本轮按已保存的来源顺序继续，刷新后保持同一题组。':'当前作答保留，只调整后续题目。缺少学科信息时按资料来源分组。'}</p></details>
       </details>

@@ -1,0 +1,52 @@
+import React,{useEffect,useMemo,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {RecallPlugin} from '../../app/plugin-recall.tsx';
+import {createLearningDraftStore} from '../../app/learning-draft-store.ts';
+import {LearningDraftBoundary} from '../../app/learning-draft.tsx';
+import {createNonWordSession} from '../../src/application/nonword-study/index.ts';
+import {createLocalAttemptRepository,attemptFingerprint,evaluationFingerprint} from '../../src/infrastructure/learning-attempt/index.ts';
+import '../../app/globals.css';
+import '../../app/c-study.css';
+const query=new URLSearchParams(location.search),mode=query.get('mode');
+document.documentElement.classList.toggle('dark',query.get('theme')==='dark');
+const binding={ownerId:'synthetic-owner',libraryId:'synthetic-library',snapshotId:'synthetic-snapshot',
+  itemKey:'synthetic-question',contentHash:'a'.repeat(64),groupId:'synthetic-group',roundId:'synthetic-round'};
+const repository=createLocalAttemptRepository({userId:binding.ownerId,libraryId:binding.libraryId});
+const session=createNonWordSession({repository,binding,attemptId:'synthetic-first',formalEventId:'synthetic-formal',
+  mode:'recall',purpose:'first',now:()=>new Date().toISOString(),newId:()=>crypto.randomUUID(),fingerprint:attemptFingerprint,evaluationFingerprint});
+const probe={calls:[],read:()=>repository.read('synthetic-first')};
+Object.assign(window,{__nonwordProbe:probe});
+const data={itemId:'synthetic-question',fingerprint:binding.contentHash,questionType:'recall',
+  prompt:'为什么修改需求后要核对相关测试？',answer:'需求变化可能影响原来的行为，因此需核对相关测试。',
+  explanation:'需求变化可能影响原来的行为，因此需核对相关测试。',
+  learningSupport:{schemaVersion:1,type:'recall',criteria:[{id:'p',text:'需求变化可能影响原来的行为。'}]}};
+function App(){
+  const store=useMemo(()=>createLearningDraftStore('synthetic-browser'),[]),[ready,setReady]=useState(false),[done,setDone]=useState(false),[error,setError]=useState('');
+  const draft=store.adapter('synthetic-question','recall:1');
+  useEffect(()=>{let live=true;session.open().then(state=>{if(!live)return;
+    if(state.submitted){draft.write('answer',state.submitted.answer);if(state.evaluation.status==='pending')draft.write('nonwordPending','原回答已保存，等待核对。');draft.markInputRecovered(draft.inputRevision());}
+    setReady(true);
+  }).catch(value=>setError(String(value)));return()=>{live=false;};},[]);
+  if(error)return <p role="alert">{error}</p>;
+  if(!ready)return <p>正在恢复</p>;
+  if(done)return <h2>已继续，答案待核对</h2>;
+  const lifecycle={ready:true,purpose:'first',intent:'review',get submitted(){return Boolean(session.snapshot()?.submitted);},
+    async recordHint(policy){const revision=draft.inputRevision();await session.save(draft.read('answer',''),{
+      ...session.snapshot().checkpoint.pluginFields,hintLevel:String(policy.maxPreHintLevel),policyAttemptId:policy.attemptId});
+      draft.markInputRecovered(revision);},
+    async submit(answer){const revision=draft.inputRevision();probe.calls.push('submit');await session.submit(answer);draft.markInputRecovered(revision);},
+    async assess(outcome){probe.calls.push('assess');await session.assess(outcome);},
+    async waitForReview(){probe.calls.push('pending');await session.pending('offline');},
+    async continuePending(){await session.traversePending();setDone(true);}};
+  const gradeRecall=async()=>{probe.calls.push('ai');return {source:'ai',verdict:mode==='zero'?'correct':mode,
+    rating:mode==='zero'||mode==='correct'?'good':mode==='partial'?'hard':'again',
+    matchedPointIds:mode==='zero'||mode==='incorrect'?[]:['p'],missedPointIds:mode==='zero'||mode==='incorrect'?['p']:[],
+    feedback:'依据合成参考核对。'};};
+  return <main className="study-app study-focus"><section className="workspace">
+    <LearningDraftBoundary store={store} interactiveWhileGrading><RecallPlugin.renderUI data={data}
+      context={{draft,nonWordLearning:lifecycle,gradeRecall,guidanceInOptions:true,recallPersistenceRequired:false,
+        recallNavigation:{continueLabel:'结束本轮',onSkip:()=>{probe.calls.push('skip');setDone(true);}}}}
+      onGrade={()=>{probe.calls.push('formal');}}/></LearningDraftBoundary>
+  </section></main>;
+}
+createRoot(document.getElementById('root')).render(<App/>);

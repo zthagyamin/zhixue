@@ -12,6 +12,11 @@ def _run(self, services, operation):
         self.send_json(200, operation(create_planning_application(services)))
     except CompanionFailure as error:
         self.send_json(error.status, error.payload)
+    except ValueError as error:
+        if str(error) != 'stale-vault-edit':
+            raise
+        self.send_json(409, {'status': 'stale',
+            'message': '计划或约束笔记已被修改，原改动已保留；请重新读取后再保存。'})
 
 
 def get_tasks_events(self, services: RouteServices, request_path: str, hashed_user: str, payload: Any = None) -> None:

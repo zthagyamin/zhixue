@@ -1,7 +1,9 @@
 /* Runs only inside the opaque, network-restricted Python sandbox. */
 let python = null, loading = null, busy = false, checkAssertions = null, validateTests = null, executeReport = null;
+let scientificPrepared = null;
+let runtimeReady = false;
 const MAX_OUTPUT = 20000;
-async function initialize() {
+async function initialize(scientificLibraries = null) {
     if (python)
         return python;
     if (!loading)
@@ -22,6 +24,14 @@ async function initialize() {
             finally {
                 helpers.destroy();
             }
+            if (scientificLibraries) {
+                const errors = [], imports = scientificLibraries === 'numpy' ? 'import numpy' : 'import numpy\nimport pandas';
+                await python.loadPackagesFromImports(imports, { errorCallback: message => errors.push(String(message).slice(0, 1000)) });
+                if (errors.length) throw new Error('科学运行库加载失败：' + errors.slice(0, 5).join('\n'));
+                await python.runPythonAsync(imports);
+                scientificPrepared = scientificLibraries;
+            }
+            runtimeReady = true;
             return python;
         })();
     try {
@@ -30,6 +40,8 @@ async function initialize() {
     catch (error) {
         loading = null;
         python = null;
+        scientificPrepared = null;
+        runtimeReady = false;
         throw error;
     }
 }
@@ -37,9 +49,12 @@ self.onmessage = async (event) => {
     const request = event.data;
     if (request?.type === 'init') {
         try {
-            await initialize();
+            if (request.scientificWarmup === true && !['numpy','pandas'].includes(request.scientificLibraries)) throw new Error('科学库准备参数无效。');
+            const required = request.scientificWarmup === true ? request.scientificLibraries : null;
+            await initialize(required);
+            if (required && scientificPrepared !== required) throw new Error('科学库准备需要新的隔离环境。');
             self.postMessage({
-                type: 'ready'
+                type: 'ready', ...(scientificPrepared ? { scientificWarmup: true, scientificLibraries: scientificPrepared } : {})
             });
         }
         catch (error) {
@@ -49,7 +64,7 @@ self.onmessage = async (event) => {
         }
         return;
     }
-    if (request?.type !== 'run' || !python || busy)
+    if (request?.type !== 'run' || !python || !runtimeReady || busy)
         return;
     busy = true;
     let namespace = null, runner = null, result = null, output = '', executing = false, truncated = false, executionPhase = 'preparation';

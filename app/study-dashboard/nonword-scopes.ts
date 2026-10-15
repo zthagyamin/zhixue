@@ -34,11 +34,13 @@ export function scopeForNonWord(source: {
     enabled: boolean;
 }, item: {
     contentHash?: string;
+    sourceConfirmationRequired?: boolean;
 }, itemKey: string, groupId: string, roundId: string, temporary = false): NonWordHostScope | undefined {
     if (!source.enabled || !source.libraryId || !item.contentHash)
         return;
     const original=source.loaded?resolveAccountStudyItem(source.loaded,item):null;
     const scope: NonWordHostScope = { workspaceId: source.workspaceId, ownerId: source.ownerId, libraryId: source.libraryId, snapshotId: original?.bundle.snapshot.snapshotId ?? 'local', itemKey, contentHash: item.contentHash, groupId, roundId, cloud: Boolean(source.loaded), ...(temporary ? { temporary: true } : {}),
+        ...(item.sourceConfirmationRequired ? {sourceConfirmationRequired:true} : {}),
         ...(original?.item.kind==='practice'&&(['code','calculation'].includes(original.item.practice.questionType)
             ||original.item.learningSupport?.schemaVersion===2&&'task' in original.item.learningSupport)?{courseReference:{item:original.item,snapshot:original.bundle.snapshot}}:{}) };
     return {...scope, ...nativeScopeReference(scope, item)};

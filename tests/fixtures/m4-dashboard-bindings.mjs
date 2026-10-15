@@ -68,6 +68,7 @@ export function m4Bindings(name,original,options,fn){
     env.readDashboardBoundHistory=(owner,full,signal)=>original.readBoundStudyHistory({workspaceId:owner,forceFull:full,signal,isCurrent:()=>!signal.aborted});
     env.nativeBootstrap=createSourceReader({...options('nativeBootstrap',env),busy:noop});
   }
+  if(name==='runV3Bootstrap')env.readNativeBootstrap=env.nativeBootstrap.read;
   if(['exportAccountCache','clearAccountCache','runSettingsRecovery','handleExportRecovery','handleClearCacheConfirmed','signOut','requestClearCache','dismissSettingsModal'].includes(name)){
     let fixture=sessions.get(original);
     if(!fixture){

@@ -1,6 +1,6 @@
 # Public beta status
 
-Version: 1.42.2 (selective maintenance scope; focused paper/flashcard UI follows separately). This page describes the public source snapshot, not an automatic deployment.
+Version: 1.42.2 (selective maintenance plus focused paper/flashcard UI). This page describes the public source snapshot, not an automatic deployment.
 
 The project has learning, review, draft, source, code and calculation infrastructure. Real-material acceptance and model/learning-effect evaluation are still required. New work must preserve original attempts, auxiliary practice and pending evaluation boundaries.
 

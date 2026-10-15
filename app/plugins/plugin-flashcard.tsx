@@ -13,7 +13,13 @@ import {useStudySwipe} from '../use-study-swipe';
 import {splitCardSections} from '../../src/domain/practice-candidates';
 import {CandidateLauncher} from '../../src/features/remediation';
 import {downloadStudyMaterial} from '../../src/infrastructure/artifacts';
+import {LearningText} from '../../src/features/nonword-study';
 import {MathText} from '../math-text';
+import {resolveItemSource,type ItemSourceFields} from '../study-item-source-model';
+import {isNonWordOriginal} from '../../src/domain/content';
+import {flashcardAnswerView} from '../../src/domain/flashcard-reading';
+import '../../src/features/flashcard-reading/reading.css';
+import {FlashcardAnswer} from '../../src/features/flashcard-reading';
 
 export type FlashcardData = {
   id?:string;itemId?:string;learningSupport?:LearningSupport;
@@ -46,6 +52,10 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
     const frontText=studyAIVisibleText(data.front),backText=studyAIVisibleText(visibleBack);
     const sourceData=context?.contentSource?.data as {contentHash?:string;fingerprint?:string}|undefined;
     const contentVersion=sourceData?.contentHash??sourceData?.fingerprint;
+    const nonWord=context?.contentSource?isNonWordOriginal(context.contentSource.mode,context.contentSource.data):Boolean(lifecycle);
+    const sourceLocation=resolveItemSource((context?.contentSource?.data??data) as ItemSourceFields);
+    const answerView=nonWord&&typeof visibleBack==='string'?flashcardAnswerView(visibleBack,support?undefined:context?.contentSource?.data):undefined;
+    const splitSeeds=nonWord&&!occlusion?splitCardSections(frontText,backText):[];
     useReportStudyAIItem(context,{question:studyAIVisibleText(data.front)||context?.aiItem?.question,learnerAnswer:showAnswer?'已翻面查看答案':'正在回忆，尚未翻面'});
     useAssistanceDisplay(assistance,'reference-answer','flashcard-back',showAnswer&&(Boolean(visibleBack)||visibleBack===0));
 
@@ -132,15 +142,18 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
     });
 
     return (
-      <div data-study-activity="flashcard" className="study-activity study-flashcard w-full max-w-3xl mx-auto flex flex-col items-center">
+      <div data-study-activity="flashcard" className={`study-activity study-flashcard w-full max-w-3xl mx-auto flex flex-col items-center${nonWord ? ' study-flashcard--nonword' : ''}`}>
         <StudyGuidance topic="flashcard" context={context} engaged={isFlipped}/>
+        {nonWord&&<p className="study-meta w-full" aria-label="本卡来源" style={{overflowWrap:'anywhere'}}>
+          {sourceLocation.kind==='unlocated'?'来源尚未定位；可通过“查看来源”核对材料。':`来源：${sourceLocation.label}${sourceLocation.section?' · '+sourceLocation.section:''}`}
+        </p>}
         {/* Main Card Area */}
         <div className="study-card study-flashcard-body" {...swipe}>
           
           <div className="w-full flex-grow flex flex-col justify-center items-center text-center">
             <div className="study-flashcard-front">
               {support?.mode==='bidirectional'&&<small>{support.direction==='reverse'?'反向回忆':'正向回忆'} · {lifecycle?(lifecycle.purpose==='first'?'首轮自评':'辅助回忆'):'独立排程'}</small>}
-              {lifecycle&&typeof data.front==='string'?<MathText text={data.front}/>:data.front}
+              {nonWord&&typeof data.front==='string'?<LearningText text={data.front} renderMath={value=><MathText text={value}/>}/>:data.front}
             </div>
             {occlusion&&<FlashcardImage support={occlusion} revealed={showAnswer} services={context?.paperServices} onReady={setImageReady}/>}
             {support&&!support.parentId&&<p role="status">这组卡片尚未展开，请更新 Companion 后重新同步来源。</p>}
@@ -149,7 +162,7 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
               <div className="w-full animate-in fade-in slide-in-from-top-4 flex flex-col items-center mt-4">
                 <div className="w-16 h-px bg-zinc-200 dark:bg-zinc-800/80 mb-8"></div>
                 <div className="whitespace-pre-line text-lg sm:text-xl text-zinc-600 dark:text-zinc-300">
-                  {lifecycle&&typeof visibleBack==='string'?<MathText text={visibleBack}/>:visibleBack}
+                  {answerView?.compact?<FlashcardAnswer view={answerView} renderText={value=><LearningText text={value} renderMath={text=><MathText text={text}/>}/>}/>:nonWord&&typeof visibleBack==='string'?<LearningText text={visibleBack} renderMath={value=><MathText text={value}/>}/>:visibleBack}
                 </div>
               </div>
             )}
@@ -210,7 +223,10 @@ function FlashcardUI({ data, onGrade, context }: PluginRenderProps<FlashcardData
           {lifecycle.purpose==='first'&&['again','hard'].includes(flashcardRating)&&(submitted||context?.draft?.hasSavedFeedback?.())&&<button type="button" className="study-secondary-action" disabled={saving||context?.draft?.isPending?.()} onClick={handleStartRemediation}>收起解释，再回忆一次</button>}
           {lifecycle.purpose==='remediation'&&<p role="status">这是辅助补练，首轮自评保持不变。</p>}
         </section>}
-        {showAnswer&&!occlusion&&<CandidateLauncher registerGuard={registerStudyNavigationGuard} source={{kind:'card',key:data.itemId??data.id??'visible-card',version:contentVersion,versionKind:contentVersion?'item-content':'visible-snapshot',title:frontText,fragments:[{id:'back',label:'父卡背面',text:backText}]}} seeds={splitCardSections(frontText,backText)} scope={JSON.stringify([context?.guidanceScope,context?.paperServices?.library])} createDraft={context?.draft?.createTemporary} isCurrent={context?.paperServices?.isCurrent} download={downloadStudyMaterial} label="把复杂背面整理为子卡候选"/>}
+        {showAnswer&&splitSeeds.length>0&&<details className="mt-6 w-full">
+          <summary>更多工具</summary>
+          <CandidateLauncher registerGuard={registerStudyNavigationGuard} source={{kind:'card',key:data.itemId??data.id??'visible-card',version:contentVersion,versionKind:contentVersion?'item-content':'visible-snapshot',title:frontText,fragments:[{id:'back',label:'父卡背面',text:backText}]}} seeds={splitSeeds} scope={JSON.stringify([context?.guidanceScope,context?.paperServices?.library])} createDraft={context?.draft?.createTemporary} isCurrent={context?.paperServices?.isCurrent} download={downloadStudyMaterial} label="把复杂背面整理为子卡候选"/>
+        </details>}
       </div>
     );
 }

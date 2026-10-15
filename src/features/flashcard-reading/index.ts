@@ -1,0 +1,1 @@
+export {FlashcardAnswer} from './answer';

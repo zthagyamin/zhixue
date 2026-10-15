@@ -25,7 +25,9 @@ import { TodayView } from './today-view';
 import type { DashboardController } from './use-dashboard-controller';
 const SourcesView=createLazyComponent<Parameters<typeof import('./sources-view').SourcesView>[0]>(async()=>({default:(await import('./sources-view')).SourcesView}),'资料与设置');
 const SubjectView=createLazyComponent<Parameters<typeof import('./subject-view').SubjectView>[0]>(async()=>({default:(await import('./subject-view')).SubjectView}),'学科练习');
-export function DashboardView({model}:{model:DashboardController}){
+const FocusedPaperEntry=createLazyComponent<Parameters<typeof import('../paper-reading/entry').PaperReadingEntry>[0]>(async()=>({default:(await import('../paper-reading/entry')).PaperReadingEntry}),'论文专注阅读');
+const PaperWorkshopTools=createLazyComponent<Parameters<typeof import('../plugins/plugin-paper').PaperWorkshop>[0]>(async()=>({default:(await import('../plugins/plugin-paper')).PaperWorkshop}),'论文整理工具');
+export function DashboardView({model,paperReading=false}:{model:DashboardController;paperReading?:boolean}){
  const {
   retryWorkspace,
   accountAILibrary,
@@ -104,6 +106,11 @@ export function DashboardView({model}:{model:DashboardController}){
   workspacePhase,
  }=model;
  if(workspacePhase!=='ready')return <StudyWorkspaceGate phase={workspacePhase} onRetry={retryWorkspace}/>;
+ if(paperReading&&tab!=='sources')return <DashboardAIWorkspace connection={studyAI} pageContext={aiPage}>
+   <main data-study-ai-content className="study-app paper-reading-route" data-page="paper-reading">
+     <FocusedPaperEntry key={JSON.stringify([paperServices.owner,paperServices.library])} services={paperServices} returnHref={homeHref.startsWith('/?')?'/study'+homeHref.slice(1):'/study'}
+       renderTools={paper=><PaperWorkshopTools services={paperServices} initialPaper={paper} restoreLast={false} showMaterialManager={false}/>}/>
+   </main></DashboardAIWorkspace>;
  return <DashboardAIWorkspace connection={studyAI} pageContext={aiPage}><main data-study-ai-content className={`app-shell study-app${studyFocus?' study-focus':''}`} data-page={tab}>
     <LearningDraftLeaveGuard store={learningDrafts}/>
     <StudyWorkspaceNavigation

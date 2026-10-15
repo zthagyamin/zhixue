@@ -18,3 +18,8 @@
 .paper-dialog option { background: var(--surface); color: var(--ink); }
 .paper-dialog input::file-selector-button { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; font: inherit; }
 .paper-launch:focus-visible, .paper-close:focus-visible, .paper-dialog :is(button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--study-accent-text); outline-offset: 3px; }
+/* The retained workshop also lives inline in the focused page's optional tools. */
+.paper-workshop :is(input, select, textarea) { background: var(--surface); color: var(--ink); caret-color: var(--ink); }
+.paper-workshop :is(input, textarea)::placeholder { color: var(--muted); opacity: 1; }
+.paper-workshop option { background: var(--surface); color: var(--ink); }
+.paper-workshop input::file-selector-button { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; font: inherit; }

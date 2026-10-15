@@ -4,7 +4,7 @@ import type {PaperWord} from '../paper-study';
 import {placePaperSelectionToolbar} from '../paper-selection-position';
 import {speakWord} from '../plugins/speech';
 
-type Props={word:PaperWord;raw:RefObject<HTMLParagraphElement|null>;selected:boolean;busy:boolean;pending:boolean;connected:boolean;focusOnOpen:boolean;
+type Props={word:PaperWord;raw:RefObject<HTMLElement|null>;selected:boolean;busy:boolean;pending:boolean;connected:boolean;focusOnOpen:boolean;
   message:string;error?:string;onMeaning:(value:string)=>void;onIngest:()=>void;onRetry:()=>void;onClose:(restoreFocus?:boolean)=>void;onTray:()=>void;onConnect?:()=>void};
 export function PaperSelectionToolbar({word,raw,selected,busy,pending,connected,focusOnOpen,message,error,onMeaning,onIngest,onRetry,onClose,onTray,onConnect}:Props){
   const panel=useRef<HTMLElement>(null),input=useRef<HTMLInputElement>(null),id=useId();

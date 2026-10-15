@@ -1,25 +1,56 @@
-// Theme regression: real library, native controls and the portaled paper workshop.
+import {existsSync,statSync} from 'node:fs';
+// Theme regression: real library, focused paper route and optional legacy draft tools.
 // Synthetic browser-only stores; no production login, API or learning records.
 import assert from 'node:assert/strict';
-import {mkdir, writeFile} from 'node:fs/promises';
+import {mkdir, writeFile,mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {createServer} from 'vite';
 import react from '@vitejs/plugin-react';
 const {chromium} = createRequire(resolve(process.env.UX_BROWSER_DRIVER, 'package.json'))('playwright');
-const evidence = resolve(process.env.UX_EVIDENCE || 'scratch/ci-evidence/theme');
-const root = resolve('scratch/ci-theme');
+const project=process.cwd().replaceAll('\\','/');
+const root=await mkdtemp(resolve(tmpdir(),'zhixue-theme-browser-'));
+const evidence=resolve(process.env.UX_EVIDENCE||resolve(root,'evidence'));
+/** Generated fixtures live outside the repository; retain exact source extensions. */
+function fixtureSource(text){
+ return text.replace(/(['"])\.\.\/\.\.\/([^'"]+)\1/g,(_match,quote,specifier)=>{
+  const base=resolve(project,specifier),candidates=[base,...['.ts','.tsx','.mjs','.js','.json','.css'].map(extension=>base+extension),...['index.ts','index.tsx','index.mjs','index.js'].map(name=>resolve(base,name))];
+  const file=candidates.find(path=>existsSync(path)&&statSync(path).isFile());
+  if(!file)throw Error('Browser fixture source unavailable: '+specifier);
+  return quote+'/@fs/'+file.replaceAll('\\','/')+quote;
+ });
+}
 await mkdir(root, {recursive:true}); await mkdir(evidence, {recursive:true});
 await writeFile(resolve(root,'index.html'), '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div><script type="module" src="/entry.tsx"></script></body></html>');
-await writeFile(resolve(root,'entry.tsx'), `
+await writeFile(resolve(root,'entry.tsx'), fixtureSource(`
 import React,{useLayoutEffect,useSyncExternalStore,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {LearningLibrary} from '../../app/learning-library';
 import {PaperWorkshopLauncher} from '../../app/paper-workshop-launcher';
+import {PaperReadingEntry} from '../../app/paper-reading/entry';
+import {PaperWorkshop} from '../../app/plugins/plugin-paper';
+import {DEMO_PAPER_ALEXNET} from '../../app/paper-study';
+import {paperFingerprint} from '../../app/paper-draft-store';
+import {savePreparedPaperTask} from '../../app/paper-reading/prepared';
+import {paperReadingUnit} from '../../src/domain/paper-reading';
+import {studyHash} from '../../src/domain/sync';
 import {studyThemePreference,serverStudyTheme} from '../../app/study-theme';
 import '../../app/globals.css';import '../../app/c-study.css';
 import '../../app/study-overview.css';import '../../app/study-interactions.css';
 const services={owner:'theme-regression-synthetic',library:'theme-regression-library'};
+// The actual preparation service stores a source-bound question, without a model or grades.
+const paper=DEMO_PAPER_ALEXNET,fingerprint=await paperFingerprint(paper);
+const paragraph=paper.sections[0].paragraphs[0];
+const source={ownerId:services.owner,libraryId:services.library,materialFingerprint:fingerprint,
+ sourceVersion:fingerprint,sectionId:paper.sections[0].id,
+ paragraphs:[{id:paragraph.id,rawEn:paragraph.rawEn,pageNumber:paragraph.pageNumber}]};
+const goal='解释当前原文的关键概念、方法或机制';
+const unit=paperReadingUnit({schemaVersion:1,unitId:'paper-unit:'+await studyHash({source,goal,title:paper.title}),title:paper.title,goal,source});
+await savePreparedPaperTask({ownerId:services.owner,libraryId:services.library},unit,{schemaVersion:1,documentType:'paper-reading-prepared-question',
+ materialFingerprint:fingerprint,sourceVersion:fingerprint,sectionId:source.sectionId,paragraphIds:[paragraph.id],
+ question:'原文中的 f 和 x 分别表示神经元的什么量？',ability:'definition',
+ reference:[{point:'f 表示神经元输出，x 表示输入。',paragraphId:paragraph.id,quote:paragraph.rawEn}]});
 const subjects=[
  {id:'speaking',name:'IELTS Speaking · 口语复习',pluginType:'three-stage',disciplineId:'language',items:[{}]},
  {id:'vocab',name:'学术英语词库',pluginType:'three-stage',disciplineId:'language',items:[{},{}]},
@@ -36,16 +67,18 @@ function App(){
     <div><h1 style={{fontSize:32,fontWeight:700}}>知学</h1><p style={{color:'var(--muted)'}}>学科页面 · 隔离主题验证</p></div>
     <button className="study-secondary-action" onClick={()=>studyThemePreference.set(theme==='dark'?'light':'dark')}>{theme==='dark'?'使用浅色模式':'使用深色模式'}</button>
    </header>
-   <section className="study-library"><header><h2>按学科学习</h2><span>继续今日任务，或进入学科选择自由练习</span></header>
+   {location.pathname==='/study/paper'?<PaperReadingEntry services={services} initialPaper={paper} returnHref="/"
+    renderTools={current=><><PaperWorkshop services={services} initialPaper={current} restoreLast={false} showMaterialManager={false}/>
+     <PaperWorkshopLauncher services={services} legacyDialog/></>}/>:<section className="study-library"><header><h2>按学科学习</h2><span>继续今日任务，或进入学科选择自由练习</span></header>
     <LearningLibrary subjects={subjects} owner={services.owner} library={services.library} onChoose={setChosen} onSources={()=>setChosen('sources')} paper={<PaperWorkshopLauncher services={services}/>}/>
-   </section>
+   </section>}
   </div>
  </main>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
-`);
+`));
 const origin='http://127.0.0.1:4177';
-const server=await createServer({configFile:false,root,plugins:[react()],server:{host:'127.0.0.1',port:4177,strictPort:true,fs:{allow:[process.cwd()]}},logLevel:'error'});
+const server=await createServer({configFile:false,root,publicDir:false,css:{postcss:project},cacheDir:resolve(root,'.vite'),resolve:{alias:{react:resolve(project,'node_modules/react'),'react-dom':resolve(project,'node_modules/react-dom')}},plugins:[react()],server:{host:'127.0.0.1',port:4177,strictPort:true,fs:{allow:[project,root]}},logLevel:'error'});
 let browser, failure=null;
 const results=[], contrasts=[];
 // Use resolved CSS colours, including foreground alpha and ancestor opacity.
@@ -87,7 +120,7 @@ async function waitTheme(page,theme){
  await page.evaluate(async()=>{await Promise.all(document.getAnimations().map(a=>a.finished.catch(()=>{})));});
 }
 try {
- await server.listen();browser=await chromium.launch({headless:true});
+ await server.listen();browser=await chromium.launch({headless:true,...(process.env.EDU_CHROMIUM_PATH?{executablePath:process.env.EDU_CHROMIUM_PATH}:{})});
  for(const viewport of [{width:1440,height:900},{width:390,height:844}])for(const theme of ['dark','light']){
   const opposite=theme==='dark'?'light':'dark';
   const context=await browser.newContext({viewport,colorScheme:opposite});context.setDefaultTimeout(20000);
@@ -112,27 +145,51 @@ try {
   await page.mouse.move(0,0);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   await page.screenshot({path:resolve(evidence,`library-${theme}-${viewport.width}.png`),fullPage:true});
   results.push({viewport:viewport.width,theme,case:'library, search, placeholder, hover, focus and native select',passed:true});
-  await page.locator('.paper-launch').click();await page.locator('.paper-dialog[open] .paper-reading textarea').waitFor();
+  assert.equal(await page.locator('.paper-launch').getAttribute('href'),'/study/paper');
+  await page.locator('.paper-launch').click();await page.waitForURL(origin+'/study/paper');await waitTheme(page,theme);
+  const focused=page.getByRole('region',{name:'论文专注阅读',exact:true});await focused.waitFor();
+  assert.equal(await page.locator('.paper-dialog[open]').count(),0,'Default paper entry is a focused route');
+  await focused.getByRole('button',{name:'开始学习',exact:true}).click();
+  const answer=focused.getByRole('textbox',{name:'你的回答',exact:true});await answer.waitFor();
+  await surface(answer,'paper answer field',theme);await check(answer,'paper answer placeholder',theme,'::placeholder');await focus(answer);
+  await surface(focused.getByRole('combobox',{name:'阅读范围',exact:true}),'reading range select',theme);
+  await check(focused.getByRole('article',{name:'当前单元原文',exact:true}),'original paragraph',theme);
+  await focused.getByText('更换论文或上传原文',{exact:true}).click();
+  await focused.getByRole('button',{name:'选择论文 / 上传文件',exact:true}).click();
+  await surface(focused.locator('.paper-file-upload input'),'file input',theme);await check(focused.locator('.paper-file-upload input'),'native file button',theme,'::file-selector-button');
+  await focused.getByRole('button',{name:'收起资料选择',exact:true}).click();await focused.getByText('更换论文或上传原文',{exact:true}).click();
+  await answer.fill('主题切换回归：这是隔离阅读答案，不是正式学习记录。');await focused.getByText('已保存本机',{exact:true}).waitFor();
+  await focused.getByText('更多工具',{exact:true}).click();
+  const legacy=focused.locator('.paper-workshop');
+  await legacy.locator('.paper-reading textarea').waitFor();
+  await surface(legacy.locator('.paper-note-destination select'),'note destination',theme);await surface(legacy.locator('.paper-note-destination input'),'note directory',theme);
+  await check(legacy.locator('.paper-tray h2 span'),'vocabulary count badge',theme);
+  const word=legacy.locator('.paper-raw button').first();await word.hover();await check(word,'paper word hover',theme);
+  const draft=legacy.locator('.paper-reading textarea');await surface(draft,'legacy draft field',theme);await check(draft,'legacy draft placeholder',theme,'::placeholder');await focus(draft);
+  await draft.fill('主题切换回归：这是隔离草稿，不是正式学习记录。');await legacy.getByText('草稿已就绪',{exact:true}).waitFor();
+  // Optional legacy modal remains covered, but is never the default paper entry.
+  await focused.getByRole('button',{name:'论文精读工坊',exact:true}).click();await page.locator('.paper-dialog[open]').waitFor();
   await surface(page.locator('.paper-close'),'portaled close control',theme);
-  await page.getByText('更换论文 / 上传材料',{exact:true}).click();await surface(page.locator('.paper-import button').first(),'paper import button',theme);await page.getByText('更换论文 / 上传材料',{exact:true}).click();
-  const answer=page.locator('.paper-reading textarea');await surface(answer,'paper answer field',theme);await check(answer,'paper answer placeholder',theme,'::placeholder');await focus(answer);
-  await surface(page.locator('.paper-note-destination select'),'note destination',theme);await surface(page.locator('.paper-note-destination input'),'note directory',theme);
-  await check(page.locator('.paper-tray h2 span'),'vocabulary count badge',theme);
-  const word=page.locator('.paper-raw button').first();await word.hover();await check(word,'paper word hover',theme);
-  await page.getByText('更换论文 / 上传材料',{exact:true}).click();await page.getByRole('button',{name:'选择论文 / 上传文件',exact:true}).click();
-  await surface(page.locator('.paper-file-upload input'),'file input',theme);await check(page.locator('.paper-file-upload input'),'native file button',theme,'::file-selector-button');
-  await page.getByRole('button',{name:'收起资料选择',exact:true}).click();await page.getByText('更换论文 / 上传材料',{exact:true}).click();
-  await answer.fill('主题切换回归：这是隔离草稿，不是正式学习记录。');await page.getByText('草稿已就绪',{exact:true}).waitFor();
-  await page.screenshot({path:resolve(evidence,`paper-${theme}-${viewport.width}.png`)});
+  await page.getByText('更换论文 / 上传材料',{exact:true}).click();await surface(page.locator('.paper-import button').first(),'paper import button',theme);
   await page.locator('.paper-close').click();await page.locator('.paper-dialog[open]').waitFor({state:'detached'});
-  results.push({viewport:viewport.width,theme,case:'real paper dialog, input, native controls and hovered word contrast',passed:true});
+  await page.mouse.move(0,0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Focused reading must fit the viewport');
+  await page.screenshot({path:resolve(evidence,`paper-${theme}-${viewport.width}.png`)});
+  await focused.getByRole('link',{name:'返回学习',exact:true}).click();await page.waitForURL(origin+'/');await waitTheme(page,theme);
+  results.push({viewport:viewport.width,theme,case:'focused paper route, optional legacy tools, native controls and hovered word contrast',passed:true});
   // Switch through the same preference store used by the app, then reload.
   await page.getByRole('button',{name:opposite==='dark'?'使用深色模式':'使用浅色模式',exact:true}).click();await waitTheme(page,opposite);
   await surface(first.locator('strong'),'switched title',opposite);await surface(search,'switched input',opposite);await surface(page.locator('.paper-launch'),'switched launcher',opposite);
   await page.reload();await waitTheme(page,opposite);await surface(page.locator('.learning-subject-open strong').first(),'persisted title',opposite);
-  await page.locator('.paper-launch').click();await page.locator('.paper-reading textarea').waitFor();
-  assert.equal(await page.locator('.paper-reading textarea').inputValue(),'主题切换回归：这是隔离草稿，不是正式学习记录。');
-  await surface(page.locator('.paper-reading textarea'),'reopened saved draft',opposite);await page.locator('.paper-close').click();
+  await page.locator('.paper-launch').click();await page.waitForURL(origin+'/study/paper');await waitTheme(page,opposite);
+  const reopened=page.getByRole('region',{name:'论文专注阅读',exact:true});
+  const savedAnswer=reopened.getByRole('textbox',{name:'你的回答',exact:true});await savedAnswer.waitFor();
+  assert.equal(await savedAnswer.inputValue(),'主题切换回归：这是隔离阅读答案，不是正式学习记录。');
+  await surface(savedAnswer,'reopened saved reading answer',opposite);
+  await reopened.getByText('更多工具',{exact:true}).click();
+  const savedDraft=reopened.locator('.paper-workshop .paper-reading textarea');await savedDraft.waitFor();
+  assert.equal(await savedDraft.inputValue(),'主题切换回归：这是隔离草稿，不是正式学习记录。');
+  await surface(savedDraft,'reopened saved draft',opposite);
   assert.deepEqual(errors,[]);results.push({viewport:viewport.width,theme,case:'manual preference overrides OS, survives reload and keeps draft',passed:true});
   await context.close();
  }

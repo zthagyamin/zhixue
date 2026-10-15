@@ -26,6 +26,8 @@ type Props = Pick<HostProps, 'temporary' | 'question' | 'reference' | 'renderMat
         beginGuided: () => void;
         skipRemediation: () => void;
         beginIndependent: () => void;
+        continueSourcePending: () => void;
+        reviewSource: () => void;
     };
 };
 /** Presentation receives state and learner actions, with no storage or event-writing port. */
@@ -54,6 +56,10 @@ export function HostView(props: Props) {
     </section> : <>
       {lessonStep === 'guided' && <p>{course ? '引导练习 · 可对照讲解' : '引导练习：可以对照材料。结果保留为辅助尝试，不证明首轮独立通过。'}</p>}
       <PluginSlot key={generation} renderPlugin={props.renderPlugin} draft={draft} lifecycle={lifecycle} onGrade={props.onGrade}/>
+      {submitted && lifecycle.sourcePending && <button type="button" className="study-secondary-action" disabled={busy}
+        onClick={actions.continueSourcePending}>保留答案，继续</button>}
+      {submitted && lifecycle.sourcePending && <button type="button" className="study-secondary-action" disabled={busy}
+        onClick={actions.reviewSource}>恢复核对</button>}
       {!props.temporary && props.purpose === 'remediation' && !submitted && <button type="button" className="study-secondary-action" disabled={busy} onClick={actions.skipRemediation}>跳过本次补练，继续</button>}
       {lessonStep === 'guided' && <button type="button" className="study-secondary-action" disabled={busy} onClick={actions.beginIndependent}>收起讲解，独立尝试</button>}
     </>}

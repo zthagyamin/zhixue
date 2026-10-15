@@ -8,6 +8,7 @@ import routes_sources
 import routes_ai
 import routes_course
 import routes_math
+import routes_nonword_source
 
 
 def _register(entries):
@@ -40,6 +41,7 @@ GET_ROUTES = _register([
 ])
 
 POST_ROUTES = _register([
+    ('/v1/nonword/source', routes_nonword_source.post_nonword_source),
     ('/v1/math/source/capture', routes_math.post_math),
     ('/v1/math/source/read', routes_math.post_math),
     ('/v1/math/mapping/publish', routes_math.post_math),
@@ -56,6 +58,7 @@ POST_ROUTES = _register([
     ('/v1/papers/material', routes_sources.post_papers_read),
     ('/v1/papers/save', routes_sources.post_papers_read),
     ('/v1/papers/figure', routes_sources.post_papers_read),
+    ('/v1/papers/page', routes_sources.post_papers_read),
     ('/v1/vocabulary/append', routes_sources.post_vocabulary_append),
     ('/v1/note-sources', routes_sources.post_note_sources),
     ('/v1/setup', routes_sources.post_note_sources),

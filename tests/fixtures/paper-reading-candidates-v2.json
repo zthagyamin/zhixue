@@ -1,0 +1,51 @@
+{
+  "documentType": "zhixue-practice-candidates",
+  "schemaVersion": 2,
+  "status": "reviewed-candidates",
+  "parent": {
+    "key": "Papers/synthetic.md",
+    "sourceVersion": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "versionKind": "paper-origin",
+    "kind": "paper",
+    "title": "Synthetic paper"
+  },
+  "items": [
+    {
+      "id": "paper-candidate:2b7c399009e6f7dcebee4fb0cab8207e6643a80d1ebeedf72ab6f4df9f23fb2f",
+      "question": "解释 ReLU 在正输入时的作用。",
+      "reference": "避免饱和，保留正输入条件。",
+      "keyPoints": "避免饱和，保留正输入条件。",
+      "category": "claim",
+      "fragmentId": "reading-p-1",
+      "quote": "avoids saturation for positive inputs",
+      "citation": {
+        "fragmentId": "reading-p-1",
+        "label": "Methods · PDF 第 3 页",
+        "start": 5,
+        "end": 42,
+        "page": 3
+      }
+    }
+  ],
+  "readingContext": {
+    "schemaVersion": 1,
+    "paperId": "synthetic-paper",
+    "sourceNote": "Papers/synthetic.md",
+    "materialFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sourceVersion": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "unitId": "synthetic-unit",
+    "taskId": "synthetic-task",
+    "taskRevision": 1,
+    "abilityType": "mechanism",
+    "mappingStatus": "candidate",
+    "sectionId": "methods",
+    "paragraphs": [
+      {
+        "id": "paragraph-1",
+        "rawEn": "ReLU avoids saturation for positive inputs. 中文 😀 | x < 1",
+        "pageNumber": 3
+      }
+    ],
+    "abilityId": "paper-ability:808c84c64cf996f985a358273268cd5074aedbdc6946c5300e250e0c8b1a385e"
+  }
+}

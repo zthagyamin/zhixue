@@ -26,10 +26,11 @@ export async function executePracticeEvidenceAction(body:Record<string,unknown>,
         studyObject(body,['action','mutation'],['libraryId']);
         const mutation=parsePracticeEvidenceMutation(body.mutation);
         if(mutation.binding.ownerId!==scope.userId||mutation.binding.libraryId!==scope.libraryId)throw new AccountFailure(403,'practice-evidence-scope-mismatch');
-        return {kind:'value',status:200,value:await store.mutate(scope,mutation)};
+        return {kind:'value',status:200,value:await store.mutate(scope,mutation,auth.principal.kind==='device'?context.deviceWriter(auth.principal):undefined)};
     } catch(error) {
         if(error instanceof AccountFailure)throw error;
         const code=error instanceof Error?error.message:'';
+        if(code==='study-writer-required')throw new AccountFailure(403,code);
         if(code.startsWith('practice-evidence-'))throw new AccountFailure(409,code);
         throw new AccountFailure(400,'invalid-practice-evidence-request');
     }

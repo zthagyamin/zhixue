@@ -7,7 +7,7 @@ export type CourseEvidenceScope = { userId: string; libraryId: string };
 export interface CourseEvidenceStorePort {
     supported(): Promise<boolean>;
     read(scope: CourseEvidenceScope, attemptId: string): Promise<CourseEvidence | null>;
-    mutate(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation): Promise<CourseEvidenceReceipt>;
+    mutate(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation, writerGrantId?: string): Promise<CourseEvidenceReceipt>;
     /** Internal application path: a validated provider result, never a client body flag. */
     writeModel(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation): Promise<CourseEvidenceReceipt>;
 }

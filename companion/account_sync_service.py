@@ -190,6 +190,12 @@ class AccountSyncService:
         excluded={'factsHash','observedAt'}
         return {key:value for key,value in left.items() if key not in excluded} == {key:value for key,value in right.items() if key not in excluded}
 
+    def _remember_authorization(self, owner, grant, sync, handle):
+        # Caller holds self.lock. This is display-only history for this worker generation.
+        if (self.workers.get(grant) is handle and self.generations.get(owner) == handle['generation']
+                and not handle['stop'].is_set() and not handle['pauseRequested'] and sync.authorization):
+            handle['authorization'] = dict(sync.authorization)
+
     def start(self, owner, grant, *, resume=False):
         link = self._link(owner, grant); self._library(owner, link['libraryId'])
         with self.lock:
@@ -219,6 +225,7 @@ class AccountSyncService:
                     raise ValueError('account-service-stopping')
                 if self.closing or handle['stop'].is_set():
                     raise ValueError('account-service-stopping')
+                self._remember_authorization(owner, grant, sync, handle)
                 for old_grant, old in self.workers.items():
                     if old_grant != grant and old['owner'] == owner and old['thread'] is not None and old['thread'].is_alive():
                         old['stop'].set(); old['status'] = 'stopping'; predecessors.append(old['thread'])
@@ -241,7 +248,9 @@ class AccountSyncService:
                 try:
                     self._owner(owner); self._library(owner, link['libraryId'])
                     result = sync.run_once()
-                    handle['status'] = result['status']; handle['error'] = result.get('error')
+                    with self.lock:
+                        self._remember_authorization(owner, link['grantId'], sync, handle)
+                        handle['status'] = result['status']; handle['error'] = result.get('error')
                 except (ValueError, sqlite3.Error, OSError):
                     self.links.mark_state(owner, link['grantId'], 'paused')
                     handle['status'] = 'paused'; handle['error'] = 'account-local-configuration-required'
@@ -281,6 +290,8 @@ class AccountSyncService:
                 result[-1]['workerStatus'] = handle['status'] if handle else 'stopped'
                 if handle and handle['error']:
                     result[-1]['error'] = handle['error']
+                if handle and handle.get('authorization'):
+                    result[-1]['authorization'] = dict(handle['authorization'])
         return {'capability': CAPABILITY, 'links': result}
 
     def resume(self):

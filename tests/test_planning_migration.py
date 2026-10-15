@@ -210,6 +210,38 @@ class PlanningMigrationTests(unittest.TestCase):
         self.assertEqual(index_gateway._meta(index.read_text(encoding='utf-8'))['language'], 'en')
         self.assertNotIn('language', index_gateway._meta(self.index.read_text(encoding='utf-8')))
 
+    def test_gateway_cli_bootstraps_sibling_imports_with_isolated_python(self):
+        for module in ('index_gateway', 'study_day'):
+            (self.root / f'{module}.py').write_text(
+                "raise RuntimeError('CLI must not import from the working directory')\n", encoding='utf-8')
+
+        def run(*args):
+            return subprocess.run(
+                [sys.executable, '-I', '-X', 'utf8', '-B', str(ROOT / 'companion/gateway_cli.py'),
+                 '--vault', str(self.vault), *args],
+                cwd=self.root, capture_output=True, text=True, encoding='utf-8')
+
+        added = run('add-subject', '--id', 'isolated', '--name', 'Isolated', '--plugin', 'three-stage',
+                    '--root', 'subjects/isolated', '--language', 'en')
+        self.assertEqual(added.returncode, 0, added.stderr or added.stdout)
+        summary = json.loads(added.stdout)
+        self.assertEqual(summary['subjectCount'], 3)
+        self.assertEqual(summary['diagnostics'], [])
+        index = self.vault / index_gateway.GATEWAY_ROOT / 'subjects/isolated.md'
+        self.assertEqual(index_gateway._meta(index.read_text(encoding='utf-8'))['language'], 'en')
+        self.assertNotIn('language', index_gateway._meta(self.index.read_text(encoding='utf-8')))
+
+        before = self.snapshot()
+        validated = run('validate')
+        self.assertEqual(validated.returncode, 0, validated.stderr or validated.stdout)
+        self.assertEqual(json.loads(validated.stdout), summary)
+        self.assertEqual(self.snapshot(), before)
+        duplicate = run('add-subject', '--id', 'isolated', '--name', 'Changed', '--plugin', 'three-stage',
+                        '--root', 'subjects/isolated', '--language', 'zh')
+        self.assertEqual(duplicate.returncode, 2, duplicate.stderr or duplicate.stdout)
+        self.assertIn('error', json.loads(duplicate.stdout))
+        self.assertEqual(self.snapshot(), before)
+
     def test_preview_rejects_breaking_another_subjects_existing_dependency(self):
         migration.apply_planning_migration(self.vault, migration.preview_planning_migration(self.vault, self.proposals), self.root / 'backups')
         dependent = CONTENT.replace('subjects/course/lesson', 'subjects/words/words').replace('| 1 | | open-note |', '| 1 | course:lesson | open-note |')

@@ -24,6 +24,7 @@ import {courseEvidenceOriginal} from '../../src/application/course-study/index.t
 import {D1MathMappingStore} from '../../src/infrastructure/math-study/index.ts';
 import {reviewedCases} from './math-mapping-fixtures.mjs';
 import {studyDay} from '../../src/domain/planning/index.ts';
+import {D1PaperReadingStore} from '../../src/infrastructure/paper-reading/index.ts';
 
 const dictionary=[
   ['disturb','打扰；使不安','Notifications can disturb your concentration.'],
@@ -51,7 +52,7 @@ const dictionary=[
   ['resolve','解决','Resolve the question with evidence.'],
 ];
 
-export async function createAccountPreview({origin,scenario='approved-15',userId='study-preview-account',longReading=false,syntheticAi=false,stage3=false,stage3Mapping=false,stage3Semantic=false,stage3Stress=false,manyReviews=false,groupedStudy=false,vagueRecall=false,reviewTarget=6,day=studyDay(new Date().toISOString())}){
+export async function createAccountPreview({origin,scenario='approved-15',userId='study-preview-account',longReading=false,syntheticAi=false,paperReadingProvider,stage3=false,stage3Mapping=false,stage3Semantic=false,stage3Stress=false,manyReviews=false,groupedStudy=false,vagueRecall=false,reviewTarget=6,day=studyDay(new Date().toISOString())}){
   const url=new URL(origin);
   if(!['127.0.0.1','localhost'].includes(url.hostname)||url.protocol!=='http:')throw new Error('Preview requires localhost');
   if(!['no-plan','draft-15','approved-15','completed-15','partial-15','all-plugins','account-writeback','visual-reference'].includes(scenario))throw new Error('Unknown preview scenario');
@@ -62,6 +63,7 @@ export async function createAccountPreview({origin,scenario='approved-15',userId
   let lastAIContext=null;
   const unavailable=async()=>{throw new Error('Preview never calls an external AI provider');};
   const make=browser=>createAccountStudyHandlers({enabled:true,getBrowserUser:async()=>browser?{userId}:null,
+    getPaperReadingStore:async()=>new D1PaperReadingStore(binding),...(paperReadingProvider?{getPaperReadingProvider:async()=>paperReadingProvider}:{}),
     ...(stage3?{getPracticeEvidenceStore:async service=>new D1PracticeEvidenceStore(binding,courseEvidenceOriginal(study,new D1LearningAttemptStore(binding)),{service,mapping:mappings}),
       getMathMappingStore:async()=>mappings,getPracticeEvidenceMapping:async()=>mappings}:{}),
     ...(stage3Semantic?{getPracticeAi:async()=>({async run(kind,input,trace){

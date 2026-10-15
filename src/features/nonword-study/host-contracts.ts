@@ -19,6 +19,9 @@ export type HostDraft = AttemptEvidenceDraft & {
     markInputRecovered?: (revision: number) => boolean;
 };
 export type HostDriver = {
+    beforeFormal?: () => Promise<void>;
+    source?: {review:()=>Promise<void>;beforeFormal:()=>Promise<void>;beforeContinue?:()=>Promise<void>;savePending?:()=>Promise<void>;
+        selfRating?:()=>FSRSRating|undefined;supported?:()=>boolean};
     course?:import('../../application/course-study').CourseLearningPort;
     runtime: NonWordRuntimePort;
     restore: () => Record<string, unknown>;
@@ -31,13 +34,14 @@ export type HostDriver = {
 };
 export type HostProps = {
     temporary?: boolean;
+    sourceConfirmationRequired?: boolean;
     bindingKey: string;
     mode: NonWordMode;
     draft: HostDraft;
     question?: string;
     reference: string;
     recallConfigured: boolean;
-    createDriver: (purpose: 'first' | 'guided' | 'remediation', intent: 'review' | 'learn', parentId?: string, instanceId?: string,taskId?:string) => Promise<HostDriver>;
+    createDriver: (purpose: 'first' | 'guided' | 'remediation', intent: 'review' | 'learn', parentId?: string, instanceId?: string,taskId?:string,current?:()=>boolean) => Promise<HostDriver>;
     renderPlugin: (draft: HostDraft, lifecycle: NonWordLearningPort, onGrade: (rating: FSRSRating, options?: {
         deferAdvance?: boolean;
         identity?: {

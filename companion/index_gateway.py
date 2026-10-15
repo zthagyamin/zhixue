@@ -634,7 +634,7 @@ def read_subject_events(vault_root: Path, binding: dict, account_id: str) -> lis
     return sorted(rows.values(), key=lambda row: (row["event"]["occurredAt"], row["event"]["eventId"]))
 
 
-def record_subject_event(vault_root: Path, binding: dict, account_id: str, event: dict, context: dict, planning_evidence: dict | None = None) -> Path:
+def record_subject_event(vault_root: Path, binding: dict, account_id: str, event: dict, context: dict, planning_evidence: dict | None = None, source_association: dict | None = None) -> Path:
     with LOCK:
         path = subject_event_path(vault_root, binding, event)
         previous = next((row for row in read_subject_events(vault_root, binding, account_id) if row["event"]["eventId"] == event["eventId"]), None)
@@ -646,26 +646,18 @@ def record_subject_event(vault_root: Path, binding: dict, account_id: str, event
         row = {"schemaVersion": 1, "accountId": account_id, "subjectId": binding["subjectId"], "event": event, "localContext": context}
         if planning_evidence is not None:
             row['planningEvidence'] = planning_evidence
+        if source_association is not None:
+            row['sourceAssociationV1'] = source_association
         with path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
         return path
 
 
 def progress_records(vault_root: Path, catalog: dict, account_id: str) -> list[dict]:
-    roots: set[str] = set()
-    events: dict[str, dict] = {}
-    for binding in [*catalog.get('recordRoots', []), *catalog.get("bindings", {}).values()]:
-        if binding["recordsRoot"] in roots:
-            continue
-        roots.add(binding["recordsRoot"])
-        for row in read_subject_events(vault_root, binding, account_id):
-            event = row["event"]
-            previous = events.get(event["eventId"])
-            if previous and previous["event"]["coreHash"] != event["coreHash"]:
-                raise GatewayError("event-conflict", "不同学科日志包含相同 ID、不同内容的事件，未覆盖已有进度。")
-            if lookup_binding(catalog, event.get("item", {}).get("key", "")):
-                events[event["eventId"]] = row
-    return sorted(events.values(), key=lambda row: (row["event"]["occurredAt"], row["event"]["eventId"]))
+    from application.source_history import collect_progress_records
+    return collect_progress_records(catalog, account_id, lookup=lambda key: lookup_binding(catalog, key),
+        read_records=lambda binding, owner: read_subject_events(vault_root, binding, owner),
+        conflict=lambda: GatewayError('event-conflict', '不同学科日志包含相同 ID、不同内容的事件，未覆盖已有进度。'))
 
 
 def progress_events(vault_root: Path, catalog: dict, account_id: str) -> list[dict]:

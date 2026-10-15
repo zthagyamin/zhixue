@@ -5,13 +5,18 @@ import types
 import unittest
 import urllib.request
 import urllib.error
+from dataclasses import replace
 from http.server import ThreadingHTTPServer
 from unittest import mock
 import test_companion as fixtures
+from local_chat_transport_fixture import inline_chat_transport
 server=fixtures.server
 class LocalAIEndpoints(unittest.TestCase):
  def setUp(self):
   self.fixture=fixtures.CompanionSyncTests();self.fixture.setUp()
+  bind=server.route_services
+  patch=mock.patch.object(server,'route_services',side_effect=lambda:replace(bind(),local_chat_transport=inline_chat_transport))
+  patch.start();self.addCleanup(patch.stop)
  def tearDown(self):self.fixture.tearDown()
  def test_authenticated_local_settings_and_stream_never_leave_fixture(self):
   origin='https://local-ai-fixture.example';server.CONFIG['allowed_origins']=[origin]

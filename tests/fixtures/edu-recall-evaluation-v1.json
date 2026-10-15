@@ -34,6 +34,9 @@
     {"id":"EV-31","result":{"verdict":"correct","source":"self-assess"},"criteria":[],"error":"recall-evaluation-undetermined"},
     {"id":"EV-32","result":{"verdict":"correct","matchedPointIds":["invented"],"missedPointIds":[]},"criteria":[],"error":"invalid-recall-alignment"},
     {"id":"EV-33","result":{"rating":"good","verdict":"incorrect","confidence":1},"criteria":[],"error":"recall-evaluation-conflicting-rating"},
-    {"id":"EV-34","result":{"verdict":"partial","correct":1},"criteria":[],"error":"recall-evaluation-invalid-correct"}
+    {"id":"EV-34","result":{"verdict":"partial","correct":1},"criteria":[],"error":"recall-evaluation-invalid-correct"},
+    {"id":"EV-35","result":{"verdict":"correct","rating":"good","matchedPointIds":[],"missedPointIds":["p"]},"criteria":[{"id":"p","text":"参考要点"}],"error":"recall-evaluation-no-matched-points"},
+    {"id":"EV-36","result":{"correct":true,"matchedPointIds":[],"missedPointIds":["p"]},"criteria":[{"id":"p","text":"参考要点","mandatory":false}],"error":"recall-evaluation-no-matched-points"},
+    {"id":"EV-37","result":{"verdict":"correct","matchedPointIds":["p"],"missedPointIds":["extra"]},"criteria":[{"id":"p","text":"已匹配","weight":1},{"id":"extra","text":"可选补充","weight":1000}],"expected":{"status":"complete","rating":"good","coverage":{"matched":["p"],"missed":["extra"],"missingMandatory":[],"percent":0}}}
   ]
 }

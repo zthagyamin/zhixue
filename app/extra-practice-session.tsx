@@ -144,7 +144,7 @@ export function ExtraPracticeSession({ snapshot, onExit, canOpenLocal, getObsidi
       <span>{completed} / {snapshot.items.length}</span>
     </header>
     <p className="study-meta">额外巩固 · 不计入正式记录</p>
-    <details className="study-inline-options"><summary>学习选项</summary><StudyPluginOptionsSlot/><StudyGuidanceHelp kind={mode}/><ReviewContext temporary/>
+    <details className="study-inline-options"><summary>学习选项</summary><StudyPluginOptionsSlot/><StudyGuidanceHelp kind={mode} pendingEvaluation={Boolean(recoveryScope&&originalNonWord)}/><ReviewContext temporary/>
       <p>{hasRecovery?'本轮不计入今日进度，不改变正式成绩或复习安排；支持恢复的作答按原来源保存在本机，同步状态以题目提示为准。':'本轮仅在当前页面练习，不计入今日进度，不改变正式成绩或复习安排；离开后不保留。'}</p>
     </details>
     {roundError&&<p role="alert">{roundError}</p>}

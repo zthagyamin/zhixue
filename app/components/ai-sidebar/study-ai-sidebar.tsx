@@ -1,7 +1,9 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {StudyAIRequestGate,readStudyAIHistory,writeStudyAIHistory,studyAIHistoryKey} from '../../ai/study-ai-service';
 import {buildStudyAIRequest} from '../../ai/study-ai-context';
+import {createLocalChatRecovery} from '../../ai/local-chat-recovery-store';
+import {useChatRecovery,ChatRecoveryNotice} from '../../../src/features/ai';
 import {legacyStudyAIConversations,legacyStudyAIContextId} from '../../ai/study-ai-conversations';
 import {studyAIErrorMessage,suggestedStudyAIModel} from '../../ai/study-ai-errors';
 import type {StudyAIMessage,StudyAIProvider} from '../../ai/study-ai-types';
@@ -25,6 +27,9 @@ function ChatSession({visible,onSettings,drafts,onDraft}:{visible:boolean;onSett
  const gate=useRef(new StudyAIRequestGate()),provider=settings?.provider??'deepseek';
  const key=legacy.find(item=>item.id===conversation)?.key??studyAIHistoryKey(scope,provider,`workspace:${conversation}`),indexKey=studyAIHistoryKey(scope,provider,'workspace-index');
  const input=drafts[key]??'',setInput=(value:string)=>onDraft(key,value);
+ const journal=useMemo(()=>scope.mode==='local'?createLocalChatRecovery({mode:scope.mode,ownerId:scope.ownerId,libraryId:scope.libraryId},key):null,[scope.mode,scope.ownerId,scope.libraryId,key]);
+ const recovery=useChatRecovery(journal,indexReady&&loadedKey===key,setMessages);
+ const localBusy=useRef(false);
  useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(!active)return;try{
    const archived=legacyStudyAIConversations(localStorage,scope,provider);setLegacy(archived);
    const saved=JSON.parse(localStorage.getItem(indexKey)??'null'),ids=Array.isArray(saved?.ids)?saved.ids.filter((id:unknown)=>typeof id==='string'&&/^[A-Za-z0-9-]{1,80}$/.test(id)).slice(-50):['current'];
@@ -36,13 +41,26 @@ function ChatSession({visible,onSettings,drafts,onDraft}:{visible:boolean;onSett
  useEffect(()=>{const shown=()=>observeStudyAIReplies(assistance,studyAIRepliesForContext(messages,context.id,legacyStudyAIContextId(key),loadedKey===key),visible&&document.visibilityState!=='hidden');shown();document.addEventListener('visibilitychange',shown);return()=>document.removeEventListener('visibilitychange',shown);},[assistance,messages,context.id,visible,key,loadedKey]);
  const stop=()=>{gate.current.invalidate();setBusy(false);};
  const newConversation=()=>{stop();setInput('');setError('');const id=crypto.randomUUID();setConversations(ids=>[...ids,id].slice(-50));setConversation(id);};
- const ready=loadedKey===key&&settings?.enabled&&settings.configured&&Boolean(settings.model)&&settings.serverAvailable!==false&&!suggestedStudyAIModel(provider,settings.model,settings.baseUrl);
+ const ready=loadedKey===key&&recovery.ready&&settings?.enabled&&settings.configured&&Boolean(settings.model)&&settings.serverAvailable!==false&&!suggestedStudyAIModel(provider,settings.model,settings.baseUrl);
+ async function restore(requestId:string){
+  if(!recovery.ready||localBusy.current||!settings||settings.serverAvailable===false)return;
+  localBusy.current=true;const task=gate.current.begin();setBusy(true);setError('');
+  try{await recovery.run(requestId,service,task);}catch(error){if(task.current())setError(studyAIErrorMessage(error));}
+  finally{localBusy.current=false;if(task.current())setBusy(false);}
+ }
  async function send(text=input,retry=false){
-  if(!text.trim()||!settings||busy||!ready)return;
+  if(!text.trim()||!settings||busy||!ready||(scope.mode==='local'&&localBusy.current))return;
   const task=gate.current.begin(),user:StudyAIMessage={id:crypto.randomUUID(),role:'user',content:text.trim(),contextId:context.id,contextTitle:includePage?context.title:'自由提问（未引用页面）'},answer:StudyAIMessage={id:crypto.randomUUID(),role:'assistant',content:'',provider,contextId:context.id,contextTitle:includePage?context.title:'自由提问（未引用页面）'};
   const base=retry&&messages.at(-1)?.role==='user'&&messages.at(-1)?.content===text?messages.slice(0,-1):messages,prior=[...base,user];
   const request=buildStudyAIRequest(settings,includePage?context:{id:'free-chat',title:'自由提问'},prior,`chat:${crypto.randomUUID()}`);
   if(scope.mode==='account'&&!settings.unlimitedDailyUsage&&new TextEncoder().encode(JSON.stringify(request)).length+settings.maxOutputTokens>settings.dailyTokenLimit){setError('本次引用内容超过当前每日用量上限。可关闭页面引用，或在 AI 设置中调整用量限制。');return;}
+  if(scope.mode==='local'){
+   localBusy.current=true;setBusy(true);setError('');
+   try{const saved=await recovery.prepare({request,user,answer},task);if(!task.current())return;
+    setInput('');await recovery.run(saved.request.requestId,service,task);
+   }catch(error){if(task.current())setError(studyAIErrorMessage(error));}
+   finally{localBusy.current=false;if(task.current())setBusy(false);}return;
+  }
   setMessages([...prior,answer]);setInput('');setBusy(true);setError('');
   try{for await(const event of service.chat(request,task.signal)){if(!task.current())return;setMessages(current=>current.map(message=>message.id!==answer.id?message:event.type==='delta'?{...message,content:message.content+event.text}:{...message,model:event.model,provider:event.provider??provider}));}}
   catch(error){if(task.current()){setMessages(current=>current.filter(message=>message.id!==answer.id||message.content.trim()));setError(studyAIErrorMessage(error));}}
@@ -56,7 +74,9 @@ function ChatSession({visible,onSettings,drafts,onDraft}:{visible:boolean;onSett
   {!ready&&<div className="study-ai-setup-callout"><strong>{settings?.configured?'还差一步即可提问':'先连接你的模型'}</strong><p>{settings?.configured?'请确认已选择有效模型、启用并保存；可运行连接测试定位问题。':'填写 API 密钥、选择模型并测试连接。'}</p><button type="button" onClick={onSettings}>配置与测试 <StudyAIIcon name="chevron" size={14}/></button></div>}
   {!ready&&<StudyAICopyPrompt context={context} includePage={includePage}/>}
   <StudyAIChatStream messages={messages} busy={busy}/>
-  {error&&<div className="study-ai-error" role="alert"><p>{error}</p><div><button type="button" onClick={onSettings}>检查配置 / 测试连接</button><button type="button" disabled={busy||!ready} onClick={()=>{const last=messages.findLast(message=>message.role==='user');if(last)void send(last.content,true);}}>重试</button></div></div>}
+  <ChatRecoveryNotice entries={recovery.pending} disabled={busy||!recovery.ready||settings?.serverAvailable===false} onRestore={id=>void restore(id)}/>
+  {recovery.error&&<div className="study-ai-error" role="alert"><p>{studyAIErrorMessage(recovery.error)}</p><button type="button" onClick={()=>void recovery.refresh()}>重新读取</button></div>}
+  {error&&<div className="study-ai-error" role="alert"><p>{error}</p><div><button type="button" onClick={onSettings}>检查配置 / 测试连接</button>{scope.mode==='account'&&<button type="button" disabled={busy||!ready} onClick={()=>{const last=messages.findLast(message=>message.role==='user');if(last)void send(last.content,true);}}>重试</button>}</div></div>}
   <div className="study-ai-chips">{suggestions.map(([label,prompt])=><button key={label} type="button" disabled={!ready||busy} onClick={()=>void send(prompt)}>{label}</button>)}</div>
   <form className="study-ai-composer" onSubmit={event=>{event.preventDefault();void send();}}><label className="study-ai-sr" htmlFor="study-ai-input">向 AI 学习助手提问</label><textarea id="study-ai-input" value={input} maxLength={12000} onChange={event=>setInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing&&ready&&input.trim()){event.preventDefault();void send();}}} placeholder={includePage?'针对这页，问点什么…':'写下你的问题…'} rows={3}/><div><span>{busy?'正在回答…':settings?.model||'尚未选择模型'}<small>{historyError?'本机历史暂不可用':'Enter 发送 · Shift + Enter 换行'}</small></span>{busy?<button type="button" className="study-ai-send" onClick={stop} aria-label="停止回答">■</button>:<button type="submit" className="study-ai-send" disabled={!ready||!input.trim()} aria-label="发送问题"><StudyAIIcon name="send"/></button>}</div></form>
  </>;

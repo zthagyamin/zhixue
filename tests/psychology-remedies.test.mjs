@@ -11,6 +11,9 @@ import {paperFromPages} from '../app/paper-import.ts';
 import {groupIsCollapsed,parseCollapsedGroups,libraryDisclosureKey} from '../app/library-disclosure.ts';
 import {reviewContextText} from '../app/review-context-model.ts';
 import {mayStartGeneratedPlan} from '../app/generated-start-model.ts';
+import {createElement} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {loadTsx} from './fixtures/tsx-components.mjs';
 const source=text=>({name:'课程.md',text}),qa='Q: 什么是卷积？\nA: 按局部连接对输入进行加权求和。';
 const read=name=>readFileSync(new URL('../app/'+name,import.meta.url),'utf8');
 
@@ -121,5 +124,8 @@ test('one-click start does not approve or write a plan as a side effect',()=>{
  const code=read('generated-plan-start.tsx');assert.doesNotMatch(code,/approveTodayPlan|writeBack|fetch\s*\(/);assert.match(code,/mayStartGeneratedPlan/);assert.match(code,/consumed\.current/);
 });
 test('settings distinguish opt-in AI, explicit writeback and unsubmitted page input',()=>{
- const code=read('study-dashboard/sources-view.tsx');assert.doesNotMatch(code,/永不修改原文件|不上传完整私密上下文|备份全部本地作答、草稿/);assert.match(code,/AI/);assert.match(code,/尚未提交/);assert.match(code,/确认/);
+ const code=read('study-dashboard/sources-view.tsx');assert.doesNotMatch(code,/永不修改原文件|不上传完整私密上下文|备份全部本地作答、草稿/);assert.match(code,/AI/);assert.match(code,/确认/);assert.match(code,/RecoveryDataControls/);
+ const {RecoveryDataControls}=loadTsx(new URL('../app/study-dashboard/recovery-data-controls.tsx',import.meta.url));
+ const html=renderToStaticMarkup(createElement(RecoveryDataControls,{workspaceId:'account:synthetic',ready:true,onExport(){},onChanged(){}}));
+ assert.match(html,/尚未提交/);assert.match(html,/不等于已保存记录/);assert.doesNotMatch(html,/备份全部本地作答、草稿/);
 });

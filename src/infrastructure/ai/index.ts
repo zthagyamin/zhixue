@@ -1,5 +1,7 @@
 export type {ProviderOptions} from './provider';
 // @ts-expect-error TS5097: standalone Node contracts.
+export {readProviderText} from './bounded-response.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
 export {providerRequest,listProviderModels,decodeProviderStream} from './provider.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 export {createStudyAIChat} from './chat.ts';

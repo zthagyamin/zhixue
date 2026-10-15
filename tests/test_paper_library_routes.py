@@ -33,7 +33,7 @@ class PaperLibraryRoutes(unittest.TestCase):
         self.ns['paper_library_request']=failure;self.assertEqual(self.request('POST','/v1/papers/save',{})[1],{'message':'paper-source-changed','noWrite':True})
     def test_production_factory_checks_library_before_reading_source(self):
         node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='paper_library_request')
-        root=Path(__file__).resolve().parents[1];ns={'installation_owner_hash':lambda:'owner','NOTE_SOURCE_LOCK':threading.RLock(),'source_path':lambda k:root,'LOCAL_DATABASE_PATH':root/'.superpowers/unused-fixture.db','local_vault_library_id':lambda v:'local','get_note_source_runtime':lambda:types.SimpleNamespace(service=None)}
+        root=Path(__file__).resolve().parents[1];ns={'installation_owner_hash':lambda:'owner','NOTE_SOURCE_LOCK':threading.RLock(),'source_path':lambda k:root,'LOCAL_DATABASE_PATH':root/'.superpowers/unused-fixture.db','local_vault_library_id':lambda v:'local','get_note_source_runtime':lambda:types.SimpleNamespace(service=None,paper_source_lookup=None)}
         exec(compile(ast.Module(body=[node],type_ignores=[]),'paper-factory','exec'),ns)
         with patch.object(paper_library.PaperLibrary,'read',return_value={'ok':True}) as read:
             with self.assertRaisesRegex(ValueError,'library-changed'):ns['paper_library_request']('owner','read',{'localLibraryId':'other','source':{}})

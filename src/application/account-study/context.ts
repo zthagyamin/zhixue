@@ -24,6 +24,11 @@ export function createAccountContext(deps: AccountStudyDependencies) {
         if (expected !== undefined && id(expected, 'expected-user') !== principal.userId)
             throw new ApiFailure(403, 'account-mismatch');
     }
+    function deviceWriter(principal: Principal): string {
+        requireRole(principal, 'device');
+        if (principal.kind !== 'device') throw new ApiFailure(403, 'action-not-allowed');
+        return principal.grantId;
+    }
     async function scope(principal: Principal, value?: unknown): Promise<StudyScope> {
         const supplied = value === undefined ? undefined : id(value, 'library');
         if (principal.kind === 'device') {
@@ -38,6 +43,6 @@ export function createAccountContext(deps: AccountStudyDependencies) {
             throw new ApiFailure(404, 'study-library-not-configured');
         return { userId: principal.userId, libraryId };
     }
-    return { deps, longTermStore, assistanceStore, requireRole, expectedAccount, scope };
+    return { deps, longTermStore, assistanceStore, requireRole, expectedAccount, deviceWriter, scope };
 }
 export type AccountContext = ReturnType<typeof createAccountContext>;

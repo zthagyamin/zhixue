@@ -75,7 +75,10 @@ def estimate_schedule(
     deadlines: list[dict[str, Any]],
     day: date,
 ) -> ScheduleEstimate:
-    """Estimate time/rhythm from the inclusive 28-day window ending at day."""
+    """Estimate from the inclusive 28-day window and chronological revisions.
+
+    Only the last approved plan per date contributes completion evidence.
+    """
 
     start = day - timedelta(days=WINDOW_DAYS - 1)
     daily_minutes: dict[date, int] = {}
@@ -104,13 +107,17 @@ def estimate_schedule(
             explanation=f"近 28 天只有 {len(active)} 个有效学习日，证据不足，暂用 30–60 分钟保守范围。",
         )
 
-    planned_count = 0
-    completed_count = 0
-    plan_days = 0
+    latest_plans: dict[date, dict[str, Any]] = {}
     for plan in approved_plans:
         plan_day = _plan_day(plan)
         if plan_day is None or plan_day < start or plan_day > day:
             continue
+        latest_plans[plan_day] = plan
+
+    planned_count = 0
+    completed_count = 0
+    plan_days = 0
+    for plan_day, plan in latest_plans.items():
         items = [item for item in plan.get("items", []) if isinstance(item, dict) and isinstance(item.get("itemKey"), str)]
         if not items:
             continue
@@ -129,7 +136,7 @@ def estimate_schedule(
         explanations.append(f"计划跳过率为 {skip_rate:.0%}，超过 25%，容量下调 20%。")
     elif completion is not None and completion >= 0.85 and plan_days >= 14:
         adjusted *= 1.1
-        explanations.append(f"连续两周计划完成率为 {completion:.0%}，容量谨慎上调 10%。")
+        explanations.append(f"至少 14 个计划日的完成率为 {completion:.0%}，容量谨慎上调 10%。")
 
     global_pressure = 0
     for deadline in deadlines:

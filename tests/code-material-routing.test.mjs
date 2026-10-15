@@ -51,7 +51,7 @@ test('actual practice-session adapter accepts structured-only code',()=>{
 });
 
 test('actual Companion export and generation preserve valid structured-only material',async()=>{
-    const script=`import json,sys
+    const script=`import json,sys,hashlib
 sys.path.insert(0,'companion')
 from account_sync_export import export_catalog
 from application.generated_content import validate_cards
@@ -66,7 +66,7 @@ for row in json.load(sys.stdin):
   bundle,_=export_catalog(catalog,{},'library-a','snapshot-a',1,'2026-10-08T00:00:00.000Z');result['export']=bundle['items'][0]
  except ValueError:result['export']=None
  try:
-  generated=validate_cards({'subjects':[{'id':'code','pluginType':'code','items':[item]}]},title='Synthetic',scope='Synthetic',seed={},stamp=lambda fmt:'2026-10-08',code_material_available=has_executable_code_material)
+  generated=validate_cards({'subjects':[{'id':'code','pluginType':'code','items':[item]}]},title='Synthetic',scope='Synthetic',seed={},stamp=lambda fmt:'2026-10-08',code_material_available=has_executable_code_material,hash_text=lambda text:hashlib.sha256(text.encode('utf-8')).hexdigest())
   result['generated']=generated['subjects'][0]['items'][0]
  except ValueError:result['generated']=None
  out.append(result)

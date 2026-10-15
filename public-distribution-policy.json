@@ -1,0 +1,373 @@
+{
+  "schemaVersion": 1,
+  "policyVersion": "1.0.0",
+  "review": {
+    "baselineCommit": "e98b596af0ce603c7743c17397914c7f8bedf232",
+    "manualReviewRequired": true,
+    "scope": "Review source, screenshots, provenance, archives and third-party licenses for each selective import. Checks do not prove absence of all sensitive material. The pretest hook runs the distribution guard before preparing ignored assets."
+  },
+  "requiredFiles": [
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CONTRIBUTING.zh-CN.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "CODE_OF_CONDUCT.md",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/README.md",
+    "docs/open-source.md",
+    "companion/LICENSE",
+    "companion/THIRD_PARTY_NOTICES.md",
+    "companion/program-files.json",
+    "package.json",
+    ".openai/hosting.json",
+    ".gitleaks.toml",
+    "scripts/prepare-companion-assets.mjs",
+    "scripts/prepare-browser-assets.mjs",
+    "scripts/prepare-paper-worker.mjs",
+    "scripts/prepare-python-runtime.mjs",
+    "tests/fixtures/public-baseline.json",
+    "tests/fixtures/nonword-baseline-preview.mjs",
+    "docs/en/getting-started.md",
+    "docs/en/development.md",
+    "docs/en/FAQ.md",
+    "docs/en/privacy.md",
+    "docs/en/roadmap.md",
+    "docs/zh-CN/getting-started.md",
+    "docs/zh-CN/development.md",
+    "docs/zh-CN/FAQ.md",
+    "docs/zh-CN/privacy.md",
+    "docs/zh-CN/roadmap.md",
+    "docs/third-party/npm-licenses.json"
+  ],
+  "excluded": {
+    "directories": [
+      "docs/verification",
+      "docs/superpowers",
+      "docs/plans",
+      "docs/implementation-notes",
+      "docs/handoffs",
+      "outputs",
+      "work",
+      "scratch",
+      "backups",
+      ".codex-staging",
+      ".artifacts",
+      "test-results",
+      "playwright-report",
+      "dist",
+      "out",
+      "build",
+      ".next",
+      ".vinext",
+      "coverage",
+      ".stage2-material",
+      ".superpowers",
+      ".wrangler",
+      ".openai/outputs",
+      "companion/runtime",
+      "companion/data/learning-workspace",
+      "companion/data/setup-backups"
+    ],
+    "directoryNames": [
+      "node_modules",
+      "__pycache__",
+      ".venv",
+      ".git",
+      ".aws",
+      ".ssh"
+    ],
+    "filenamePatterns": [
+      "^(?:CODEX|DSH|ANTIGRAVITY)_RELAY_",
+      "^\\.env(?:\\..+)?$",
+      "^\\.dev\\.vars(?:\\..+)?$",
+      "^config\\.local\\.json$",
+      "^hosting\\.local\\.json$",
+      "^(?:credentials|secrets)\\.(?:json|ya?ml|toml)$",
+      "^\\.gitleaks-report.*\\.json$",
+      "^runtime-instance\\.json$"
+    ],
+    "extensions": [
+      ".exe",
+      ".dll",
+      ".so",
+      ".dylib",
+      ".pyc",
+      ".pyo",
+      ".msi",
+      ".msix",
+      ".dmg",
+      ".pkg",
+      ".appx",
+      ".zip",
+      ".7z",
+      ".rar",
+      ".tar",
+      ".gz",
+      ".tgz",
+      ".db",
+      ".db-wal",
+      ".db-shm",
+      ".sqlite",
+      ".sqlite3",
+      ".sqlite-wal",
+      ".sqlite-shm",
+      ".sqlite3-wal",
+      ".sqlite3-shm",
+      ".pem",
+      ".key",
+      ".p12",
+      ".pfx",
+      ".log"
+    ]
+  },
+  "archiveExceptions": [
+    {
+      "path": "public/knowledge-starter-kit/structure.zip",
+      "reason": "Only the existing original Markdown starter kit archive. Its exact bytes are pinned below; adding or replacing an archive requires manual content and provenance review."
+    }
+  ],
+  "provenanceRoots": [
+    "examples",
+    "public/knowledge-starter-kit"
+  ],
+  "protectedFiles": [
+    {
+      "path": "examples/course-tasks/requirements-model-checks.json",
+      "sha256": "778774ff26202bfa4c80e0ab9f548e791035fe56a70bac69db3b8a093c136e3d",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "examples/course-tasks/requirements-original.json",
+      "sha256": "e464a100d43f9b1792589944b40028474d9348d1db48ef7f1df04e90f4fb79d8",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "examples/course-tasks/requirements-original.md",
+      "sha256": "918d2cff1d515b2c98bf547b665293e9b6d1e16687f9091771dcda7f36c34898",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "examples/d1/app/api/notes/route.ts",
+      "sha256": "a3d4a74fd53b7bf53e2df41f169d9d9d44a8b22aeb6d92f4e754956079af8909",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "examples/d1/db/schema.ts",
+      "sha256": "d89eabd95716ce404f5f7ca2a254220435be8ddce7c899d7ef461ff22ec80454",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "examples/papers/activation-functions.md",
+      "sha256": "bbbe1ee463035441a7eaa0b86640b32008fb08c58a088ab99360c6171f430a84",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/CONNECTIONS.md",
+      "sha256": "164344f1aff2c1e5269b7aff55ba249e4a06ca927d8ae7eb087dddbfee4625d5",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/OBSIDIAN.md",
+      "sha256": "1c45d341af6f320199ff10274085bd895d08abd0bd474f5eed475f7f38dfc504",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/QUICKSTART.md",
+      "sha256": "2aa80ac9ea0a4e761741d45313b3b34dff01aecc501b063acf37ec85486136b6",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/README.md",
+      "sha256": "61c2a9456a859e4d1e052c62f23ebe4bd476d9d2eaa4fec91fc782de5ab2e377",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Starter/records/README.md",
+      "sha256": "ce171376ec4b0706c5e8b5a042495dae4b55585aa1efb44ee81c6fbe60b2877c",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/TROUBLESHOOTING.md",
+      "sha256": "232dcd62e8c2e2a3ffe1c0605c5afa84ec81706544481b633a36d101a301b6aa",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Templates/concepts-template.md",
+      "sha256": "2437a04740424441461318df57767a548134b9b2ec939b1a8a7046d2f4963246",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Templates/learning-record-template.md",
+      "sha256": "557c2c2bd228f3cbbf96363970de19d40cc3e0e133a771172db6ccaf82034517",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Templates/python-template.md",
+      "sha256": "168c4b6772c7f4b41d06fa2ae41f0f99a11678aa2633cc55be658a2a33ec168a",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Templates/reading-template.md",
+      "sha256": "6601a2d1b1392480e77370bf4c9a8f8cf755d1eedf54a498abbedd7074c2e390",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/Templates/vocabulary-template.md",
+      "sha256": "649f03918b42b0c8b63ad65ed06112bcf083ffb185c11903e35791430fd65639",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/WORKFLOW.md",
+      "sha256": "a84438caa89778c86e68123b0b1402bc81bf67fdc7050f9d8d4ffbf3dbc5e7aa",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/concepts.md",
+      "sha256": "41630b1e5601db68d9ca177c8eb2a31a13fa89f0c496c410ebe6707053738793",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/course.md",
+      "sha256": "ab97a242f3b41d75a3bc5d8dab84919c8eb7736917abe2cfd55afc9bece8e2d6",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/paper.md",
+      "sha256": "02f553ae8ab4900f8e11d432d5556c5184ba152cbd0d0cdbadbc184e1d612e89",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/python.md",
+      "sha256": "0e48925e1d720c6134bac606741ac670728fd4622633ce49138d2f98a25795b5",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/structure.zip",
+      "sha256": "a1457acb8076ae1ef1710085ea6780d3805abd98bce0b493e888fcea7c4ed4d4",
+      "normalization": "bytes",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "public/knowledge-starter-kit/vocabulary.md",
+      "sha256": "5afe641edb74510550787b989c837b710302c4d772472b1c773fd954be7a830d",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "app/paper-study.ts",
+      "sha256": "25a8db2fd72a2ab3777005ba8c74bcd31dc1ad78d5ab3908949e4de05ec588f8",
+      "normalization": "utf8-lf",
+      "provenance": "Original project educational/example material from the initial public snapshot; synthetic, not learner records or third-party course/paper excerpts."
+    },
+    {
+      "path": "tests/fixtures/public-baseline.json",
+      "sha256": "a7875e5f1a2bae55c57937814638701e900913557b49accd1823b2a84bc88249",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public baseline attestation and synthetic preview adapter; private Git ancestry is not required."
+    },
+    {
+      "path": "tests/fixtures/nonword-baseline-preview.mjs",
+      "sha256": "bc1bbf39004f7786c3c19a2d40f20cee95727cb772fd70d30d1c7a12fe090780",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public baseline attestation and synthetic preview adapter; private Git ancestry is not required. Reviewed maintenance extension: preserve the frozen public attestation/digest checks while adding isolated code and owner/library scenarios; the public-baseline.json bytes remain unchanged."
+    },
+    {
+      "path": ".gitleaks.toml",
+      "sha256": "7ffe3a63b2661275b34462c5bc5215602821f663c09a5da47ab0fd579cedc2e1",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public scanner configuration: default rules plus only the exact synthetic math exposure digest exception."
+    },
+    {
+      "path": "companion/config.json",
+      "sha256": "7ac54c63fce80b71d97b65879aa6165402bf8bcc2a8208b28018949aebf5a59a",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public empty local-root configuration template; no account credentials or local operator paths."
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "52fc781ae2d0b5505905cbf34e817f916b5db6421af198a2d2495dcd9b65c4c8",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public complete MIT license, retained for source and Companion redistribution."
+    },
+    {
+      "path": "companion/LICENSE",
+      "sha256": "52fc781ae2d0b5505905cbf34e817f916b5db6421af198a2d2495dcd9b65c4c8",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public complete MIT license, retained for source and Companion redistribution."
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "36bdd873ecc5ec3f9639ebbb338e1c06b657cd65ae17439010a0ed544f02efe7",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public third-party distribution notices; preserve upstream terms and review any notice change explicitly."
+    },
+    {
+      "path": "companion/THIRD_PARTY_NOTICES.md",
+      "sha256": "0b6758c49e071cb1f4d0661df332898726d51d0f2f5681e0476982c0a43411bc",
+      "normalization": "utf8-lf",
+      "provenance": "Initial public third-party distribution notices; preserve upstream terms and review any notice change explicitly."
+    }
+  ],
+  "hosting": {
+    "path": ".openai/hosting.json",
+    "value": {
+      "project_id": null,
+      "d1": "DB",
+      "r2": null
+    }
+  },
+  "package": {
+    "license": "MIT",
+    "repository": "https://github.com/zthagyamin/zhixue",
+    "scripts": {
+      "predev": "node scripts/prepare-browser-assets.mjs",
+      "prebuild": "npm run assets:companion && node scripts/prepare-browser-assets.mjs",
+      "pretest": "npm run open-source:check && npm run assets:companion",
+      "assets:companion": "node scripts/prepare-companion-assets.mjs"
+    }
+  },
+  "companionManifest": "companion/program-files.json",
+  "contentPatterns": [
+    {
+      "id": "private-repository",
+      "pattern": "github\\.com/zthagyamin/zhixue-study-loop"
+    },
+    {
+      "id": "private-operator-path",
+      "pattern": "C:[/\\\\]+Users[/\\\\]+30972(?:[/\\\\]|\\b)"
+    },
+    {
+      "id": "production-sites-binding",
+      "pattern": "appgprj_[a-zA-Z0-9]+"
+    },
+    {
+      "id": "private-key-material",
+      "pattern": "-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----"
+    }
+  ]
+}

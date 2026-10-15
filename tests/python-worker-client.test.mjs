@@ -9,6 +9,66 @@ class WorkerStub {
 }
 function fixture(timeoutMs=30){const workers=[];const client=createPythonWorkerClient(()=>{const w=new WorkerStub();workers.push(w);return w;},{loadTimeoutMs:100,runTimeoutMs:timeoutMs});return {client,workers};}
 async function ready(f){const p=f.client.ready();f.workers.at(-1).emit({type:'ready'});await p;}
+
+test('first scientific use replaces the potentially modified runtime and waits for preparation acknowledgment',async t=>{
+  const f=fixture(100);t.after(()=>f.client.dispose());await ready(f);const old=f.workers[0];
+  const plain=f.client.run('pass');await Promise.resolve();old.emit({type:'result',id:old.messages.at(-1).id,output:'ok'});await plain;
+  const run=f.client.run('import numpy as np');run.catch(()=>{});await Promise.resolve();
+  assert.equal(f.workers.length,2);assert.equal(old.stopped,true);
+  const clean=f.workers[1];assert.deepEqual(clean.messages,[{type:'init',scientificWarmup:true,scientificLibraries:'numpy'}]);
+  await assert.rejects(f.client.run('pass'),/正在运行/);
+  old.emit({type:'ready',scientificWarmup:true});assert.equal(clean.messages.length,1);
+  clean.emit({type:'ready',scientificWarmup:true,scientificLibraries:'numpy'});await Promise.resolve();
+  const request=clean.messages.at(-1);assert.equal(request.type,'run');
+  clean.emit({type:'result',id:request.id,output:'verified'});assert.equal((await run).output,'verified');
+  const again=f.client.run('import numpy');await Promise.resolve();assert.equal(f.workers.length,2);
+  clean.emit({type:'result',id:clean.messages.at(-1).id,output:'cached'});await again;f.client.dispose();
+});
+
+test('old runtime acknowledgment cannot claim scientific preparation',async t=>{
+  const f=fixture();t.after(()=>f.client.dispose());await ready(f);const run=f.client.run('import pandas');run.catch(()=>{});await Promise.resolve();
+  assert.equal(f.workers.length,2);f.workers[1].emit({type:'ready'});
+  await assert.rejects(run,/版本|科学库/);assert.equal(f.workers[1].stopped,true);f.client.dispose();
+});
+
+test('cancelling scientific preparation never sends the learner program',async t=>{
+  const f=fixture();t.after(()=>f.client.dispose());await ready(f);const run=f.client.run('import pandas');run.catch(()=>{});await Promise.resolve();
+  assert.equal(f.workers.length,2);const clean=f.workers[1];f.client.cancel();
+  await assert.rejects(run,{name:'AbortError'});clean.emit({type:'ready',scientificWarmup:true});
+  assert.equal(clean.messages.some(message=>message.type==='run'),false);assert.equal(clean.stopped,true);f.client.dispose();
+});
+
+test('requesting pandas after numpy starts a clean environment; pandas then covers numpy',async t=>{
+  const f=fixture(100);t.after(()=>f.client.dispose());await ready(f);
+  for(const [code,library,count] of [['import numpy','numpy',2],['import pandas','pandas',3]]){
+    const pending=f.client.run(code);pending.catch(()=>{});await Promise.resolve();assert.equal(f.workers.length,count);
+    const worker=f.workers.at(-1);assert.equal(worker.messages[0].scientificLibraries,library);
+    worker.emit({type:'ready',scientificWarmup:true,scientificLibraries:library});await Promise.resolve();
+    worker.emit({type:'result',id:worker.messages.at(-1).id,output:'ok'});await pending;
+  }
+  assert.equal(f.workers[1].stopped,true);
+  const pending=f.client.run('import numpy');await Promise.resolve();assert.equal(f.workers.length,3);
+  const worker=f.workers.at(-1);worker.emit({type:'result',id:worker.messages.at(-1).id,output:'cached'});await pending;
+});
+
+for(const reopen of [false,true])test('immediate cancellation cannot restart a waiting scientific run'+(reopen?' after another ready request':''),async t=>{
+  const f=fixture();t.after(()=>f.client.dispose());await ready(f);
+  const pending=f.client.run('import pandas');pending.catch(()=>{});f.client.cancel();
+  let opening;if(reopen){opening=f.client.ready();f.workers.at(-1).emit({type:'ready'});}
+  await assert.rejects(pending,{name:'AbortError'});if(opening)await opening;
+  assert.equal(f.workers.length,reopen?2:1);
+  assert.equal(f.workers.some(worker=>worker.messages.some(message=>message.scientificWarmup||message.type==='run')),false);
+});
+
+test('host program budget protects a used scientific worker even if it emits no running message',async t=>{
+  const workers=[],client=createPythonWorkerClient(()=>{const worker=new WorkerStub();workers.push(worker);return worker;},
+    {loadTimeoutMs:100,preparationTimeoutMs:50,runTimeoutMs:10});t.after(()=>client.dispose());
+  const opened=client.ready();workers[0].emit({type:'ready'});await opened;
+  const first=client.run('import numpy');first.catch(()=>{});await Promise.resolve();const worker=workers[1];
+  worker.emit({type:'ready',scientificWarmup:true,scientificLibraries:'numpy'});await Promise.resolve();
+  worker.emit({type:'result',id:worker.messages.at(-1).id,output:'ok'});await first;
+  await assert.rejects(client.run('import numpy'),{name:'TimeoutError'});assert.equal(worker.stopped,true);
+});
 test('worker carries stdin, returns bounded result and rejects overlapping runs',async()=>{
   const f=fixture();await ready(f);const p=f.client.run('print(input())','hello');
   await assert.rejects(f.client.run('pass'),/正在运行/);

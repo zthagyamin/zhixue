@@ -2,6 +2,7 @@
 import copy
 import json
 import unittest
+from pathlib import Path
 from unittest import mock
 import test_gateway_server as fixtures
 import index_gateway
@@ -13,6 +14,84 @@ try:
 except ImportError:
     planning_evidence = None
 server = fixtures.server
+
+
+class PracticeCompletionEligibilityTests(unittest.TestCase):
+    def setUp(self):
+        self.fixture = json.loads((Path(__file__).parent / 'fixtures/practice-completion-source-v1.json').read_text(encoding='utf-8'))
+        self.catalog = {'practiceSources': copy.deepcopy(self.fixture['sources']),
+                        'subjects': [{'words': [{'itemKey': key} for key in self.fixture['wordKeys']]}]}
+
+    def record(self, case):
+        event = {'eventId': 'completion-' + case['id'], 'coreHash': 'a' * 64,
+                 'eventType': 'practice-attempt', 'item': {'key': case['key']},
+                 'attempt': {'correct': True, 'stageAfter': 3}}
+        record = {'event': event, 'subjectId': 'course'}
+        if case['proof'] is not None:
+            observation = {'itemSource': {'itemKey': case['key'],
+                           'subjectId': 'another-course' if case.get('wrongSubject') else 'course',
+                           'sourceHash': case['proof']}}
+            record['planningEvidence'] = planning_evidence.seal(observation, event)
+            if case.get('wrongCore'):
+                record['planningEvidence']['coreHash'] = 'd' * 64
+                record['planningEvidence'] = planning_evidence.seal(
+                    record['planningEvidence'], {**event, 'coreHash': 'd' * 64})
+        return record
+
+    def current_record(self):
+        return self.record(self.fixture['cases'][0])
+
+    def test_shared_current_source_cases(self):
+        for case in self.fixture['cases']:
+            with self.subTest(case=case['id']):
+                self.assertEqual(planning_evidence.practice_completion_eligible(self.record(case), self.catalog), case['expected'])
+
+    def test_source_proof_rejects_tampered_evidence_hash(self):
+        record = self.current_record()
+        record['planningEvidence']['evidenceHash'] = 'f' * 64
+        self.assertFalse(planning_evidence.practice_completion_eligible(record, self.catalog))
+
+    def test_proof_must_bind_event_id_item_key_and_record_subject(self):
+        for field in ('eventId', 'itemKey', 'subjectId'):
+            record = self.current_record()
+            if field == 'eventId':
+                evidence = {**record['planningEvidence'], field: 'different-event'}
+                record['planningEvidence'] = planning_evidence.seal(evidence, {**record['event'], field: 'different-event'})
+            elif field == 'itemKey':
+                evidence = copy.deepcopy(record['planningEvidence'])
+                evidence['itemSource'][field] = 'practice:different'
+                record['planningEvidence'] = planning_evidence.seal(evidence, record['event'])
+            else:
+                record[field] = 'another-course'
+            with self.subTest(field=field):
+                self.assertFalse(planning_evidence.practice_completion_eligible(record, self.catalog))
+
+    def test_conflicting_catalog_versions_cannot_choose_a_matching_duplicate(self):
+        for field, value in (('subjectId', 'another-course'), ('sourceHash', 'c' * 64)):
+            catalog = copy.deepcopy(self.catalog)
+            catalog['practiceSources'].append({**catalog['practiceSources'][0], field: value})
+            with self.subTest(field=field):
+                self.assertFalse(planning_evidence.practice_completion_eligible(self.current_record(), catalog))
+        self.catalog['practiceSources'].append(copy.deepcopy(self.catalog['practiceSources'][0]))
+        self.assertTrue(planning_evidence.practice_completion_eligible(self.current_record(), self.catalog))
+
+    def test_removed_current_source_cannot_complete_from_old_proof(self):
+        self.catalog['practiceSources'] = []
+        self.assertFalse(planning_evidence.practice_completion_eligible(self.current_record(), self.catalog))
+
+    def test_word_alias_completion_survives_changed_word_hash_without_a_source_proof(self):
+        self.catalog['subjects'][0]['words'] = [{'itemKey': 'word:canonical', 'legacyKeys': ['word:w'], 'sourceHash': 'e' * 64}]
+        self.assertTrue(planning_evidence.practice_completion_eligible(self.record(self.fixture['cases'][-1]), self.catalog))
+        unknown = self.record({**self.fixture['cases'][-1], 'key': 'word:removed'})
+        self.assertFalse(planning_evidence.practice_completion_eligible(unknown, self.catalog))
+
+    def test_only_successful_stage_three_practice_attempts_complete(self):
+        for patch in ({'eventType': 'review-scheduled'}, {'attempt': {'correct': False, 'stageAfter': 3}},
+                      {'attempt': {'correct': True, 'stageAfter': 2}}):
+            record = self.current_record()
+            record['event'].update(patch)
+            with self.subTest(patch=patch):
+                self.assertFalse(planning_evidence.practice_completion_eligible(record, self.catalog))
 
 
 class PlanningEvidenceTests(unittest.TestCase):
@@ -28,7 +107,7 @@ class PlanningEvidenceTests(unittest.TestCase):
     def test_word_identity_is_local_only_and_survives_removed_source(self):
         root = self.fixture.builder.subject('words', 'three-stage', 'legacy')
         source = self.fixture.builder.write(root + '/words.md', '---\ntype: vocabulary-database\n---\n| 单词 | 释义 | 原文语境 |\n|---|---|---|\n| Tree | PRIVATE meaning | PRIVATE context |\n')
-        payload = self.fixture.fixture.make_v3_activity('word-identity-event', item_key='word:tree', state_ref=root + '/state.md', ability_id='word:tree')
+        payload = self.fixture.source_payload('word-identity-event', item_key='word:tree', state_ref=root + '/state.md', ability_id='word:tree')
         payload['event']['attempt']['stageBefore'] = 0
         payload['event']['coreHash'] = server.compute_study_event_core_hash(payload['event'])
         original = copy.deepcopy(payload['event'])
@@ -47,7 +126,7 @@ class PlanningEvidenceTests(unittest.TestCase):
         source = self.fixture.builder.write(root + '/words.md', '---\ntype: vocabulary-database\n---\n| word | meaning |\n|---|---|\n| Tree | A tree |\n')
         catalog = index_gateway.load_gateway(self.vault)
         key = next(key for key, value in catalog['bindings'].items() if value['subjectId'] == 'unconfirmed-words')
-        payload = self.fixture.fixture.make_v3_activity('unknown-language-word', item_key=key, state_ref=root + '/state.md', ability_id=key)
+        payload = self.fixture.source_payload('unknown-language-word', item_key=key, state_ref=root + '/state.md', ability_id=key)
         payload['event']['attempt']['stageBefore'] = 0
         payload['event']['coreHash'] = server.compute_study_event_core_hash(payload['event'])
         self.fixture.accept(payload)
@@ -59,7 +138,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_review_before_and_actual_machine_after_are_frozen_once(self):
         card = self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('source-review-observed', item_key='practice:stable-card',
+        payload = self.fixture.source_payload('source-review-observed', item_key='practice:stable-card',
             state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         self.fixture.accept(payload)
         row = self.records()[0];observation = row['planningEvidence']
@@ -76,7 +155,7 @@ class PlanningEvidenceTests(unittest.TestCase):
         card = self.fixture.result_card()
         catalog = index_gateway.load_gateway(self.vault)
         binding = catalog['bindings']['practice:stable-card']
-        payload = self.fixture.fixture.make_v3_activity('practice-source-version', item_key='practice:stable-card',
+        payload = self.fixture.source_payload('practice-source-version', item_key='practice:stable-card',
             state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         original_hash = payload['event']['coreHash']
         self.fixture.accept(payload)
@@ -90,7 +169,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_corrupt_identity_metadata_does_not_silently_change_new_word_counts(self):
         self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('source-evidence-tamper', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('source-evidence-tamper', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         self.fixture.accept(payload)
         rows = self.records();self.assertTrue(rows[0]['planningEvidence'])
         path = next((self.vault / self.fixture.root / 'records').rglob('*.jsonl'))
@@ -100,9 +179,25 @@ class PlanningEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.records()
 
+    def test_conflicting_duplicate_source_proofs_are_rejected_in_either_order(self):
+        self.fixture.result_card()
+        payload = self.fixture.source_payload('duplicate-source-proof', item_key='practice:stable-card',
+            state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        self.fixture.accept(payload)
+        path = next((self.vault / self.fixture.root / 'records').rglob('*.jsonl'))
+        original = json.loads(path.read_text(encoding='utf-8'))
+        conflict = copy.deepcopy(original)
+        conflict['planningEvidence']['itemSource']['sourceHash'] = 'f' * 64
+        conflict['planningEvidence'] = planning_evidence.seal(conflict['planningEvidence'], conflict['event'])
+        for rows in ([original, conflict], [conflict, original]):
+            path.write_text(''.join(json.dumps(row) + '\n' for row in rows), encoding='utf-8')
+            with self.subTest(first_hash=rows[0]['planningEvidence']['itemSource']['sourceHash']):
+                with self.assertRaisesRegex(ValueError, 'conflicting-planning-evidence'):
+                    self.records()
+
     def test_source_write_failure_keeps_before_without_inventing_an_after(self):
         self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('source-write-pending', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('source-write-pending', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         with mock.patch.object(server.review_queue, 'apply_result', side_effect=ValueError('stale-vault-edit')):
             result = self.fixture.accept(payload)
         self.assertEqual(result['projectionStatus'], 'pending')
@@ -124,7 +219,7 @@ class PlanningEvidenceTests(unittest.TestCase):
         def fingerprint():
             return index_gateway.load_gateway(self.vault)['bindings']['practice:stable-card']['signature']
         before = fingerprint()
-        payload = self.fixture.fixture.make_v3_activity('stable-content-hash', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('stable-content-hash', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         self.fixture.accept(payload)
         self.assertEqual(fingerprint(), before)
         card.write_text(card.read_text(encoding='utf-8').replace('Stable review point', 'Changed learning content'), encoding='utf-8')
@@ -132,7 +227,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_machine_review_queue_never_becomes_part_of_the_answer(self):
         card = self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('review-answer-boundary', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('review-answer-boundary', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         self.fixture.accept(payload)
         parsed = server.learning_result.parse_result_file(self.vault, card)
         self.assertEqual(parsed['reviewPoints'], ['Stable review point'])
@@ -144,7 +239,7 @@ class PlanningEvidenceTests(unittest.TestCase):
         card = self.fixture.result_card();relative = card.relative_to(self.vault).as_posix()
         server.review_queue.apply_result(self.vault, relative, {'name': 'Stable review point'}, 'good', event_id='fixture-prior-good')
         server.review_queue.apply_result(self.vault, relative, {'name': 'Another pending point'}, 'again', event_id='fixture-other-point')
-        payload = self.fixture.fixture.make_v3_activity('queue-after-observation', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('queue-after-observation', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         self.fixture.accept(payload)
         self.assertTrue(self.records()[0]['planningEvidence']['afterReview']['enabled'])
         self.assertEqual([item['name'] for item in server.review_queue.read_queue(self.vault, relative)], ['Another pending point'])
@@ -161,7 +256,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_context_exposes_current_source_demands_and_verified_unit_progress(self):
         card = self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('context-practice-event', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('context-practice-event', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         payload['event']['occurredAt'] = '2026-08-31T01:00:00.000Z';payload['event']['scheduling']['reviewedAt'] = payload['event']['occurredAt']
         payload['event']['coreHash'] = server.compute_study_event_core_hash(payload['event'])
         self.fixture.accept(payload)
@@ -221,6 +316,8 @@ class PlanningEvidenceTests(unittest.TestCase):
     def test_evidence_pages_bind_source_and_plan_revision_and_preserve_all_rows(self):
         gateway = index_gateway.load_gateway(self.vault)
         binding = gateway['bindings'][self.fixture.key]
+        # Immutable accepted history for paging; this is not a new formal
+        # acceptance path and intentionally never disables source admission.
         for index in range(103):
             event = self.fixture.payload(f'page-evidence-{index:03d}')['event']
             index_gateway.record_subject_event(self.vault, binding, 'account', event, {})
@@ -234,7 +331,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_manual_edit_after_machine_write_is_not_sealed_as_the_machine_after_state(self):
         card = self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('after-state-race', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('after-state-race', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         write = server.review_queue.apply_result;actual = {}
         def write_then_edit(*args, **kwargs):
             result = write(*args, **kwargs)
@@ -277,7 +374,8 @@ class PlanningEvidenceTests(unittest.TestCase):
         builder.write_goals(rule='formal-mastered', basis='formal-state')
         builder.goal_path.write_text('\n'.join(line.replace('| open-note |', '| practice |') for line in builder.goal_path.read_text(encoding='utf-8').splitlines() if not line.startswith('| study |')) + '\n', encoding='utf-8')
         gateway = index_gateway.load_gateway(builder.vault);key, binding = next(iter(gateway['bindings'].items()))
-        event = self.fixture.fixture.make_v3_activity('formal-practice-success', item_key=key)['event']
+        event = self.fixture.source_payload('formal-practice-success', item_key=key)['event']
+        # Declared historical correct practice does not establish formal mastery.
         index_gateway.record_subject_event(builder.vault, binding, 'account', event, {})
         context = planning_evidence.build_context(builder.vault, gateway, 'account', server.validate_study_event_v3)
         catalog = context['catalog'];unit = catalog['subjects'][0]['units'][0]
@@ -299,7 +397,7 @@ class PlanningEvidenceTests(unittest.TestCase):
 
     def test_later_failure_does_not_roll_back_a_manual_edit_after_queue_write(self):
         card = self.fixture.result_card()
-        payload = self.fixture.fixture.make_v3_activity('after-edit-rollback', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
+        payload = self.fixture.source_payload('after-edit-rollback', item_key='practice:stable-card', state_ref=self.fixture.root + '/state.md', ability_id='card-ability')
         write = server.review_queue.apply_result
         def write_then_edit(*args, **kwargs):
             result = write(*args, **kwargs)

@@ -2,7 +2,7 @@
 
 [简体中文](../zh-CN/privacy.md) · [Get started](getting-started.md) · [FAQ](FAQ.md)
 
-This document explains the public 1.41.1 implementation boundaries. It is not a promise that every deployment, optional integration, or third-party service has identical settings. The hosted service, your Companion, your browser, and any API provider are different processing locations.
+This document explains the public 1.42.2 implementation boundaries. It is not a promise that every deployment, optional integration, or third-party service has identical settings. The hosted service, your Companion, your browser, and any API provider are different processing locations.
 
 ## Source ownership and permission
 
@@ -27,7 +27,7 @@ A portable/“cloud-safe” contract restricts fields and identities. It does no
 
 Local-mode AI keys and Notion authorization use the system credential store through Companion. Account-mode model keys are independently configured and encrypted in the account service. These are different storage scopes; the local key is not automatically published as an account key.
 
-Encryption at storage is not end-to-end secrecy from the service performing the API request. The selected API endpoint receives the key needed for authentication and the request content. A custom API address changes the recipient; review it before using your key.
+Encryption at storage is not end-to-end secrecy from the service performing the API request. The selected API endpoint receives the key needed for authentication and the request content. A custom API address changes the recipient; review it before using your key. Account-mode AI accepts the official OpenAI/DeepSeek origins and additional public HTTPS origins registered by the deployment maintainer through the empty-by-default allowed-origin setting in the environment template. An account request cannot add an origin. Local Companion endpoint configuration is separate.
 
 AI settings require acknowledgment of content transmission and possible charges. Usage is billed to the API account associated with the configured key, subject to provider limits. A connection test makes a real API call with a fixed check message, not the current learning page. Model availability and connection success do not establish judgment accuracy.
 

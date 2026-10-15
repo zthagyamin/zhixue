@@ -7,7 +7,7 @@ export interface LearningAttemptStorePort {
     supported(): Promise<boolean>;
     read(scope: AttemptScope, attemptId: string): Promise<LearningAttempt | null>;
     list(scope: AttemptScope, groupId?: string): Promise<LearningAttempt[]>;
-    mutate(scope: AttemptScope, mutation: AttemptMutation): Promise<AttemptReceipt>;
+    mutate(scope: AttemptScope, mutation: AttemptMutation, writerGrantId?: string): Promise<AttemptReceipt>;
 }
 export interface AttemptCloudPort {
     read(attemptId: string): Promise<LearningAttempt | null>;

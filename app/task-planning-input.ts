@@ -1,5 +1,5 @@
 // @ts-expect-error TS5097: standalone Node contracts.
-import {studyDayBounds,sourceReviewDueAt,completionDay} from '../src/domain/planning/index.ts';
+import {studyDayBounds,sourceReviewDueAt,completionDay,currentPracticeCompletionEvents,currentPracticeCompletionReviews} from '../src/domain/planning/index.ts';
 import type {PlanningInputFacts,CompletionFacts} from '../src/domain/planning';
 export type {PlanningHistoryStatus,PlanningInputFacts} from '../src/domain/planning';
 import type {StudyAttemptEventV3,StudyEventV3} from './study-event-v3';
@@ -68,7 +68,10 @@ export function completedPlanTaskIds(plan:TaskPlanV2|null,facts:CompletionFacts)
   const completedKeys=new Set(completeAttempts(facts.events).filter(event=>studyDay(event.occurredAt)===plan.day).map(event=>keyFor(event.item.key)).filter(Boolean));
   return plan.tasks.filter(task=>{
     if (task.category==='review') return facts.reviews.some(round=>round.completed
-      && (round.roundId===task.reviewRoundId || round.aliasRoundIds?.includes(task.reviewRoundId??'')));
+      && (round.roundId===task.reviewRoundId || round.aliasRoundIds?.includes(task.reviewRoundId??''))
+      && (!facts.catalog.practiceSources?.some(source=>source.itemKey===round.itemKey)
+        && facts.catalog.subjects.some(subject=>subject.words.some(word=>[word.itemKey,...word.legacyKeys??[]].includes(round.itemKey)))
+        || completeAttempts(facts.events).some(event=>event.item.key===round.itemKey&&event.occurredAt===round.completedAt)));
     if (task.completionRule.startsWith('formal-')) return task.unitIds.length>0 && task.unitIds.every(id=>facts.catalog.subjects
       .find(subject=>subject.subjectId===task.subjectId)?.units.some(unit=>unit.unitId===id && unit.completionRule===task.completionRule && unit.formalComplete));
     if (task.completionRule==='self-report') {
@@ -80,7 +83,7 @@ export function completedPlanTaskIds(plan:TaskPlanV2|null,facts:CompletionFacts)
 }
 
 /** Compose only complete, integrity-checked channels; failures never become empty progress. */
-export async function buildDailyPlanningInput(facts:PlanningInputFacts):Promise<{input:DailyPlanningInput;events:StudyEventV3[];completedTaskIds:string[];taskEvents:TaskEventV1[]}> {
+export async function buildDailyPlanningInput(facts:PlanningInputFacts):Promise<{input:DailyPlanningInput;events:StudyEventV3[];completionEvents:StudyEventV3[];completedTaskIds:string[];taskEvents:TaskEventV1[]}> {
   if (['local','companion','tasks'].some(key=>facts.history[key as keyof typeof facts.history]!=='complete')
     || !['complete','not-applicable'].includes(facts.history.cloud)) throw new Error('planning-history-not-ready');
   if (!validPlanDay(facts.day)) throw new Error('invalid-plan-day');
@@ -101,11 +104,13 @@ export async function buildDailyPlanningInput(facts:PlanningInputFacts):Promise<
     if (Date.parse(report.occurredAt)<end) reports.set(report.eventId,report);
   }
   const taskEvents=[...reports.values()];
-  const reviews=await projectReviewObligations({day:facts.day,words,events,previous:previousReviews(facts.previous),catalog:context.catalog,
+  const historyReviews=await projectReviewObligations({day:facts.day,words,events,previous:previousReviews(facts.previous),catalog:context.catalog,
     sourceHistory:records.filter(row=>Date.parse(row.event.occurredAt)<end),currentSourceReviews:context.sourceReviews,
     sourceObservedAt:context.observedAt,timedSourceReviews:context.captureReviews});
-  const completions=projectUnitCompletions(context.catalog,events,taskEvents,identities);
+  const completionEvents=currentPracticeCompletionEvents(context.catalog,events,records);
+  const reviews=currentPracticeCompletionReviews(context.catalog,historyReviews,completionEvents,facts.day,events);
+  const completions=projectUnitCompletions(context.catalog,completionEvents,taskEvents,identities);
   const input:DailyPlanningInput={day:facts.day,catalog:context.catalog,words,reviews,completions,previous:facts.previous,
     wordIdentities:identities,...(facts.optionalMinutes===undefined?{}:{optionalMinutes:facts.optionalMinutes})};
-  return {input,events,taskEvents,completedTaskIds:completedPlanTaskIds(facts.previous,{catalog:context.catalog,events,completions,reviews,identities,taskEvents})};
+  return {input,events,completionEvents,taskEvents,completedTaskIds:completedPlanTaskIds(facts.previous,{catalog:context.catalog,events:completionEvents,completions,reviews,identities,taskEvents})};
 }

@@ -4,6 +4,7 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import sys
 
@@ -28,6 +29,33 @@ class SourceAreaParsingTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return path
+
+    def test_oversized_source_fails_without_partial_study_items(self) -> None:
+        path = self.write_source('large.md', '# synthetic')
+        with path.open('r+b') as stream:
+            stream.seek(20_000_000)
+            stream.write(b'x')
+        self.assertEqual(path.stat().st_size, 20_000_001)
+        with self.assertRaisesRegex(ValueError, '过大|上限'):
+            source_area.parse_source_area(self.root)
+
+    def test_source_reader_rejects_redirected_file_before_parsing(self) -> None:
+        path = self.write_source('redirected.md', '# synthetic')
+        from infrastructure import vault_documents
+        original = vault_documents.redirects_path
+        identity = path.lstat().st_ino
+        with mock.patch.object(vault_documents, 'redirects_path',
+                               side_effect=lambda info: info.st_ino == identity or original(info)):
+            with self.assertRaises(ValueError):
+                source_area.parse_source_file(path)
+
+    def test_source_content_after_excerpt_budget_is_preserved(self) -> None:
+        text = ('---\ntype: study-loop-source\nstatus: active\n---\n'
+                + '普通解释。' * 20000
+                + '\n## 词汇\n| 单词 | 释义 |\n|---|---|\n| retained-word | 保留释义 |\n')
+        path = self.write_source('complete.md', text)
+        items = source_area.parse_source_file(path)
+        self.assertEqual([item['word'] for item in items], ['retained-word'])
 
     def test_vocabulary_table_rows_become_study_items(self) -> None:
         self.write_source("知学资料.md", """---

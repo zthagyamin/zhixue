@@ -27,8 +27,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import os
 from pathlib import Path
 from typing import Any
+from infrastructure.vault_documents import checked_literal_path, read_complete_source_text
 
 STUDY_LOOP_INTEGRATION_ROOT = "_System/Integrations/Study Loop"
 SOURCE_SUBFOLDER = "sources"
@@ -268,7 +270,7 @@ def parse_source_file(path: Path) -> list[dict[str, Any]]:
     if path.suffix.lower() not in SUPPORTED_SUFFIXES:
         return []
     try:
-        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        text = read_complete_source_text(path)
     except OSError:
         return []
     return parse_source_text(text, path)
@@ -291,9 +293,18 @@ def parse_source_area(vault_root: Path, integration_root: str = STUDY_LOOP_INTEG
         return []
     seen: set[str] = set()
     items: list[dict[str, Any]] = []
-    for path in sorted(sources_root.rglob("*")):
-        if not path.is_file() or path.suffix.lower() not in SUPPORTED_SUFFIXES:
-            continue
+    checked_literal_path(sources_root)
+    files: list[Path] = []
+
+    def failed_walk(error):
+        raise error
+
+    for folder, directories, names in os.walk(sources_root, followlinks=False, onerror=failed_walk):
+        base = checked_literal_path(Path(folder))
+        for directory in directories:
+            checked_literal_path(base / directory)
+        files.extend(base / name for name in names if Path(name).suffix.lower() in SUPPORTED_SUFFIXES)
+    for path in sorted(files):
         for item in parse_source_file(path):
             digest = content_hash(item)
             if digest in seen:

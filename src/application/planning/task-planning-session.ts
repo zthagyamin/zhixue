@@ -26,12 +26,13 @@ import {hashTaskEvent} from '../../domain/planning/index.ts';
 // @ts-expect-error TS5097: Node tests require explicit TypeScript extensions.
 import {canonicalizeJson} from '../../domain/evidence/index.ts';
 // @ts-expect-error TS5097: Node tests require explicit TypeScript extensions.
-import {studyDay} from '../../domain/planning/index.ts';
+import {studyDay,currentPracticeCompletionEvents,currentPracticeCompletionReviews} from '../../domain/planning/index.ts';
+import type {StudyEventV3} from '../../domain/evidence';
 
 export type TaskPlanningBundle=Omit<PlanningInputFacts,'day'|'previous'|'optionalMinutes'> & {longTermPlan?:LongTermPlanSnapshot|null;authority:PlanDocumentPayload;studyData?:unknown;offline?:boolean;pendingTaskCount?:number;cacheWarning?:string};
 export type TaskPlanConflict={revision:number;sourceHash:string;local:TaskDraft;remote:TaskPlanV2|null};
 export type TaskPlanningState=TaskPlanState & {minimumSpec?:LongTermPlanSpec|null;ready:boolean;busy:boolean;offline:boolean;catalog:PlanningCatalog|null;summary:TaskPlanSummary;
-  completedTaskIds:string[];reviewRounds:ReviewObligation[];message:string;lastSyncedAt?:string;pendingCount:number;conflict:TaskPlanConflict|null;lastBackup:TaskDraft|null};
+  completedTaskIds:string[];completionEvents:StudyEventV3[];reviewRounds:ReviewObligation[];message:string;lastSyncedAt?:string;pendingCount:number;conflict:TaskPlanConflict|null;lastBackup:TaskDraft|null};
 const emptySummary:TaskPlanSummary={newDone:0,newTarget:20,newMissing:0,reviewDone:0,reviewTotal:0};
 function semantic(plan:TaskPlanV2):string {
   return canonicalizeJson([plan.day,plan.sourceHash,plan.tasks,plan.vocabulary,plan.manual,plan.optionalMinutes??null,plan.longTermAllocation??null]);
@@ -44,7 +45,7 @@ export function createTaskPlanningSession(dependencies:{
   buildInput:(facts:PlanningInputFacts)=>Promise<PlanningInputComposition>;completedTasks:(plan:TaskPlanV2|null,facts:CompletionFacts)=>string[];
 }) {
   let state:TaskPlanningState={workspaceId:'',day:'',draft:null,loading:false,error:null,ready:false,busy:false,offline:false,catalog:null,
-    summary:emptySummary,completedTaskIds:[],reviewRounds:[],message:'',pendingCount:0,conflict:null,lastBackup:null};
+    summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',pendingCount:0,conflict:null,lastBackup:null};
   let bundle:TaskPlanningBundle|null=null,composed:PlanningInputComposition|null=null;
   let context=0,readVersion=0;
   const now=dependencies.now;
@@ -71,9 +72,11 @@ export function createTaskPlanningSession(dependencies:{
   const publishCompletions=()=>{
     if(!composed || !bundle) return;
     const plan=controller.snapshot().draft?.plan??null;
-    const completedTaskIds=dependencies.completedTasks(plan,{catalog:bundle.context.catalog,events:composed.events,
-      completions:composed.input.completions,reviews:composed.input.reviews,identities:composed.input.wordIdentities??[],taskEvents:composed.taskEvents});
-    state={...state,minimumSpec:bundle.longTermPlan?.spec??null,completedTaskIds,reviewRounds:composed.input.reviews,summary:plan?summarizeTaskPlan(plan,composed.input.words,composed.input.reviews):emptySummary};publish();
+    const completionEvents=currentPracticeCompletionEvents(bundle.context.catalog,composed.events,bundle.companionRecords);
+    const reviewRounds=currentPracticeCompletionReviews(bundle.context.catalog,composed.input.reviews,completionEvents,state.day,composed.events);
+    const completedTaskIds=dependencies.completedTasks(plan,{catalog:bundle.context.catalog,events:completionEvents,
+      completions:composed.input.completions,reviews:reviewRounds,identities:composed.input.wordIdentities??[],taskEvents:composed.taskEvents});
+    state={...state,minimumSpec:bundle.longTermPlan?.spec??null,completedTaskIds,completionEvents,reviewRounds,summary:plan?summarizeTaskPlan(plan,composed.input.words,reviewRounds):emptySummary};publish();
   };
   const regenerate=async(canContinue=()=>true,minimums=false)=>{
     requireReady();const owner=context,epoch=readVersion;
@@ -196,7 +199,7 @@ export function createTaskPlanningSession(dependencies:{
     },
     open:async(workspaceId:string,day:string)=>{
       const owner=++context;readVersion++;bundle=null;composed=null;
-      state={...state,minimumSpec:null,ready:false,busy:false,offline:false,catalog:null,summary:emptySummary,completedTaskIds:[],reviewRounds:[],message:'',lastSyncedAt:undefined,pendingCount:0,conflict:null,lastBackup:null};
+      state={...state,minimumSpec:null,ready:false,busy:false,offline:false,catalog:null,summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',lastSyncedAt:undefined,pendingCount:0,conflict:null,lastBackup:null};
       await controller.open(workspaceId,day);
       if(owner!==context) return;
       const backup=await dependencies.loadLastBackup?.(workspaceId,day);

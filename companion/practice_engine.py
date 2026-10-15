@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from datetime import date
 from pathlib import Path
@@ -41,7 +42,8 @@ def build_base_item(card: dict[str, Any], materials: dict[str, Any]) -> dict[str
     review_point = (card.get("reviewPoints") or [""])[0]
     question_type = select_question_type(review_point, materials, card.get("pluginHint"))
     source_label = str(card.get("title") or card.get("itemId", ""))
-    if question_type == "quiz" and materials.get("prompt") and materials.get("answer"):
+    has_answer = materials.get("answer") is not None and bool(str(materials["answer"]).strip())
+    if question_type == "quiz" and materials.get("prompt") and has_answer:
         options = [str(materials["answer"])]
         for wrong in (materials.get("wrong") or [])[:3]:
             if str(wrong) not in options:
@@ -56,7 +58,7 @@ def build_base_item(card: dict[str, Any], materials: dict[str, Any]) -> dict[str
             "reviewPoint": review_point, "fingerprint": fingerprint_for(review_point, card.get("sourceNote", "")),
             "sourceLabel": source_label,
         }
-    if materials.get("prompt") and materials.get("answer"):
+    if materials.get("prompt") and has_answer:
         return {
             "itemId": card["itemId"], "abilityId": card["abilityId"], "domain": card["domain"],
             "sourceNote": materials.get("sourceNote") or card.get("sourceNote", ""),
@@ -250,15 +252,22 @@ def grade_answer(
         if (item.get('learningSupport') or {}).get('type')=='calculation':
             from calculation_grade import grade_calculation_reference
             return grade_calculation_reference(item,answer)
+        prompt = str(item.get("prompt") or "").strip()
+        if prompt and prompt == str(item.get("answer")).strip():
+            return {"correct": None, "verdict": "unknown", "source": "deterministic",
+                    "explanation": "材料尚未提供具体计算问题，不能把复习要点直接作为作答成绩；请核对来源。"}
         try:
             actual = float(answer)
             expected = float(item.get("answer"))
+            if not math.isfinite(expected) or not math.isfinite(actual):
+                return {"correct": None, "verdict": "unknown", "source": "deterministic",
+                        "explanation": "现有数值规则无法可靠核对这个参考结果或输入，请核对来源后重试。"}
             correct = _relative_error(actual, expected) <= 1e-6
             return {"correct": correct, "verdict": "correct" if correct else "wrong", "explanation": explanation}
         except (TypeError, ValueError):
-            # P2：期望答案可能是复习要点文本（I1 的无素材公式点），没有客观数值
-            # 可比——降级自评（spec §8：表达式不匹配 → 自评），不能判永远 wrong。
-            return self_assess_result(explanation)
+            # An unsupported reference/input is not a grade or a self-assessment.
+            return {"correct": None, "verdict": "unknown", "source": "deterministic",
+                    "explanation": "现有数值规则无法可靠核对这个参考结果或输入，请核对来源后重试。"}
     if qtype == "recall":
         if needs_concrete_recall_question(item):
             return self_assess_result("这份材料尚未提供具体问题，已暂停自测；没有调用 AI。")

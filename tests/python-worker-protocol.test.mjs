@@ -3,14 +3,39 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../public/workers/python-runtime.js',import.meta.url),'utf8');
+
+test('fresh scientific initialization loads fixed libraries before declaring ready without learner execution',async()=>{
+  const messages=[],operations=[];
+  const python={toPy:()=>({get:()=>()=>{},destroy(){}}),runPython(){},
+    loadPackagesFromImports:async code=>operations.push(['packages',code]),
+    runPythonAsync:async code=>operations.push(['import',code])};
+  const self={postMessage:value=>messages.push(value),__zhixueSandboxRuntime:async()=>({python,checker:''})};
+  vm.runInContext(source,vm.createContext({self}));await self.onmessage({data:{type:'init',scientificWarmup:true,scientificLibraries:'pandas'}});
+  assert.deepEqual(operations,[['packages','import numpy\nimport pandas'],['import','import numpy\nimport pandas']]);
+  assert.equal(messages.at(-1).type,'ready');assert.equal(messages.at(-1).scientificWarmup,true);
+});
 function fixture({packageError=false,longOutput=false}={}){
   const messages=[];let executions=0,stdout,input;
   const python={loadPackagesFromImports:async(_code,options)=>{if(packageError)options.errorCallback('package download failed');},setStdin:options=>{input=options.stdin;},setStdout:options=>{stdout=options.batched;},setStderr(){},toPy:()=>({destroy(){}}),runPythonAsync:async()=>{executions++;stdout(longOutput?'x'.repeat(30000):input?.()??'ok');return null;}};
   const self={postMessage:value=>messages.push(value)};
   const context=vm.createContext({self,fixturePython:python});
-  vm.runInContext(source+'\npython=fixturePython;checkAssertions=()=>2;validateTests=()=>{};',context);
+  vm.runInContext(source+'\npython=fixturePython;runtimeReady=true;checkAssertions=()=>2;validateTests=()=>{};',context);
   return {self,messages,context,python,executions:()=>executions};
 }
+
+test('scientific initialization cannot execute an early program while package preparation is pending',async()=>{
+  let release;const gate=new Promise(resolve=>{release=resolve;}),messages=[],operations=[];
+  const python={toPy:()=>({get:()=>()=>{},destroy(){}}),runPython(){},
+    loadPackagesFromImports:async()=>{operations.push('prepare');await gate;},
+    runPythonAsync:async source=>{operations.push(source);}};
+  const self={postMessage:message=>messages.push(message),__zhixueSandboxRuntime:async()=>({python,checker:''})};
+  vm.runInContext(source,vm.createContext({self}));
+  const init=self.onmessage({data:{type:'init',scientificWarmup:true,scientificLibraries:'numpy'}});
+  await Promise.resolve();await Promise.resolve();
+  await self.onmessage({data:{type:'run',id:1,code:'untrusted early program'}});
+  assert.deepEqual(operations,['prepare']);assert.deepEqual(messages,[]);
+  release();await init;assert.deepEqual(operations,['prepare','import numpy']);assert.equal(messages.at(-1).type,'ready');
+});
 test('a non-throwing package download failure stays an environment error and never executes learner code',async()=>{
   const f=fixture({packageError:true});await f.self.onmessage({data:{type:'run',id:1,code:'import numpy',testCode:'assert True',captureOutput:true}});
   assert.equal(f.executions(),0);assert.equal(f.messages.length,1);assert.equal(f.messages[0].type,'prepare-error');assert.match(f.messages[0].error,/package download failed/);

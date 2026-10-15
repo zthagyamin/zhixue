@@ -1,11 +1,24 @@
 """Disposable managed workspace for source UI tests. No external services."""
 import threading
+import sys
+from pathlib import Path
 from http.server import ThreadingHTTPServer
 from urllib.parse import urlparse
+
+FIXTURE_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(FIXTURE_ROOT))
+for name in ('server', 'external_sources', 'note_source_runtime'):
+    if name in sys.modules:
+        filename = getattr(sys.modules[name], '__file__', None)
+        if not isinstance(filename, str) or Path(filename).resolve().parent != FIXTURE_ROOT:
+            raise RuntimeError('Preview must use only its copied Companion')
 import server
 import external_sources
 import note_source_runtime
 from notion_connector import NotionError
+
+if any(Path(module.__file__).resolve().parent != FIXTURE_ROOT for module in (server, external_sources, note_source_runtime)):
+    raise RuntimeError('Preview must use only its copied Companion')
 
 class Keys:
     def __init__(self):self.values={}
@@ -29,5 +42,6 @@ server.deepseek_key=lambda:None
 server.NOTE_SOURCE_RUNTIME=note_source_runtime.SourceRuntime(external_sources.ExternalSources(server.LOCAL_DATABASE_PATH.parent,lambda:server.source_path('learning_vault_root'),Keys(),verify_owner=lambda owner:owner==server.installation_owner_hash(),client_factory=OfflineNotion),server.validate_study_event_v3)
 server.STATE={'status':'connected','contentMode':'personal','subjects':[]}
 threading.Thread(target=server.note_source_loop,args=(threading.Event(),),daemon=True).start()
+httpd=ThreadingHTTPServer(('127.0.0.1',server.CONFIG['port']),Handler)
 print('Isolated source Companion ready.',flush=True)
-ThreadingHTTPServer(('127.0.0.1',server.CONFIG['port']),Handler).serve_forever()
+httpd.serve_forever()

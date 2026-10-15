@@ -8,10 +8,11 @@ import hashlib
 import json
 import re
 import shutil
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from managed_markdown import replace_managed_block
 from task_plan_schema import validate_task_plan_integrity
@@ -35,11 +36,19 @@ def _timestamp(now: datetime) -> str:
     return value.strftime("%Y%m%dT%H%M%SZ")
 
 
-def _atomic_write(path: Path, content: str) -> None:
+def _atomic_write(path: Path, content: str, *, expected: bytes | None) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.zhixue.tmp")
-    temporary.write_text(content, encoding="utf-8", newline="")
-    temporary.replace(path)
+    temporary = path.with_name(f".{path.name}.zhixue-{uuid.uuid4().hex}.tmp")
+    try:
+        temporary.write_text(content, encoding="utf-8", newline="")
+        current = path.read_bytes() if path.exists() else None
+        if current != expected:
+            raise ValueError('stale-vault-edit')
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    # The generated content owns this receipt, not a subsequent editor's bytes.
+    return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
 
 def _read_text(path: Path) -> str:
@@ -188,6 +197,7 @@ def apply_current_plan(
     candidate: dict[str, Any],
     revision: int,
     now: datetime | None = None,
+    *, on_written: Callable[[Path, str, bytes | None], None] | None = None,
 ) -> Path:
     if 'schemaVersion' in candidate:
         candidate = validate_task_plan_integrity(candidate)
@@ -197,11 +207,14 @@ def apply_current_plan(
         raise ValueError("invalid-plan-revision")
     now = now or datetime.now(timezone.utc)
     path = Path(vault_root) / PLAN_RELATIVE_PATH
-    original = _read_text(path) if path.exists() else "# 学习计划总览\n"
+    original_bytes = path.read_bytes() if path.exists() else None
+    original = original_bytes.decode('utf-8') if original_bytes is not None else "# 学习计划总览\n"
     if PLAN_BEGIN not in original:
         _backup(Path(vault_root), path, now)
     updated = replace_managed_block(original, PLAN_BEGIN, PLAN_END, _render_plan(candidate, revision))
-    _atomic_write(path, updated)
+    written_hash = _atomic_write(path, updated, expected=original_bytes)
+    if on_written is not None:
+        on_written(path, written_hash, original_bytes)
     return path
 
 
@@ -265,7 +278,8 @@ def capture_review_task(vault_root: Path, candidate: dict, item: dict, capture_i
             'completionRule': rule, 'sourceHash': binding['signature']}
 
 
-def migrate_plan(vault_root: Path, legacy_area: Path, now: datetime) -> MigrationResult:
+def migrate_plan(vault_root: Path, legacy_area: Path, now: datetime, *,
+                 on_written: Callable[[Path, str, bytes | None], None] | None = None) -> MigrationResult:
     current = read_current_plan(vault_root)
     if current is not None:
         return MigrationResult("already-migrated", current.get("revision"), str(PLAN_RELATIVE_PATH))
@@ -286,5 +300,5 @@ def migrate_plan(vault_root: Path, legacy_area: Path, now: datetime) -> Migratio
     latest = valid[-1]
     revision = int(latest.get("revision") or len(valid))
     _backup(Path(vault_root), revisions_path, now)
-    apply_current_plan(Path(vault_root), latest["after"], revision, now=now)
+    apply_current_plan(Path(vault_root), latest["after"], revision, now=now, on_written=on_written)
     return MigrationResult("migrated", revision, str(revisions_path.relative_to(vault_root)))

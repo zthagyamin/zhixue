@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from account_sync_schema import study_id, study_object, study_text
-from account_sync_worker import AccountBindingFailure, CloudFailure, SyncStopped
+from account_sync_worker import AccountAuthorizationFailure, AccountBindingFailure, AccountNetworkFailure, CloudFailure, SyncStopped
 
 
 def dispatch(service, method, path, owner, origin, allowed_origins, payload=None):
@@ -25,8 +25,14 @@ def dispatch(service, method, path, owner, origin, allowed_origins, payload=None
         if path.endswith('/start'):
             return 200, runtime().start(owner, payload['grantId'])
         return 200, runtime().stop(owner, payload['grantId'])
-    except (CloudFailure, AccountBindingFailure):
-        return 409, {'error': 'account-cloud-link-not-ready', 'message': '云端授权未就绪或已变化，请刷新账号同步设置后重试。'}
+    except AccountBindingFailure:
+        return 409, {'error': 'account-cloud-link-changed', 'message': '云端账号、资料库或设备绑定已变化，请刷新后核对连接。'}
+    except (CloudFailure, AccountAuthorizationFailure) as error:
+        if isinstance(error, AccountAuthorizationFailure) or error.status in (401, 403):
+            return 409, {'error': 'account-authorization-required', 'message': '设备授权不可用，请重新授权此机。'}
+        return 503, {'error': 'account-cloud-unavailable', 'message': '暂时无法连接云端，请稍后重试。'}
+    except AccountNetworkFailure:
+        return 503, {'error': 'account-cloud-unavailable', 'message': '暂时无法连接云端，请稍后重试。'}
     except SyncStopped:
         return 409, {'error': 'account-sync-start-cancelled', 'message': '启动已被停止操作或更新的连接请求取消。'}
     except ValueError as error:

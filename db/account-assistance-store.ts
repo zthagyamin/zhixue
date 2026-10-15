@@ -9,6 +9,8 @@ import {parseStudyRecord} from '../app/account-study-record.ts';
 import {studyObject,studyId,studyCount,studyHash} from '../app/account-study-content.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {canonicalizeJson} from '../app/study-event-v3.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../src/infrastructure/account-study-writer/index.ts';
 
 type SummaryRow={sequence:number;user_id:string;library_id:string;summary_id:string;event_id:string;summary_hash:string;association_hash:string;record_json:string;received_at:string};
 type ReceiptRow={sequence:number;user_id:string;library_id:string;receipt_id:string;summary_id:string;status:string;payload_hash:string;payload_json:string;writer_grant_id:string;received_at:string};
@@ -68,6 +70,7 @@ export class AccountAssistanceStore{
   }
   private async latest(scope:StudyScope,summaryId:string):Promise<ReceiptRow|null>{return this.q('SELECT * FROM account_study_assistance_receipts WHERE user_id=? AND library_id=? AND summary_id=? ORDER BY sequence DESC LIMIT 1',...args(scope),summaryId).first<ReceiptRow>();}
   async appendReceipt(scope:StudyScope,raw:unknown,grantId:string):Promise<{status:'accepted'|'duplicate'|'conflict';receipt:StoredAssistanceReceipt}>{
+    await requireCurrentStudyWriter(this.database,scope,grantId);
     const receipt=parseAssistanceReceipt(raw),now=this.clock().toISOString();
     if(!await this.writer(scope,grantId,now))throw new Error('study-writer-required');
     const parent=await this.get(scope,receipt.summaryId);if(!parent)throw new Error('unknown-assistance-summary');checkAssistanceReceipt(parent.record,receipt);
@@ -76,8 +79,10 @@ export class AccountAssistanceStore{
     const latest=await this.latest(scope,receipt.summaryId);
     if(latest?.status==='applied'){const saved=await this.wireReceipt(scope,latest);if(receipt.status!=='applied'||canonicalizeJson(receipt.proof)!==canonicalizeJson(saved.receipt.proof))return{status:'conflict',receipt:saved};}
     // Atomic last check protects revocation and terminal evidence between awaits.
-    const inserted=await this.q("INSERT INTO account_study_assistance_receipts(user_id,library_id,receipt_id,summary_id,status,payload_hash,payload_json,writer_grant_id,received_at) SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM account_study_grants WHERE user_id=? AND library_id=? AND grant_id=? AND state='active' AND expires_at>?) AND NOT EXISTS (SELECT 1 FROM account_study_assistance_receipts WHERE user_id=? AND library_id=? AND summary_id=? AND status='applied' AND (?!='applied' OR json_extract(payload_json,'$.proof')!=json_extract(?,'$.proof'))) ON CONFLICT DO NOTHING RETURNING sequence",
-      ...args(scope),receipt.receiptId,receipt.summaryId,receipt.status,hash,canonicalizeJson(receipt),grantId,now,...args(scope),grantId,now,...args(scope),receipt.summaryId,receipt.status,canonicalizeJson(receipt)).all<{sequence:number}>();
+    const writer=studyWriterCondition(scope,grantId);
+    const inserted=await this.q(`INSERT INTO account_study_assistance_receipts(user_id,library_id,receipt_id,summary_id,status,payload_hash,payload_json,writer_grant_id,received_at) SELECT ?,?,?,?,?,?,?,?,? WHERE ${writer.sql} AND NOT EXISTS (SELECT 1 FROM account_study_assistance_receipts WHERE user_id=? AND library_id=? AND summary_id=? AND status='applied' AND (?!='applied' OR json_extract(payload_json,'$.proof')!=json_extract(?,'$.proof'))) ON CONFLICT DO NOTHING RETURNING sequence`,
+      ...args(scope),receipt.receiptId,receipt.summaryId,receipt.status,hash,canonicalizeJson(receipt),grantId,now,...writer.bindings,...args(scope),receipt.summaryId,receipt.status,canonicalizeJson(receipt)).all<{sequence:number}>();
+    await requireCurrentStudyWriter(this.database,scope,grantId);
     const row=await this.q('SELECT * FROM account_study_assistance_receipts WHERE user_id=? AND library_id=? AND receipt_id=?',...args(scope),receipt.receiptId).first<ReceiptRow>();
     if(row)return{status:row.payload_hash!==hash?'conflict':inserted.results.length?'accepted':'duplicate',receipt:await this.wireReceipt(scope,row)};
     if(!await this.writer(scope,grantId,now))throw new Error('study-writer-required');

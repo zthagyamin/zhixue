@@ -24,7 +24,7 @@ function cache(){let get;const hooks=createHooks(),load=loader(hooks.api,overrid
 function ui(){const value={index:0,round:emptySubjectRound(),scope:'projection-1',bumps:0};const ports={canContinue:()=>true,canRestore:()=>value.scope==='projection-1',round:()=>value.round,clear(){},publish:fn=>{value.round=fn(value.round);},select:index=>{value.index=index;},bump:()=>value.bumps++};return {value,ports};}
 function scope(){const ownerId=`group-host-${serial++}`,members=['A','B'].map((itemKey,index)=>({itemKey,snapshotId:'local',contentHash:(index?'b':'a').repeat(64),kind:'practice',mode:'recall'}));
   return {workspaceId:`account:${ownerId}`,ownerId,libraryId:'group-library',snapshotId:'local',itemKey:'A',contentHash:members[0].contentHash,groupId:'course-group',roundId:'page-group-scope',day:'2026-10-05',cloud:false,members};}
-async function mount(t,base,key,getRound,projection,{earlyPolicy,bootGate,writeFormal=true}={}){
+async function mount(t,base,key,getRound,projection,{earlyPolicy,bootGate,writeFormal=true,continuationGate,continuationEntered}={}){
   const initialBumps=projection.value.bumps;
   const member=base.members.find(item=>item.itemKey===key),currentScope={...base,itemKey:key,contentHash:member.contentHash},boundHooks=createHooks(),boundLoad=loader(boundHooks.api,overrides),hostHooks=createHooks(),hostLoad=loader(hostHooks.api);
   const store=createLearningDraftStore(`${base.workspaceId}:${key}:${serial++}`),rawDraft=store.adapter(key,'recall'),events=[];let handles;
@@ -35,7 +35,8 @@ async function mount(t,base,key,getRound,projection,{earlyPolicy,bootGate,writeF
       continuePending:()=>createNonWordContinuation({itemKeys:['A','B'],index:['A','B'].indexOf(key)},projection.ports)(),
       resumeFormal:rating=>createNonWordContinuation({itemKeys:['A','B'],index:['A','B'].indexOf(key)},projection.ports)(rating)}};
   const props={plugin:{id:'@zhixue/plugin-recall',renderUI:probe},data:{itemId:key,prompt:`Explain synthetic ${key}.`,explanation:`Reference ${key}.`,...(earlyPolicy?{learningSupport:{type:'recall'}}:{})},context,
-    round:async()=>{await bootGate?.promise;return getRound(currentScope);},
+    round:async()=>{await bootGate?.promise;const group=await getRound(currentScope);return !continuationGate?group:{...group,
+      async saveCursor(cursor,...args){if(cursor.currentItemKey==='B'){continuationEntered.resolve();await continuationGate.promise;}return group.saveCursor(cursor,...args);}};},
     async onGrade(rating,options){assert.equal(writeFormal,true,'Pending continuation must not call the official writer');const identity=options.identity;assert.ok(identity);
       const event=await attempt(identity.eventId,identity.reviewedAt,0,['good','easy'].includes(rating)?3:0,['good','easy'].includes(rating),{domain:'differential-review',item:{kind:'due',key},attempt:{rating,correct:['good','easy'].includes(rating),stageBefore:0,stageAfter:['good','easy'].includes(rating)?3:0}});
       const record={workspaceId:base.workspaceId,eventId:event.eventId,event,cloud:'not-required',companion:'not-required',occurredAt:event.occurredAt,updatedAt:event.occurredAt};
@@ -49,7 +50,7 @@ async function mount(t,base,key,getRound,projection,{earlyPolicy,bootGate,writeF
   return {base,key,props,rawDraft,store,events,hostProps,hostHooks,boundHooks,get handles(){return handles;},
     async submit(raw,result='again') {assert.ok(handles);handles.context.draft.write('answer',raw);await handles.context.nonWordLearning.submit(raw);
       if(result==='pending'){await handles.context.nonWordLearning.waitForReview('Synthetic offline grading');await handles.context.nonWordLearning.continuePending();}
-      else{await handles.context.nonWordLearning.assess({status:result==='good'?'correct':'incorrect',source:'self-assess',rating:result,explanation:`Synthetic ${result}.`});await handles.onGrade(result,{deferAdvance:true});assert.equal(handles.context.draft.continueAfterFeedback(),true);assert.equal(handles.context.draft.continueAfterFeedback(),false);await settle(hostHooks);}
+      else{await handles.context.nonWordLearning.assess({status:result==='good'?'correct':'incorrect',source:'self-assess',rating:result,explanation:`Synthetic ${result}.`});await handles.onGrade(result,{deferAdvance:true});const beforeContinue=projection.value.round;assert.equal(handles.context.draft.continueAfterFeedback(),true);assert.equal(handles.context.draft.continueAfterFeedback(),false);await settle(hostHooks,()=>projection.value.round!==beforeContinue);}
     }};
 }
 
@@ -66,6 +67,17 @@ for(const result of ['again','pending'])test(`actual app bridge refresh at B pre
   const againB=(await b.hostProps.createDriver('first','review')).runtime.session.snapshot().attemptId;assert.equal(againB,idB);assert.equal((await coldCache.get(base)).anchorAttemptId,saved.anchorAttemptId);
   assert.equal((await repo.read(firstA.attemptId)).submitted.answer,`FIRST_A_${result}`);assert.equal(redirect.events.length,0);firstCache.hooks.unmount();coldCache.hooks.unmount();
 });
+test('fixture waits for accepted group continuation before reporting submit complete',async t=>{
+  const base=scope(),get=cache(),projection=ui(),gate=deferred(),entered=deferred();t.after(()=>gate.resolve());
+  const a=await mount(t,base,'A',get.get,projection,{continuationGate:gate,continuationEntered:entered});let finished=false;
+  const submission=a.submit('SYNTHETIC_DELAYED_CONTINUATION').then(()=>{finished=true;});
+  await entered.promise;await settle(a.hostHooks);
+  assert.equal((await (await get.get(base)).read()).currentItemKey,'A');
+  assert.equal(finished,false,'A submit cannot finish while the actual cursor receipt is withheld');
+  gate.resolve();await submission;
+  assert.equal((await (await get.get(base)).read()).currentItemKey,'B');get.hooks.unmount();
+});
+
 test('completed group summary is restored before stale first-question input and never rewrites its raw or formal result',async t=>{
   const base=scope(),get=cache(),projection=ui(),a=await mount(t,base,'A',get.get,projection);await a.submit('ORIGINAL_WRONG_A');a.hostHooks.unmount();
   const b=await mount(t,base,'B',get.get,projection);await b.submit('CORRECT_B','good');const accepted=await (await get.get(base)).read();assert.equal(accepted.currentItemKey,null);

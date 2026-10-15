@@ -17,6 +17,7 @@ function Open-ZhixueWebsite {
 if (-not $NoBrowser -and -not $ProtocolUrl) {
     $config = [IO.File]::ReadAllText((Join-Path $companionRoot 'config.local.json'),[Text.Encoding]::UTF8) | ConvertFrom-Json
     $origin = @($config.allowed_origins)[0]
+    if ($origin -isnot [string] -or [string]::IsNullOrWhiteSpace($origin)) { return }
     $uri = $null
     if ([Uri]::TryCreate($origin,[UriKind]::Absolute,[ref]$uri) -and $uri.Scheme -eq 'https' -and -not $uri.UserInfo) {
         Start-Process -FilePath ($origin.TrimEnd('/') + '/?companionPort=' + $port)

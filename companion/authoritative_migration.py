@@ -82,11 +82,14 @@ def _backup(vault: Path, paths: list[Path], now: datetime) -> tuple[str, Path, l
     for path in paths:
         relative = path.relative_to(vault)
         existed = path.exists()
-        records.append({"relativePath": relative.as_posix(), "existed": existed, "sha256": _hash(path)})
+        saved_hash = None
         if existed:
             destination = backup_root / "files" / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, destination)
+            # Bind the bytes actually saved, rather than an earlier source read.
+            saved_hash = _hash(destination)
+        records.append({"relativePath": relative.as_posix(), "existed": existed, "sha256": saved_hash})
     backup_root.mkdir(parents=True, exist_ok=True)
     return backup_id, backup_root, records
 
@@ -123,9 +126,16 @@ def _apply_locked(vault_root: Path, preview_id: str, now: datetime | None = None
     (backup_root / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
+    written: dict[Path, tuple[str, bytes | None]] = {}
+
+    def capture_write(path: Path, digest: str, preimage: bytes | None) -> None:
+        if path not in targets:
+            raise ValueError("migration-write-receipt-binding")
+        written[path] = (digest, preimage)
+
     try:
         if actions["plan"] == "migrate":
-            migration = plan_authority.migrate_plan(vault, vault / LEGACY_PLAN_AREA, now)
+            migration = plan_authority.migrate_plan(vault, vault / LEGACY_PLAN_AREA, now, on_written=capture_write)
             current_plan = plan_authority.read_current_plan(vault)
             if migration.status == "migrated" and current_plan is not None:
                 plan_area.record_migrated_plan(
@@ -134,17 +144,24 @@ def _apply_locked(vault_root: Path, preview_id: str, now: datetime | None = None
                     int(current_plan["revision"]),
                     migration.source or str(LEGACY_PLAN_AREA),
                     now,
+                    on_written=capture_write,
                 )
         if actions["constraints"] == "initialize":
-            constraint_area.write_constraints(vault, constraint_area.default_constraints(now), now)
+            constraint_area.write_constraints(vault, constraint_area.default_constraints(now), now, on_written=capture_write)
     except Exception:
-        rollback(vault, backup_id)
+        _rollback_locked(vault, backup_id, expected_writes=written)
         raise
     return {"status": "applied", "backupId": backup_id, "previewId": preview_id, "actions": actions}
 
 
 def rollback(vault_root: Path, backup_id: str) -> dict[str, Any]:
-    """Restore only files recorded by a migration backup manifest."""
+    """Validate the complete backup before restoring any recorded target."""
+    with plan_area.PLAN_LOCK:
+        return _rollback_locked(vault_root, backup_id)
+
+
+def _rollback_locked(vault_root: Path, backup_id: str, *,
+                     expected_writes: dict[Path, tuple[str, bytes | None]] | None = None) -> dict[str, Any]:
     if not backup_id or Path(backup_id).name != backup_id or not backup_id.startswith("migration-"):
         raise ValueError("invalid-backup-id")
     vault = Path(vault_root).resolve()
@@ -153,15 +170,31 @@ def rollback(vault_root: Path, backup_id: str) -> dict[str, Any]:
     if not manifest_path.exists():
         raise ValueError("migration-backup-not-found")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    restores: list[tuple[Path, bytes | None]] = []
     for record in manifest.get("files", []):
         relative = Path(str(record.get("relativePath", "")))
         target = _inside(vault, vault / relative)
+        if expected_writes is not None and (target not in expected_writes or _hash(target) != expected_writes[target][0]):
+            continue
+        if target.exists() and not target.is_file():
+            raise ValueError("migration-target-not-file")
         if record.get("existed"):
             source = _inside(backup_root, backup_root / "files" / relative)
-            if not source.exists():
+            if not source.is_file():
                 raise ValueError("migration-backup-incomplete")
+            previous = source.read_bytes()
+            if hashlib.sha256(previous).hexdigest() != record.get("sha256"):
+                raise ValueError("migration-backup-integrity")
+        else:
+            previous = None
+        restores.append((target, previous if expected_writes is None else expected_writes[target][1]))
+    # Use these checked bytes, not a second read from a mutable backup file.
+    for target, previous in restores:
+        if expected_writes is not None and _hash(target) != expected_writes[target][0]:
+            continue
+        if previous is not None:
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
+            target.write_bytes(previous)
         else:
             target.unlink(missing_ok=True)
     return {"status": "rolled-back", "backupId": backup_id}

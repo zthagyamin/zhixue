@@ -5,6 +5,8 @@ import type {NativeMathTransport} from '../src/domain/math-study';
 import {createNativeMathClient} from '../src/infrastructure/math-study/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {createNativeCourseClient} from '../src/infrastructure/course-study/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {createSourceAdmissionClient} from '../src/infrastructure/source-admission/index.ts';
 export type {PlanHistoryEntry,CurrentPlanPayload,PlanDocumentPayload,MutationResult} from '../src/domain/planning';
 import type { PlanCandidate } from "./daily-plan";
 import type { PlanDocument, TaskPlanV2, SuggestionRequest, SuggestionResponse, TaskEventV1, PlanningContext, PlanningEvidencePage } from './task-plan-types';
@@ -103,6 +105,7 @@ type FetchLike = (url: string, init?: RequestInit) => Promise<ResponseLike>;
 export type CompanionPlanClient = {
   nativeCourse?: NativeCourseTransport;
   nativeMath?: NativeMathTransport;
+  sourceAdmission?: (libraryId:string,current?:()=>boolean)=>import('../src/application/source-admission').SourceAdmissionTransport;
   getCurrentPlan: () => Promise<CurrentPlanPayload>;
   getPlanDocument: () => Promise<PlanDocumentPayload>;
   getPlanningContext: () => Promise<PlanningContext>;
@@ -180,6 +183,7 @@ export function createCompanionPlanClient(options: {
   return {
     nativeCourse: createNativeCourseClient({...options, fetcher}),
     nativeMath: createNativeMathClient({...options, fetcher}),
+    sourceAdmission: (libraryId,isCurrent)=>createSourceAdmissionClient({...options,libraryId,fetcher,isCurrent}),
     getPlanDocument,
     getPlanningContext:async()=>parsePlanningContext(await get('/v1/plan/context',50000)),
     getPlanningEvidence:async(sourceHash,planRevision,after)=>{

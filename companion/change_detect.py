@@ -10,11 +10,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
+
+from infrastructure import vault_documents
+from mapped_source_registry import _atomic, _safe
 
 STUDY_LOOP_INTEGRATION_ROOT = "_System/Integrations/Study Loop"
 SOURCE_SUBFOLDER = "sources"
@@ -69,24 +73,71 @@ def source_root(vault_root: Path) -> Path:
     return Path(vault_root) / STUDY_LOOP_INTEGRATION_ROOT / SOURCE_SUBFOLDER
 
 
-def scan_files(vault_root: Path) -> list[dict[str, Any]]:
-    root = source_root(vault_root)
+def _checked_source_root(vault_root: Path) -> Path:
+    return vault_documents.checked_literal_path(source_root(vault_root))
+
+
+def _relative_source_path(value: str) -> str:
+    if not value or "\\" in value or any(ord(char) < 32 for char in value):
+        raise ValueError("invalid-source-path")
+    parts = value.split("/")
+    if PureWindowsPath(value).drive or PurePosixPath(value).is_absolute() or any(
+            part in {"", ".", ".."} or any(char in part for char in ':<>"|?*')
+            or part.endswith((".", " ")) or PureWindowsPath(part).is_reserved() for part in parts):
+        raise ValueError("invalid-source-path")
+    if PurePosixPath(value).suffix.lower() not in SUPPORTED_SUFFIXES:
+        raise ValueError("invalid-source-path")
+    return value
+
+
+def _stored_source_path(value: str, root: Path) -> str:
+    """Normalize historical in-root absolute DB keys without changing those keys.
+
+    New review candidates still require relative paths. Check lexical containment
+    before inspecting a historical path; outside records never authorize reads.
+    """
+    path = Path(value)
+    if path.is_absolute():
+        relative = path.relative_to(root).as_posix()
+        relative = _relative_source_path(relative)
+        vault_documents.checked_literal_path(path)
+        return relative
+    relative = _relative_source_path(value)
+    vault_documents.checked_literal_path(root / relative)
+    return relative
+
+
+def _scan_documents(vault_root: Path) -> list[dict[str, Any]]:
+    root = _checked_source_root(vault_root)
     if not root.exists():
         return []
     files: list[dict[str, Any]] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.suffix.lower() not in SUPPORTED_SUFFIXES:
-            continue
-        try:
-            text = path.read_text(encoding="utf-8-sig", errors="replace")
-        except OSError:
-            continue
-        files.append({
-            "path": path.relative_to(root).as_posix(),
-            "contentHash": content_hash(text),
-            "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        })
-    return files
+    def failed_walk(error):
+        raise error
+    # This is a complete approval scan: unreadable/redirected entries cannot be
+    # silently omitted and then interpreted as deletion of approved sources.
+    for folder, directories, filenames in os.walk(root, followlinks=False, onerror=failed_walk):
+        base = vault_documents.checked_literal_path(Path(folder))
+        for name in directories:
+            vault_documents.checked_literal_path(base / name)
+        for name in sorted(filenames):
+            path = base / name
+            if path.suffix.lower() not in SUPPORTED_SUFFIXES:
+                continue
+            relative = _relative_source_path(path.relative_to(root).as_posix())
+            text = vault_documents.read_complete_source_text(path)
+            files.append({
+                "path": relative,
+                "contentHash": content_hash(text),
+                "approvedContent": text,
+                "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            })
+    return sorted(files, key=lambda file_: file_["path"])
+
+
+def scan_files(vault_root: Path) -> list[dict[str, Any]]:
+    return [{key: value for key, value in item.items() if key != "approvedContent"}
+            for item in _scan_documents(vault_root)]
 
 
 def snapshot_state(database: sqlite3.Connection) -> dict[str, dict[str, Any]]:
@@ -105,17 +156,14 @@ def _make_candidate(kind: str, path: str, digest: str) -> dict[str, Any]:
 
 def detect_changes(database: sqlite3.Connection, vault_root: Path) -> list[dict[str, Any]]:
     ensure_schema(database)
-    source_directory = source_root(vault_root).resolve()
+    source_directory = _checked_source_root(vault_root)
     previous_raw = snapshot_state(database)
     previous: dict[str, dict[str, Any]] = {}
     for stored_path, record in previous_raw.items():
-        path = Path(stored_path)
-        if path.is_absolute():
-            try:
-                stored_path = path.resolve().relative_to(source_directory).as_posix()
-            except ValueError:
-                continue
-        previous[Path(stored_path).as_posix()] = record
+        try:
+            previous[_stored_source_path(stored_path, source_directory)] = record
+        except ValueError:
+            continue
     current = {file_["path"]: file_ for file_ in scan_files(vault_root)}
 
     added = [path for path in current if path not in previous]
@@ -157,31 +205,31 @@ def detect_changes(database: sqlite3.Connection, vault_root: Path) -> list[dict[
 
 def apply_scan(database: sqlite3.Connection, vault_root: Path) -> None:
     ensure_schema(database)
-    database.execute("DELETE FROM source_change_state")
+    documents = _scan_documents(vault_root)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    for file_ in scan_files(vault_root):
-        source = source_root(vault_root) / file_["path"]
-        content = source.read_text(encoding="utf-8-sig", errors="replace")
-        database.execute(
-            "INSERT INTO source_change_state(path, content_hash, approved_content, title, updated_at) VALUES (?, ?, ?, NULL, ?)",
-            (file_["path"], file_["contentHash"], content, now),
-        )
-    database.commit()
+    try:
+        database.execute("DELETE FROM source_change_state")
+        for file_ in documents:
+            database.execute(
+                "INSERT INTO source_change_state(path, content_hash, approved_content, title, updated_at) VALUES (?, ?, ?, NULL, ?)",
+                (file_["path"], file_["contentHash"], file_["approvedContent"], now),
+            )
+        database.commit()
+    except Exception:
+        database.rollback()
+        raise
 
 
 def approved_source_paths(database: sqlite3.Connection, vault_root: Path) -> set[str]:
     """Return current files whose exact content has been approved already."""
-    source_directory = source_root(vault_root).resolve()
+    source_directory = _checked_source_root(vault_root)
     approved_raw = snapshot_state(database)
     approved: dict[str, dict[str, Any]] = {}
     for stored_path, record in approved_raw.items():
-        path = Path(stored_path)
-        if path.is_absolute():
-            try:
-                stored_path = path.resolve().relative_to(source_directory).as_posix()
-            except ValueError:
-                continue
-        approved[Path(stored_path).as_posix()] = record
+        try:
+            approved[_stored_source_path(stored_path, source_directory)] = record
+        except ValueError:
+            continue
     current = {file_["path"]: file_ for file_ in scan_files(vault_root)}
     return {
         str(source_directory / Path(path))
@@ -197,21 +245,28 @@ def approved_source_documents(database: sqlite3.Connection, vault_root: Path | N
         "SELECT path, content_hash, approved_content FROM source_change_state ORDER BY path"
     ).fetchall()
     documents: list[dict[str, str]] = []
+    backfills: list[tuple[str, str]] = []
     for path, digest, approved_content in rows:
         content = approved_content
         if content is None and vault_root is not None:
-            source = source_root(vault_root) / Path(str(path))
+            try:
+                relative = _stored_source_path(str(path), _checked_source_root(vault_root))
+            except ValueError:
+                continue
+            source = vault_documents.checked_literal_path(_checked_source_root(vault_root) / relative)
             if source.exists():
-                current = source.read_text(encoding="utf-8-sig", errors="replace")
+                current = vault_documents.read_complete_source_text(source)
                 if content_hash(current) == digest:
                     content = current
-                    database.execute(
-                        "UPDATE source_change_state SET approved_content = ? WHERE path = ?",
-                        (content, path),
-                    )
+                    backfills.append((content, path))
         if content is not None:
             documents.append({"path": str(path), "content": str(content)})
-    database.commit()
+    try:
+        database.executemany("UPDATE source_change_state SET approved_content = ? WHERE path = ?", backfills)
+        database.commit()
+    except Exception:
+        database.rollback()
+        raise
     return documents
 
 
@@ -238,6 +293,29 @@ def decide(database: sqlite3.Connection, change_id: str, decision: str, operator
     database.commit()
 
 
+def _matching_approved_keys(database: sqlite3.Connection, path: str, vault_root: Path) -> list[str]:
+    root = _checked_source_root(vault_root)
+    matching_keys: list[str] = []
+    for (stored_path,) in database.execute("SELECT path FROM source_change_state").fetchall():
+        try:
+            normalized = _stored_source_path(stored_path, root)
+        except ValueError:
+            continue
+        if normalized == path:
+            matching_keys.append(stored_path)
+    return matching_keys
+
+
+def _delete_approved_path(database: sqlite3.Connection, path: str, vault_root: Path | None) -> None:
+    if vault_root is None:
+        database.execute("DELETE FROM source_change_state WHERE path = ?", (path,))
+        return
+    matching_keys = _matching_approved_keys(database, path, vault_root)
+    # Delete only keys naming this approved source; do not migrate historical keys
+    # or let an outside/redirected absolute row acquire authority through a basename.
+    database.executemany("DELETE FROM source_change_state WHERE path = ?", [(key,) for key in matching_keys])
+
+
 def decide_candidate(
     database: sqlite3.Connection,
     candidate: dict[str, Any],
@@ -255,26 +333,30 @@ def decide_candidate(
     digest = str(candidate.get("contentHash", ""))
     if not change_id or kind not in {"added", "modified", "removed", "renamed"} or not path or not digest:
         raise ValueError("invalid-change-candidate")
+    path = _relative_source_path(path)
+    if kind == "renamed":
+        old_path = _relative_source_path(str(candidate.get("oldPath", "")))
 
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     try:
         if decision == "approved":
             if kind == "removed":
-                database.execute("DELETE FROM source_change_state WHERE path = ?", (path,))
+                _delete_approved_path(database, path, vault_root)
             else:
                 if kind == "renamed":
-                    old_path = str(candidate.get("oldPath", ""))
-                    if not old_path:
-                        raise ValueError("invalid-change-candidate")
-                    database.execute("DELETE FROM source_change_state WHERE path = ?", (old_path,))
+                    _delete_approved_path(database, old_path, vault_root)
                 if vault_root is None:
                     raise ValueError("vault-root-required")
-                source = source_root(vault_root) / Path(path)
+                source = vault_documents.checked_literal_path(_checked_source_root(vault_root) / path)
                 if not source.exists() or source.suffix.lower() not in SUPPORTED_SUFFIXES:
                     raise ValueError("source-change-stale")
-                content = source.read_text(encoding="utf-8-sig", errors="replace")
+                content = vault_documents.read_complete_source_text(source)
                 if content_hash(content) != digest:
                     raise ValueError("source-change-stale")
+                matching_keys = _matching_approved_keys(database, path, vault_root)
+                if len(matching_keys) > 1:
+                    raise ValueError("source-change-conflict")
+                storage_key = matching_keys[0] if matching_keys else path
                 database.execute(
                     """
                     INSERT INTO source_change_state(path, content_hash, approved_content, title, updated_at)
@@ -282,7 +364,7 @@ def decide_candidate(
                     ON CONFLICT(path) DO UPDATE SET content_hash = excluded.content_hash,
                       approved_content = excluded.approved_content, updated_at = excluded.updated_at
                     """,
-                    (path, digest, content, now),
+                    (storage_key, digest, content, now),
                 )
         database.execute(
             "INSERT INTO source_change_log(change_id, decision, decided_at, operator) VALUES (?, ?, ?, ?)",
@@ -309,12 +391,28 @@ def projection_path(vault_root: Path) -> Path:
     return Path(vault_root) / STUDY_LOOP_INTEGRATION_ROOT / CANDIDATE_PROJECTION
 
 
+def _checked_projection(vault_root: Path) -> tuple[Path, Path]:
+    vault = vault_documents.checked_literal_path(Path(vault_root))
+    return vault, _safe(vault, projection_path(vault))
+
+
+def _projection_bytes(path: Path) -> bytes:
+    with vault_documents.checked_source_file(path) as stream:
+        limit = vault_documents.METADATA_INPUT_BYTES
+        if os.fstat(stream.fileno()).st_size > limit:
+            raise ValueError("projection-input-too-large")
+        raw = stream.read(limit + 1)
+        if len(raw) > limit:
+            raise ValueError("projection-input-too-large")
+    return raw
+
+
 def read_projection(vault_root: Path) -> dict[str, Any]:
-    path = projection_path(vault_root)
+    _, path = _checked_projection(vault_root)
     if not path.exists():
         return {"scannedAt": None, "pendingCount": 0, "changes": [], "error": None}
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(_projection_bytes(path).decode("utf-8"))
     except (OSError, json.JSONDecodeError):
         return {"scannedAt": None, "pendingCount": 0, "changes": [], "error": "invalid-projection"}
     return payload if isinstance(payload, dict) else {"scannedAt": None, "pendingCount": 0, "changes": [], "error": "invalid-projection"}
@@ -330,6 +428,8 @@ def scan_and_project(
     scanned_at = now.astimezone(timezone.utc).isoformat(timespec="seconds")
     path = projection_path(vault_root)
     try:
+        vault, path = _checked_projection(vault_root)
+        previous_raw = _projection_bytes(path) if path.exists() else None
         pending = pending_changes(database, detect_changes(database, vault_root))
         safe_changes = [
             {
@@ -346,12 +446,12 @@ def scan_and_project(
             "changes": safe_changes,
             "error": None,
         }
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(f".{path.name}.zhixue.tmp")
-        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
-        temporary.replace(path)
+        _atomic(vault, path, json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"), previous_raw)
         return ScanStatus(scanned_at, len(safe_changes), path)
     except Exception as error:
-        previous = read_projection(vault_root)
+        try:
+            previous = read_projection(vault_root)
+        except (OSError, ValueError):
+            previous = {}
         safe_error = str(error).replace(str(Path(vault_root)), "<vault>")[:300]
         return ScanStatus(scanned_at, int(previous.get("pendingCount", 0) or 0), path, safe_error)

@@ -1,0 +1,755 @@
+{
+  "schemaVersion": 1,
+  "description": "Synthetic v1 closed request and durable receipt parser corpus; no model or formal evidence.",
+  "expected": {
+    "submission": {
+      "attemptId": "code-report-first-zero",
+      "binding": {
+        "ownerId": "owner-a",
+        "libraryId": "library-a",
+        "itemKey": "practice:original-code:code:q1",
+        "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+        "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+      },
+      "answerRevision": 0,
+      "answer": "def add(a,b): return 4",
+      "submittedAt": "2026-10-10T09:00:00Z",
+      "purpose": "first",
+      "parentAttemptId": null,
+      "assistance": "unknown"
+    },
+    "sourceBinding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10"
+  },
+  "request": {
+    "attemptId": "code-report-first-zero",
+    "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+    "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10"
+  },
+  "ready": {
+    "schemaVersion": 1,
+    "durable": true,
+    "attemptId": "code-report-first-zero",
+    "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+    "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+    "binding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "sourceBinding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "answerRevision": 0,
+    "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+    "status": "ready",
+    "hint": {
+      "text": "Inspect the constant return value.",
+      "sourceQuote": "Implement add.",
+      "codeQuote": "return 4",
+      "reason": "The public example requires addition."
+    },
+    "receiptHash": "89a0e9b27636167925bd8a1f41963f60cebcf31ae369e66de8d59e91d198a889"
+  },
+  "pending": {
+    "schemaVersion": 1,
+    "durable": true,
+    "attemptId": "code-report-first-zero",
+    "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+    "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+    "binding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "sourceBinding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "answerRevision": 0,
+    "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+    "status": "pending",
+    "reason": "hint-review-receipt-unknown",
+    "receiptHash": "29ca73407dbd57cc777cb08a978fbe43cc6737cc76880b6ba54a2586ee3fd9a8"
+  },
+  "requestCases": [
+    {
+      "name": "exact-identities",
+      "input": {
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10"
+      },
+      "valid": true
+    },
+    {
+      "name": "extra-answer",
+      "input": {
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "answer": "return a+b"
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-report-hash",
+      "input": {
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:bad"
+      },
+      "valid": false
+    },
+    {
+      "name": "empty-attempt",
+      "input": {
+        "attemptId": "",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10"
+      },
+      "valid": false
+    }
+  ],
+  "receiptCases": [
+    {
+      "name": "ready",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "89a0e9b27636167925bd8a1f41963f60cebcf31ae369e66de8d59e91d198a889"
+      },
+      "valid": true
+    },
+    {
+      "name": "pending",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "pending",
+        "reason": "hint-review-receipt-unknown",
+        "receiptHash": "29ca73407dbd57cc777cb08a978fbe43cc6737cc76880b6ba54a2586ee3fd9a8"
+      },
+      "valid": true
+    },
+    {
+      "name": "nondurable",
+      "input": {
+        "schemaVersion": 1,
+        "durable": false,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "0c4d115d9f507883076fb75546b59b4acded7b9a1348833dd35818af43f9a480"
+      },
+      "valid": false
+    },
+    {
+      "name": "boolean-revision",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": false,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "e1057f75bc50268a9325109e41153b429ae74ea4d3eaa4c5fa003572f26f350b"
+      },
+      "valid": false
+    },
+    {
+      "name": "extra-grade",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "grade": "good",
+        "receiptHash": "230bd6439acf1eda84774ef0bd4a0e8aa7224d042b6231a55d66394946af9553"
+      },
+      "valid": false
+    },
+    {
+      "name": "unknown-status",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "resolved",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "4d59e0b443041b32de2a085cc554d062bf305ac722c4dd4c754fe777e090e970"
+      },
+      "valid": false
+    },
+    {
+      "name": "fenced-solution",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "```python\ndef add(a,b): return a+b\n```",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "2a4adce9732adb74d19a1fda077abd1426c936fc969d1c89090dc8c901ea53b3"
+      },
+      "valid": false
+    },
+    {
+      "name": "multiline-def",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "def add(a,b):\n    return a+b",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "a1df94bd70b68afb2bc7b15b25a9031a0c729e8891b4a21b62116e2f42d1d0ce"
+      },
+      "valid": false
+    },
+    {
+      "name": "multiline-class",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Try this:\nclass Add: pass",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "2d15fbc8a9c41d27cf715dd89f175337ae457797799a475aba61b2c5f54f8c3d"
+      },
+      "valid": false
+    },
+    {
+      "name": "long-hint",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "7535a0c523fa458e354bcd50cc78c5b2b0a17fb28fed7e0cbb3e9ccefda435ee"
+      },
+      "valid": false
+    },
+    {
+      "name": "empty-source-quote",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "6969d3d5d1ca3b56b0e5c29cba6779a3851f586142d4c4f68426741de8272e26"
+      },
+      "valid": false
+    },
+    {
+      "name": "padded-reason",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": " reason "
+        },
+        "receiptHash": "e812685f45587df0cfcaf128351f299844628ded666e3c29abd0f012fb33ce23"
+      },
+      "valid": false
+    },
+    {
+      "name": "extra-hint-field",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition.",
+          "answer": "return a+b"
+        },
+        "receiptHash": "dee7d94f6ee2ef281e71d1fd8af35f2bb578eed88bae685fe68cf320266a7444"
+      },
+      "valid": false
+    },
+    {
+      "name": "null-source-binding",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": null,
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "0a3994bce6bd0efc2c50752ce10ffeb15eafddbfd239ca01a8aea06f708d839c"
+      },
+      "valid": false
+    },
+    {
+      "name": "pending-with-hint",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "pending",
+        "hint": {
+          "text": "Inspect the constant return value.",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "reason": "hint-review-receipt-unknown",
+        "receiptHash": "dcb6c00571316800aea5ac0c9cf9f003a3481db342b02ad139ba355f8e350532"
+      },
+      "valid": false
+    },
+    {
+      "name": "singleline-def",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "def add(a,b): return a+b",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "89a0e9b27636167925bd8a1f41963f60cebcf31ae369e66de8d59e91d198a889"
+      },
+      "valid": false
+    },
+    {
+      "name": "multiline-async-def",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "Check this:\nasync def add(a,b): return a+b",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "89a0e9b27636167925bd8a1f41963f60cebcf31ae369e66de8d59e91d198a889"
+      },
+      "valid": false
+    },
+    {
+      "name": "lambda-assignment",
+      "input": {
+        "schemaVersion": 1,
+        "durable": true,
+        "attemptId": "code-report-first-zero",
+        "requestId": "source-hint:c75d04c1316c9e9aa5898bd1b250a207b95eeea5402f19e54530a7695273528c",
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "binding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "sourceBinding": {
+          "ownerId": "owner-a",
+          "libraryId": "library-a",
+          "itemKey": "practice:original-code:code:q1",
+          "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+        },
+        "answerRevision": 0,
+        "answerHash": "1b949e38f8500b99c5490290e15fa34ff84bc8cd863351ea52d0baed7183e384",
+        "status": "ready",
+        "hint": {
+          "text": "add = lambda a, b: a + b",
+          "sourceQuote": "Implement add.",
+          "codeQuote": "return 4",
+          "reason": "The public example requires addition."
+        },
+        "receiptHash": "89a0e9b27636167925bd8a1f41963f60cebcf31ae369e66de8d59e91d198a889"
+      },
+      "valid": false
+    }
+  ]
+}

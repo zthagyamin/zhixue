@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'companion'))
 from note_imports import SourceError, learning_items, read_local_documents
 from practice_candidates import parse_candidate_document
+from practice_candidates import candidate_learning_rows
 
 
 def document():
@@ -26,6 +27,55 @@ def document():
 
 
 class PracticeCandidateTests(unittest.TestCase):
+    def test_reading_candidate_v2_preserves_task_version_and_ability_without_grading(self):
+        value = document()
+        value['schemaVersion'] = 2
+        value['parent']['sourceVersion'] = 'b' * 64
+        value['readingContext'] = {
+            'schemaVersion': 1, 'paperId': 'paper', 'sourceNote': 'Papers/paper.md',
+            'materialFingerprint': 'a' * 64, 'sourceVersion': 'b' * 64,
+            'unitId': 'unit', 'taskId': 'task', 'taskRevision': 1,
+            'abilityType': 'condition', 'abilityId': 'paper-ability:' + 'c' * 64,
+            'mappingStatus': 'candidate', 'sectionId': 'methods',
+            'paragraphs': [{'id': 'p', 'rawEn': value['items'][0]['quote'], 'pageNumber': 2}],
+        }
+        value['items'][0]['fragmentId'] = 'reading-p-1'
+        value['items'][0]['citation'].update(fragmentId='reading-p-1', start=0,
+            end=len(value['items'][0]['quote'].encode('utf-16-le')) // 2)
+        parsed = parse_candidate_document(json.dumps(value, ensure_ascii=False))
+        identity, fields, material = list(candidate_learning_rows(parsed))[0]
+        self.assertEqual(fields['abilityId'], value['readingContext']['abilityId'])
+        self.assertIn('"taskRevision": 1', material)
+        self.assertIn('"materialFingerprint"', material)
+        self.assertTrue({'rating', 'mastery', 'schedule', 'event', 'stateRef'}.isdisjoint(fields))
+        for key, bad in [('sourceVersion', ['b' * 64]), ('taskRevision', True), ('mappingStatus', 'approved')]:
+            corrupted = copy.deepcopy(value)
+            corrupted['readingContext'][key] = bad
+            with self.assertRaises(ValueError):
+                parse_candidate_document(json.dumps(corrupted))
+
+    def test_node_generated_reading_candidate_uses_the_existing_authorized_mapping_pipeline(self):
+        from external_source_registry import publish
+        fixture = Path(__file__).parent / 'fixtures' / 'paper-reading-candidates-v2.json'
+        raw = fixture.read_text(encoding='utf-8')
+        artifact = parse_candidate_document(raw)
+        with tempfile.TemporaryDirectory() as directory:
+            vault = Path(directory)
+            file = vault / 'reading.zhixue-candidates.json'
+            file.write_text(raw, encoding='utf-8')
+            docs = read_local_documents(file)
+            source = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            items = learning_items(docs, source)
+            manifest = publish(vault, 'a' * 64, source, docs, items, 'Synthetic review')
+            identity = next(iter(manifest['items']))
+            self.assertRegex(identity, r'^mapped-item:[a-f0-9]{24}$')
+            materials = [path for path in (vault / '_System').rglob('*.md') if '"readingContext"' in path.read_text(encoding='utf-8')]
+            self.assertTrue(materials)
+            self.assertIn(artifact['readingContext']['abilityId'], materials[0].read_text(encoding='utf-8'))
+            self.assertIn('"taskRevision": 1', materials[0].read_text(encoding='utf-8'))
+            self.assertFalse(any('/records/' in name.replace('\\', '/') for name in manifest['files']))
+            self.assertEqual(file.read_text(encoding='utf-8'), raw)
+
     def test_file_folder_zip_select_only_the_dedicated_suffix(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

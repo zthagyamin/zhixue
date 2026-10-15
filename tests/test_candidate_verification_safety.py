@@ -41,7 +41,18 @@ class CandidateVerificationSafetyTests(unittest.TestCase):
             with self.assertRaises(AssertionError): candidate.verify_program_files(installed, payload)
 
     def test_first_resume_cannot_silently_change_configuration(self):
-        before = {'databases':{'account-study.db':'core','study-loop.db':'native'},'config':'original','vault':{'core.json':'core'}}
+        before = {'databases':{'account-study.db':'core','study-loop.db':'native'},'config':'original',
+                  'executorLocks':{'request.lock':{'sha256':'original','device':'1','inode':'2'}},
+                  'vault':{'core.json':'core'}}
         after = {**before,'vault':{**before['vault'],'month.md':'new'}}
         candidate.verify_resume_preserved(before, after)
         with self.assertRaises(AssertionError): candidate.verify_resume_preserved(before, {**after,'config':'changed'})
+
+    def test_resume_rejects_replaced_execution_lock_even_when_bytes_match(self):
+        before = {'databases':{'account-study.db':'core','study-loop.db':'native'},'config':'original',
+                  'executorLocks':{'request.lock':{'sha256':'original','device':'1','inode':'2'}},
+                  'vault':{'core.json':'core'}}
+        after = {**before,'vault':{**before['vault'],'month.md':'new'},
+                 'executorLocks':{'request.lock':{'sha256':'original','device':'1','inode':'3'}}}
+        with self.assertRaises(AssertionError):
+            candidate.verify_resume_preserved(before,after)

@@ -3,6 +3,60 @@ from __future__ import annotations
 import json
 from typing import Any, Callable
 
+GENERATED_SOURCE_PATH = '已授权的本地来源'
+_BINDING_FIELDS = {
+    'itemId', 'abilityId', 'sourceNote', 'stateRef', 'stateHandle',
+    'accountItemKey', 'contentHash', 'fingerprint', 'localBindingHash',
+    'snapshotId', 'sourceMode', 'eventKind', 'allowLegacyAliases',
+    'sourceConfirmationRequired',
+}
+
+
+def _generated_item(item: dict, plugin: str, title: str, scope: str,
+                    hash_text: Callable[[str], str]) -> dict:
+    """Provider content is never source registration or writeback authority."""
+    safe = {key: value for key, value in item.items() if key not in _BINDING_FIELDS}
+    if plugin != 'three-stage':
+        body = {key: value for key, value in safe.items() if key not in {'id', 'sourceLabel'}}
+        canonical = json.dumps([title, scope, plugin, body], ensure_ascii=False,
+                               sort_keys=True, separators=(',', ':'))
+        digest = hash_text(canonical)
+        identity = 'generated:' + digest
+        safe.update(id=identity, itemId=identity, contentHash=digest,
+                    allowLegacyAliases=False, sourceConfirmationRequired=True)
+    return safe
+
+
+def _generated_subject_id(value: str, name: str, plugin: str, title: str, scope: str,
+                          hash_text: Callable[[str], str]) -> str:
+    if not value.startswith('mapped:'):
+        return value
+    canonical = json.dumps([title, scope, plugin, name], ensure_ascii=False, separators=(',', ':'))
+    return 'generated-subject:' + hash_text(canonical)
+
+
+def sanitize_generated_payload(payload: dict, *, hash_text: Callable[[str], str]) -> dict:
+    """Retire unsafe generated cache fields before handle/source enrichment.
+
+    The descriptor is written by this generator, not copied from its provider.
+    Indexed data, seed data and trusted source carriers do not use this marker.
+    Historical study events and their delivery receipts are never changed here.
+    """
+    source = payload.get('source')
+    if not isinstance(source, dict) or source.get('path') != GENERATED_SOURCE_PATH:
+        return payload
+    result = json.loads(json.dumps(payload))
+    for subject in result.get('subjects', []):
+        if not isinstance(subject, dict) or not isinstance(subject.get('items'), list):
+            continue
+        plugin = subject.get('pluginType', '')
+        subject['id'] = _generated_subject_id(str(subject.get('id', '')), str(subject.get('name', '')),
+                                              plugin, str(source.get('title', '')), str(source.get('scope', '')), hash_text)
+        subject['items'] = [_generated_item(item, item.get('pluginType') or item.get('type') or plugin,
+                                           str(source.get('title', '')), str(source.get('scope', '')), hash_text)
+                            for item in subject['items'] if isinstance(item, dict)]
+    return result
+
 def ensure_subject_payload(payload: dict[str, Any]) -> dict[str, Any]:
     """Keep legacy seed/install data readable by the plugin-driven website."""
     if isinstance(payload.get("subjects"), list) and payload["subjects"]:
@@ -37,7 +91,7 @@ def ensure_subject_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return {**payload, "contentMode": payload.get("contentMode", "demo"), "subjects": subjects}
 
 
-def validate_cards(payload: dict[str, Any], title: str, scope: str, *, seed: dict, stamp: Callable[[str], str], code_material_available: Callable[[Any], bool]) -> dict[str, Any]:
+def validate_cards(payload: dict[str, Any], title: str, scope: str, *, seed: dict, stamp: Callable[[str], str], code_material_available: Callable[[Any], bool], hash_text: Callable[[str], str]) -> dict[str, Any]:
     raw_subjects = payload.get("subjects")
     if not isinstance(raw_subjects, list) or not raw_subjects:
         legacy_words = payload.get("words", [])
@@ -137,13 +191,13 @@ def validate_cards(payload: dict[str, Any], title: str, scope: str, *, seed: dic
                     if isinstance(raw_item.get("tolerance"), (int, float)):
                         normalized["tolerance"] = raw_item["tolerance"]
             if normalized is not None:
-                for metadata_key in ("itemId", "abilityId", "sourceNote", "stateRef", "sourceLabel"):
+                for metadata_key in ("sourceLabel",):
                     metadata_value = raw_item.get(metadata_key)
                     if isinstance(metadata_value, str) and metadata_value.strip():
                         normalized[metadata_key] = metadata_value.strip()
                 if item_plugin != plugin_type:
                     normalized["pluginType"] = item_plugin
-                items.append(normalized)
+                items.append(_generated_item(normalized, item_plugin, title, scope, hash_text))
         if not items:
             continue
         subject: dict[str, Any] = {
@@ -152,6 +206,7 @@ def validate_cards(payload: dict[str, Any], title: str, scope: str, *, seed: dic
             "pluginType": plugin_type,
             "items": items,
         }
+        subject['id'] = _generated_subject_id(subject['id'], subject['name'], plugin_type, title, scope, hash_text)
         domain = str(raw_subject.get("domain", "")).strip()
         if domain and len(domain) <= 80 and not any(ord(character) < 32 for character in domain):
             subject["domain"] = domain
@@ -176,7 +231,7 @@ def validate_cards(payload: dict[str, Any], title: str, scope: str, *, seed: dic
         "status": "connected",
         "contentMode": "personal",
         "syncedAt": stamp("%Y-%m-%dT%H:%M:%S%z"),
-        "source": {"title": title, "path": "已授权的本地来源", "scope": scope},
+        "source": {"title": title, "path": GENERATED_SOURCE_PATH, "scope": scope},
         "subjects": subjects,
         "tomorrow": tomorrow or seed.get("tomorrow", []),
     }

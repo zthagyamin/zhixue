@@ -8,6 +8,8 @@ import { attemptId } from '../../domain/learning-attempt/index.ts';
 import { courseEvidenceFingerprint } from './fingerprint.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import { assertCourseScope, validateCourseAggregate, validateCourseOriginal, validateCourseDiagnosis } from './validation.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../account-study-writer/index.ts';
 
 export class D1CourseEvidenceStore implements CourseEvidenceStorePort {
     private database: Pick<D1Database, 'prepare'>;
@@ -26,9 +28,10 @@ export class D1CourseEvidenceStore implements CourseEvidenceStorePort {
         if (evidence && evidence.attemptId !== id) throw Error('course-evidence-record-binding');
         return evidence;
     }
-    mutate(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation): Promise<CourseEvidenceReceipt> { return this.write(scope, mutation, false); }
+    mutate(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation, writerGrantId?: string): Promise<CourseEvidenceReceipt> { return this.write(scope, mutation, false,writerGrantId); }
     writeModel(scope: CourseEvidenceScope, mutation: CourseEvidenceMutation): Promise<CourseEvidenceReceipt> { return this.write(scope, mutation, true); }
-    private async write(scope: CourseEvidenceScope, raw: CourseEvidenceMutation, model: boolean): Promise<CourseEvidenceReceipt> {
+    private async write(scope: CourseEvidenceScope, raw: CourseEvidenceMutation, model: boolean, writerGrantId?: string): Promise<CourseEvidenceReceipt> {
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         const mutation = parseCourseEvidenceMutation(raw); assertCourseScope(scope, mutation);
         if (mutation.kind === 'diagnose' && mutation.diagnostic.source === 'model' && !model) throw Error('course-model-public-mutation-forbidden');
         if (model && (mutation.kind !== 'diagnose' || mutation.diagnostic.source !== 'model')) throw Error('course-model-internal-result-required');
@@ -47,12 +50,14 @@ export class D1CourseEvidenceStore implements CourseEvidenceStorePort {
             return { ...next, status: next.status === 'duplicate' && !recorded ? 'conflict' : next.status, durable: next.status === 'duplicate' && Boolean(recorded) };
         }
         const saved = next.evidence!, values = [scope.userId, scope.libraryId, saved.attemptId];
+        const writer=studyWriterCondition(scope,writerGrantId);
         if (!current)
-            await this.q('INSERT INTO course_evidence_v1(user_id,library_id,attempt_id,revision,evidence_json,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING',
-                ...values, saved.revision, JSON.stringify(saved), saved.updatedAt).run();
+            await this.q(`INSERT INTO course_evidence_v1(user_id,library_id,attempt_id,revision,evidence_json,updated_at) SELECT ?,?,?,?,?,? WHERE ${writer.sql} ON CONFLICT DO NOTHING`,
+                ...values, saved.revision, JSON.stringify(saved), saved.updatedAt,...writer.bindings).run();
         else
-            await this.q('UPDATE course_evidence_v1 SET revision=?,evidence_json=?,updated_at=? WHERE user_id=? AND library_id=? AND attempt_id=? AND revision=?',
-                saved.revision, JSON.stringify(saved), saved.updatedAt, ...values, current.revision).run();
+            await this.q(`UPDATE course_evidence_v1 SET revision=?,evidence_json=?,updated_at=? WHERE user_id=? AND library_id=? AND attempt_id=? AND revision=? AND ${writer.sql}`,
+                saved.revision, JSON.stringify(saved), saved.updatedAt, ...values, current.revision,...writer.bindings).run();
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         const readback = await this.read(scope, mutation.attemptId);
         const operation = readback?.operations.find(op => op.operationId === mutation.operationId);
         if (operation?.fingerprint !== fingerprint) return { schemaVersion: 1, status: 'conflict', durable: false,

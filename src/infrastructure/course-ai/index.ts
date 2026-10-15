@@ -8,7 +8,7 @@ import {validateCourseDiagnostic,courseTaskHash} from '../../domain/course-study
 // @ts-expect-error TS5097: standalone Node contracts.
 import {studyObject,studyCount,studyId} from '../../domain/sync/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
-import {providerRequest} from '../ai/index.ts';
+import {providerRequest,readProviderText} from '../ai/index.ts';
 
 type Options={enabled:boolean;key:string;model:string;provider?:StudyAIProvider;baseUrl?:string;fetcher?:typeof fetch;timeoutMs?:number};
 export type CourseTaskAiResult={diagnostic:CourseDiagnostic;trace:CourseEvaluationTrace;usageTokens?:number};
@@ -31,7 +31,7 @@ export function createCourseTaskAi(options:Options){
             let reply:Response,rawText:string;
             try{
                 reply=await providerRequest(options,{model:options.model,messages:[{role:'system',content:instruction},{role:'user',content:JSON.stringify({task,learnerInput:answer})}],response_format:{type:'json_object'},thinking:{type:'disabled'},stream:false,max_tokens:budget.maxOutputTokens},controller.signal);
-                rawText=await reply.text();
+                rawText=await readProviderText(reply,{maxBytes:65536,limitError:'course-ai-provider-error',signal:controller.signal});
             }catch{throw Error(signal?.aborted?'course-ai-cancelled':'course-ai-provider-error');}
             finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
             if(signal?.aborted)throw Error('course-ai-cancelled');

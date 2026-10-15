@@ -1,6 +1,7 @@
 """Provider-neutral transport and owner/library-scoped public settings. No secrets in SQLite."""
 from __future__ import annotations
 import hashlib
+import http.client
 import json
 import re
 import urllib.request
@@ -10,13 +11,15 @@ import threading
 
 DEFAULT_BASES={'deepseek':'https://api.deepseek.com','chatgpt':'https://api.openai.com/v1'}
 SETTINGS_LOCK=threading.RLock()
+MAX_STREAM_RESPONSE_BYTES=8*1024*1024
+_LOOPBACK_HOSTS=frozenset(('localhost','127.0.0.1','::1'))
 
 def endpoint(base):
     if not isinstance(base,str): raise ValueError('invalid-ai-base-url')
     url=urllib.parse.urlsplit(base.strip())
     try: port=url.port
     except ValueError: raise ValueError('invalid-ai-base-url')
-    loopback=url.hostname in ('localhost','127.0.0.1','::1')
+    loopback=url.hostname in _LOOPBACK_HOSTS
     if not url.hostname or url.username or url.password or url.query or url.fragment or not re.fullmatch(r'/[A-Za-z0-9/_-]*',url.path or '/') or (url.scheme!='https' and not(url.scheme=='http' and loopback)):
         raise ValueError('invalid-ai-base-url')
     return base.strip().rstrip('/')+'/chat/completions'
@@ -36,7 +39,13 @@ def build_request(settings,key,body):
     return urllib.request.Request(endpoint(settings['baseUrl']),data=json.dumps(payload,ensure_ascii=False).encode('utf-8'),headers={'Content-Type':'application/json','Authorization':f'Bearer {key}'},method='POST')
 
 def open_request(request,timeout):
-    return urllib.request.build_opener(NoRedirect()).open(request,timeout=timeout)
+    if urllib.parse.urlsplit(request.full_url).hostname in _LOOPBACK_HOSTS:
+        # A selected local service must remain on this machine even when the
+        # operating system has a proxy without a loopback bypass rule.
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+    else:
+        opener=urllib.request.build_opener(NoRedirect())
+    return opener.open(request,timeout=timeout)
 
 class SettingsStore:
     def __init__(self,database,keyring,service,legacy,legacy_key):
@@ -113,10 +122,14 @@ def chat(settings,key,request):
 
 def stream_chat(settings,key,request):
     body=chat_body(settings,request);body.update(stream=True,stream_options={'include_usage':True})
-    finished=False;model=settings['model'];usage=None;size=0
+    finished=False;model=settings['model'];usage=None;size=0;received_bytes=0
     with open_request(build_request(settings,key,body),40) as response:
         while True:
-            line=response.readline(262145)
+            # Hidden reasoning, comments and usage-only events consume the same
+            # finite response budget as visible text; retain the original frame limit.
+            line=response.readline(min(262145,MAX_STREAM_RESPONSE_BYTES-received_bytes+1))
+            received_bytes+=len(line)
+            if received_bytes>MAX_STREAM_RESPONSE_BYTES:raise ValueError('ai-stream-limit')
             if not line:raise ValueError('ai-stream-incomplete')
             if len(line)>262144:raise ValueError('ai-stream-limit')
             line=line.decode('utf-8').strip()
@@ -144,12 +157,21 @@ def stream_chat(settings,key,request):
 
 def failure_code(error):
     allowed = {'ai-settings-stale', 'ai-model-list-key-required', 'ai-model-list-empty', 'account-ai-key-required', 'ai-provider-auth', 'ai-provider-permission', 'ai-provider-model', 'ai-provider-rate-limit', 'ai-provider-network', 'ai-provider-output-limit'}
+    allowed.update({'ai-request-pending', 'ai-request-indeterminate', 'ai-request-conflict',
+                    'ai-chat-execution-unverified', 'ai-chat-execution-required',
+                    'ai-chat-storage-unavailable', 'ai-chat-authority-changed', 'ai-library-changed',
+                    'account-ai-daily-limit', 'account-ai-token-limit', 'account-ai-concurrency-limit'})
+    allowed.update({'ai-stream-incomplete', 'ai-stream-limit'})
     if str(error) in allowed:
         return str(error)
     if isinstance(error, urllib.error.HTTPError):
         return {401: 'ai-provider-auth', 402: 'ai-provider-balance', 403: 'ai-provider-permission', 404: 'ai-provider-endpoint', 429: 'ai-provider-rate-limit', 400: 'ai-provider-bad-request'}.get(error.code, 'ai-provider-unavailable')
     if isinstance(error, (TimeoutError,)):
         return 'ai-provider-timeout'
+    if isinstance(error, http.client.IncompleteRead):
+        return 'ai-stream-incomplete'
+    if isinstance(error, ConnectionError):
+        return 'ai-provider-network'
     if isinstance(error, urllib.error.URLError):
         return 'ai-provider-network'
     return 'ai-provider-error'

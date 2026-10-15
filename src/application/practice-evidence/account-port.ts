@@ -7,7 +7,7 @@ export interface AccountPracticeEvidenceStorePort {
     supported():Promise<boolean>;
     read(scope:AccountPracticeEvidenceScope, attemptId:string):Promise<PracticeEvidenceV1|null>;
     list(scope:AccountPracticeEvidenceScope, page?:{cursor?:string;limit?:number}):Promise<PracticeEvidencePage>;
-    mutate(scope:AccountPracticeEvidenceScope, mutation:PracticeEvidenceMutationV1):Promise<PracticeEvidenceReceipt>;
+    mutate(scope:AccountPracticeEvidenceScope, mutation:PracticeEvidenceMutationV1, writerGrantId?:string):Promise<PracticeEvidenceReceipt>;
     trustedWriter():{mutate(scope:AccountPracticeEvidenceScope, mutation:PracticeEvidenceMutationV1):Promise<PracticeEvidenceReceipt>};
 }
 /** Immutable original source is resolved by the existing published-snapshot adapter. */

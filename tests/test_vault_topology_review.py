@@ -44,7 +44,8 @@ class MappingReviewTests(unittest.TestCase):
         scan=vt.inspect(self.root);self.assertEqual(len(scan['suggestions']),1);self.assertEqual(scan['diagnostics'][0]['code'],'mapping-invalid-encoding')
         import server
         with patch.object(server,'LOCAL_DATABASE_PATH',self.db),patch.object(server,'installation_owner_hash',return_value='owner'),patch.object(server,'source_path',return_value=self.root):
-            preview=server.vault_mapping_request('owner',{'action':'preview','rules':[self.rule()]})
+            context=server.vault_mapping_request('owner')['contextId']
+            preview=server.vault_mapping_request('owner',{'action':'preview','schemaVersion':2,'contextId':context,'rules':[self.rule()]})
         self.assertEqual(preview['itemCount'],1);self.assertEqual(preview['diagnostics'][0]['path'],'bad.md')
     def test_read_permission_failure_is_isolated_and_sampling_stays_bounded(self):
         bad=self.write('bad.md','## Bad\nNo read');self.write('good.md','## Good\nAnswer')

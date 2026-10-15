@@ -7,13 +7,21 @@ from http.server import ThreadingHTTPServer
 from unittest import mock
 import test_gateway_server as fixtures
 import assistance_schema as schema
+from source_admission_fixture import install_accepted_history
 
 
 class AssistanceServiceTests(unittest.TestCase):
     def setUp(self):
         self.f=fixtures.GatewayServerTests();self.f.setUp();self.addCleanup(self.f.tearDown)
         self.method=getattr(fixtures.server,'accept_assistance_payload',None);self.assertIsNotNone(self.method)
-        self.payload=self.f.payload();item=fixtures.index_gateway.load_gateway(self.f.vault)['subjects'][0]['items'][0]
+        self.payload=self.f.payload()
+        # The auxiliary summary refers to an already saved original answer and
+        # claim; the formal V3 event is still sent explicitly by each test.
+        if self._testMethodName != 'test_old_native_attempt_stays_auxiliary_unknown_and_original_record_is_preserved':
+            admission=self.f.authorize(self.payload)
+            self.assertTrue(admission['receipt']['durable'])
+            self.assertEqual(admission['evaluation']['status'],'resolved')
+        item=fixtures.index_gateway.load_gateway(self.f.vault)['subjects'][0]['items'][0]
         self.binding=dict(schemaVersion=1,eventId=self.payload['event']['eventId'],coreHash=self.payload['event']['coreHash'],contentHash=item['contentHash'],localBindingHash=item['localBindingHash'],practiceMode='quiz')
         self.payload['attemptBinding']=self.binding
         self.summary=schema.seal_summary(dict(schemaVersion=1,attemptEventId=self.binding['eventId'],attemptCoreHash=self.binding['coreHash'],practiceMode='quiz',observationScope='current-page-attempt',preSubmitAssistance=[],postSubmitFeedback=[dict(action='ai-hint',count=1)]))
@@ -29,7 +37,8 @@ class AssistanceServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'parent'):self.method('different',{'record':self.record})
 
     def test_old_native_attempt_stays_auxiliary_unknown_and_original_record_is_preserved(self):
-        self.payload.pop('attemptBinding');self.f.accept(self.payload)
+        self.payload.pop('attemptBinding')
+        install_accepted_history(fixtures.server,self.f.vault,'account',self.payload)
         result=self.method('account',{'record':self.record});self.assertEqual(result['receipt']['receipt']['status'],'blocked');self.assertEqual(result['receipt']['receipt']['reason'],'baseline-unverified')
         self.assertFalse((self.f.vault/self.f.root/'records/assistance').exists())
 

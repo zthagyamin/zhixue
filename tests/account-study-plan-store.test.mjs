@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {openD1} from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import {vocabularyInput} from './fixtures/task-plan-input.mjs';
 import {generateTaskPlan} from '../app/task-plan-engine.ts';
 import {sealStudyItem,sealStudySnapshot,studyHash} from '../app/account-study-content.ts';
@@ -27,6 +28,24 @@ async function setup(t,userId='user-a'){
   const plan=await generateTaskPlan({day:'2026-08-31',catalog:engine,words,reviews:[],completions:[],previous:null});
   return {sqlite,binding,store,scope,catalog,facts,plan:await sealCloudTaskPlan(plan,catalog,{baseRevision:0,factsHash:facts.factsHash,eventThrough:0,taskThrough:0,nativeBaseRevision:0})};
 }
+for(const phase of ['claim','receipt','repair'])for(const change of ['revoke','expire','replace-library'])test(`plan ${phase} preserves claims and receipts at qualification change: ${change}`,async t=>{
+ const f=await setup(t),operationId='qualification-plan-approve';
+ await f.store.mutate(f.scope,{action:'save',operationId:'qualification-plan-save',expectedRevision:0,plan:f.plan});
+ await f.store.mutate(f.scope,{action:'approve',operationId,expectedRevision:1,day:f.plan.day,planHash:f.plan.cloudPlanHash,predecessorOperationId:null});
+ const actor=await activateSyntheticWriter(f.binding,f.scope),receipt={schemaVersion:1,receiptId:'qualification-plan-receipt',operationId,
+  cloudPlanHash:f.plan.cloudPlanHash,status:'blocked',reason:'source-changed'};
+ if(phase!=='claim')await f.store.claimExecution(f.scope,operationId,actor.grantId);
+ if(phase==='repair'){
+  await f.store.appendExecution(f.scope,receipt,actor.grantId);
+  f.sqlite.prepare("UPDATE account_study_plan_claims SET state='claimed' WHERE operation_id=?").run(operationId);
+ }
+ const tables=['account_study_plan_claims','account_study_plan_execution_receipts'];
+ const snapshot=()=>Object.fromEntries(tables.map(table=>[table,f.sqlite.prepare(`SELECT * FROM ${table}`).all()])),before=snapshot();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,f.scope,actor,change,phase==='receipt'?'account_study_plan_execution_receipts':'account_study_plan_claims');
+ await assert.rejects(phase==='claim'?f.store.claimExecution(f.scope,operationId,actor.grantId):f.store.appendExecution(f.scope,receipt,actor.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(snapshot(),before);
+});
+
 test('catalog is scoped immutable and never contains local paths',async t=>{
   const {store,scope,catalog}=await setup(t);assert.deepEqual(await store.getCatalog(scope,catalog.snapshotId),catalog);
   assert.equal(await store.getCatalog({userId:'user-b',libraryId:'library-a'},catalog.snapshotId),null);

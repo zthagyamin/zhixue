@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {isNonWordOriginal, quizMaterial, evaluateSelection, transitionQuiz} from '../src/domain/content/nonword-learning.ts';
+import {readFile} from 'node:fs/promises';
+
+test('saved source choice fixture uses the same website selection outcomes', async () => {
+  const fixture=JSON.parse(await readFile(new URL('./fixtures/source-choice-v1.json',import.meta.url),'utf8'));
+  assert.equal(fixture.schemaVersion,1);
+  for(const row of fixture.cases)assert.equal(evaluateSelection(quizMaterial(row.item),row.selection).status,row.status,row.id);
+});
 
 test('original vocabulary remains vocabulary when displayed as quiz or flashcard', () => {
   for (const source of [{word:'retain',meaning:'保留'}, {kind:'word'}, {eventKind:'word'}, {pluginType:'three-stage'}, {type:'spelling'}]) {

@@ -1,6 +1,6 @@
 export type RecoveryPack={
   complete:boolean;
-  pending:{coreUploads:readonly string[];coreWritebacks:readonly string[];recovery:readonly string[];assistance:readonly string[];tasks:readonly string[];legacyQueues:boolean};
+  pending:{coreUploads:readonly string[];coreWritebacks:readonly string[];recovery:readonly string[];assistance:readonly string[];tasks:readonly string[];nonword?:readonly string[];legacyQueues:boolean};
   payload:{accountLibraries:readonly {libraryId:string}[]};
 };
 export type RecoveryActionResult={status:'succeeded'|'partial'|'blocked'|'cancelled'|'stale'|'failed';message:string};
@@ -14,7 +14,7 @@ export type MaintenancePorts<Pack extends RecoveryPack>={
   cancelRead:()=>void;pauseRead:()=>void;message:(message:string)=>void;
 };
 export const recoveryPending=(value:RecoveryPack)=>!value.complete||value.pending.legacyQueues||
-  [value.pending.coreUploads,value.pending.coreWritebacks,value.pending.recovery,value.pending.assistance,value.pending.tasks].some(items=>items.length>0);
+  [value.pending.coreUploads,value.pending.coreWritebacks,value.pending.recovery,value.pending.assistance,value.pending.tasks,value.pending.nonword??[]].some(items=>items.length>0);
 const stale=():RecoveryActionResult=>({status:'stale',message:'学习空间已变化，已忽略旧操作结果。'});
 
 /** Only rebuildable views are passed to the clearing ports. Immutable histories have no deletion port. */
@@ -46,7 +46,7 @@ export function createSourceMaintenance<Pack extends RecoveryPack>(ports:Mainten
     try{
       const value=await ports.export(frame.owner);if(!current(frame))return stale();
       if(!unchanged())return changed();
-      if(!value.complete||value.pending.coreUploads.length||value.pending.recovery.length||value.pending.tasks.length||value.pending.legacyQueues)
+      if(!value.complete||value.pending.coreUploads.length||value.pending.recovery.length||value.pending.tasks.length||value.pending.nonword?.length||value.pending.legacyQueues)
         return respond(frame,'blocked','仍有未上传记录或恢复数据尚未核对完整，已拒绝清理。请先导出并恢复网络同步。');
       ports.cancelRead();
       for(const library of value.payload.accountLibraries){

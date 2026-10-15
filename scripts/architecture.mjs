@@ -2,7 +2,7 @@ import ts from 'typescript';
 import {readFileSync,readdirSync,existsSync,writeFileSync} from 'node:fs';
 import {resolve,relative,posix} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawnSync} from 'node:child_process';
+import {spawnPythonSync} from './python-runtime.mjs';
 
 const normalize=text=>text.replace(/\r\n/g,'\n');
 const slash=text=>text.replaceAll('\\','/');
@@ -103,7 +103,7 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const root=resolve('.'),sources=readProjectSources(root),config=resolve(root,'architecture.config.json');
  const policy=existsSync(config)?JSON.parse(readFileSync(config,'utf8')):{};
  const report=auditSources(sources,policy),reportIndex=process.argv.indexOf('--report');
- const python=spawnSync(process.env.PYTHON||'python',['-X','utf8',resolve(root,'scripts/companion-architecture.py'),root],{encoding:'utf8',windowsHide:true});
+ const python=spawnPythonSync(['-X','utf8',resolve(root,'scripts/companion-architecture.py'),root],{encoding:'utf8'});
  if(python.error||python.status!==0){report.violations.push({code:'python-check-unavailable',file:'companion',message:python.error?.message||python.stderr||'Python boundary check failed.'});}
  else{
   const companion=JSON.parse(python.stdout);report.summary.companion=companion.summary;

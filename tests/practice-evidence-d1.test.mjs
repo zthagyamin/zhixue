@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {openD1} from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import {D1PracticeEvidenceStore} from '../src/infrastructure/practice-evidence/d1.ts';
 import {D1LearningAttemptStore} from '../src/infrastructure/learning-attempt/index.ts';
 import {AccountStudyStore} from '../db/account-study-store.ts';
@@ -26,6 +27,13 @@ async function fixture(t,mode='code',submitted=true,learningSupport=support){
  const r=report();r.identity.sourceVersion=r.identity.testVersion=item.contentHash;
  return {...db,scope,store,a,put,m,r,item,original};
 }
+for(const change of ['revoke','expire','replace-library'])test(`practice report stays unchanged when device qualification moves at commit: ${change}`,async t=>{
+ const f=await fixture(t),writer=await activateSyntheticWriter(f.binding,f.scope),before=f.sqlite.prepare('SELECT * FROM practice_evidence_v1').all();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,f.scope,writer,change,'practice_evidence_v1');
+ await assert.rejects(f.store.mutate(f.scope,f.m('code-report',{report:f.r}),writer.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(f.sqlite.prepare('SELECT * FROM practice_evidence_v1').all(),before);
+});
+
 test('actual D1 missing capability, scoped CAS, lost receipt replay and no original writes',async t=>{
  const f=await fixture(t),before=JSON.stringify(f.a),m=f.m('code-report',{report:f.r});
  const values=await Promise.all([f.store.mutate(f.scope,m),f.store.mutate(f.scope,{...m,operationId:'two'})]);

@@ -1,6 +1,6 @@
 import type {PlanningNavigationLease,PlanningNavigationSource,TaskPlanningSession,PlanningAccountEntry} from '../../src/application/planning';
 import {sameStartTasks,SubjectPlanUnavailableError} from '../../src/application/planning';
-import {studyPracticeGroups,nativeTaskCompletedKeys,assertPlanningStudySources,type TaskPlanV2,type PlanningCatalog,type StudyPracticeGroup} from '../../src/domain/planning';
+import {studyPracticeGroups,nativeTaskCompletedKeys,currentPracticeCompletionEvents,assertPlanningStudySources,type TaskPlanV2,type PlanningCatalog,type StudyPracticeGroup} from '../../src/domain/planning';
 import {normalizeDynamicSubjects,resolveStudyItemProgressKey,stableStudyItemKey,type DynamicSubject} from '../dynamic-ui-model';
 import {pluginItemKey,resolvePluginType,type PluginOverrides} from '../plugin-routing';
 import {checkContentQuality} from '../../src/domain/assessment';
@@ -50,7 +50,8 @@ export function createPlanningSourceAdapter(readFrame:()=>Frame){
       if(!plan||!catalog)return null;
       const projection=frame.nativeProjection,completed:Record<string,string[]>={};
       if(projection?.workspaceId===frame.owner&&projection.sourceScope===frame.nativeScope&&frame.nativeReady){
-        for(const task of plan.tasks)completed[task.taskId]=nativeTaskCompletedKeys(task,state.reviewRounds.find(value=>value.roundId===task.reviewRoundId||value.aliasRoundIds?.includes(task.reviewRoundId??'')),projection.events,frame.day);
+        const events=state.completionEvents??currentPracticeCompletionEvents(catalog,projection.events,[]);
+        for(const task of plan.tasks)completed[task.taskId]=nativeTaskCompletedKeys(task,state.reviewRounds.find(value=>value.roundId===task.reviewRoundId||value.aliasRoundIds?.includes(task.reviewRoundId??'')),events,frame.day,projection.events);
       }
       return {ready:state.ready,plan,catalog,libraryId:frame.nativeScope,completedTaskIds:state.completedTaskIds,startedTaskIds:plan.manual.lockedTaskIds,pendingItemByTask:{},selection:frame.selection,
         context:{subjects:frame.subjects,progress:frame.progress,overrides:frame.overrides,completed,nativeSession:session}};

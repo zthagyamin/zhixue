@@ -47,6 +47,9 @@ def file_hash(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 def manifest(data, config, vault):
     return {'databases': {name: file_hash(data/name) for name in ('study-loop.db','account-study.db','assistance-study.db')},
+            'executorLocks': {str(path.relative_to(data)): {'sha256': file_hash(path),
+                              'device': str(path.stat().st_dev), 'inode': str(path.stat().st_ino)}
+                              for path in sorted((data/'study-loop.db.chat-executors').glob('*.lock'))},
             'config': file_hash(config), 'vault': {str(path.relative_to(vault)): file_hash(path) for path in sorted(vault.rglob('*')) if path.is_file()}}
 
 
@@ -60,6 +63,7 @@ def verify_program_files(installed, payload):
 
 def verify_resume_preserved(before, after):
     assert after['config'] == before['config']
+    assert after['executorLocks'] == before['executorLocks']
     for name in ('account-study.db', 'study-loop.db'):
         assert after['databases'][name] == before['databases'][name]
     assert all(after['vault'][name] == digest for name, digest in before['vault'].items())
@@ -77,6 +81,8 @@ def main():
     candidate, reference = Path(args.candidate).resolve(), Path(args.reference).resolve()
     if not candidate.is_relative_to(root) or not reference.is_relative_to(root):
         raise ValueError('Payloads must be inside the explicit candidate workspace')
+    candidate_version = json.loads((candidate/'version.json').read_text(encoding='utf-8-sig'))['version']
+    reference_version = json.loads((reference/'version.json').read_text(encoding='utf-8-sig'))['version']
     run = root / ('retention-' + uuid.uuid4().hex)
     run.mkdir()
     target, seed, fresh = run/'installed', run/'seed', run/'fresh-install'
@@ -159,11 +165,22 @@ def main():
         for name in ('study-loop.db','account-study.db','assistance-study.db'):
             with closing(sqlite3.connect(seed/name)) as source, closing(sqlite3.connect(data/name)) as destination:
                 source.backup(destination)
+        # Create the private witness at its installed path; copying a lock from
+        # the seed directory would invalidate its recorded filesystem identity.
+        from infrastructure.local_chat_ledger import LocalChatLedger
+        chat_fixture = json.loads((REPO/'tests/fixtures/local-chat-recovery-v1.json').read_text(encoding='utf-8'))
+        chat = LocalChatLedger(data/'study-loop.db', f.owner, 'candidate-chat-library', f.vault)
+        ticket = chat.begin(chat_fixture['request'], chat_fixture['settings'])
+        with chat.execution(ticket):
+            chat.dispatch(ticket)
+            chat.append(ticket, 'Synthetic saved partial for installer retention')
+            chat.abandon(ticket)
         config = target/'config.local.json'
         config.write_text(json.dumps({'learning_vault_root':str(f.vault),'fixture':'candidate-retention'}),encoding='utf-8')
         before = manifest(data,config,f.vault)
+        assert len(before['executorLocks']) == 1
         old_read = inspect()
-        assert old_read['version'] == '1.11.5' and old_read['coreCount'] == 3 and len(old_read['native']) == 1
+        assert old_read['version'] == reference_version and old_read['coreCount'] == 3 and len(old_read['native']) == 1
         assert old_read['jobs'][0][-1] == 0 and len(old_read['receipts']) == 1
 
         fault_payload = run/'fault-payload'
@@ -176,7 +193,7 @@ def main():
         install(candidate,'upgrade')
         assert manifest(data,config,f.vault) == before
         current_read = inspect()
-        assert current_read['version'] == '1.12.0'
+        assert current_read['version'] == candidate_version
         assert {k:v for k,v in current_read.items() if k!='version'} == {k:v for k,v in old_read.items() if k!='version'}
 
         install(reference,'program-rollback')
@@ -192,7 +209,7 @@ def main():
         verify_resume_preserved(before, after)
         assert inspect(resume=True) == resumed
         assert manifest(data,config,f.vault) == after
-        report = {'candidateVersion':'1.12.0','referenceVersion':'1.11.5','runRoot':str(run),'modules':len(modules),'phases':phases,
+        report = {'candidateVersion':candidate_version,'referenceVersion':reference_version,'runRoot':str(run),'modules':len(modules),'phases':phases,
                   'oldRead':old_read,'resumed':resumed,'before':before,'after':after,
                   'registration':False,'environmentSetup':False,'realCompanionStarted':False,
                   'note':'Fresh Python processes validated old/new payload reads and resumed one incomplete auxiliary job; real machine setup/registration was not run.'}

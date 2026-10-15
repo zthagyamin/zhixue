@@ -2,6 +2,8 @@ import type {StudyEventV3} from '../../domain/evidence';
 import type {SyncV3Store,ProcessStudyBatch} from '../../application/sync';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {parseCloudStudyEventV3} from '../../domain/evidence/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {readSyncRequestBody,SyncBodyLimitError} from './request-body.ts';
 export type SyncIdentity={userId:string};
 export type GetUser = () => Promise<SyncIdentity | null>;
 
@@ -138,17 +140,25 @@ export function createSyncRouteHandlers(deps: {
     const user = await deps.getUser();
     if (!user) return unauthorizedLegacyResponse();
 
+    // Missing browser metadata remains compatible with authenticated old native
+    // callers; explicit cross-origin intent must never reach any write action.
+    const origin = request.headers.get('Origin'), site = request.headers.get('Sec-Fetch-Site');
+    if ((origin !== null && origin !== new URL(request.url).origin)
+        || site === 'cross-site' || site === 'same-site') {
+      return Response.json({error:'origin-mismatch'}, {status:403});
+    }
+
     let body: Record<string, unknown>;
     try {
       const contentLength = request.headers.get("content-length");
       if (contentLength && parseInt(contentLength, 10) > 256000) {
         return Response.json({ error: "Payload too large" }, { status: 413 });
       }
-      const rawBody = await request.text();
-      if (rawBody.length > 64_000) return Response.json({ message: "同步请求过大。" }, { status: 413 });
+      const rawBody = await readSyncRequestBody(request);
       body = JSON.parse(rawBody) as Record<string, unknown>;
       if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('invalid-sync-body');
-    } catch {
+    } catch (error) {
+      if (error instanceof SyncBodyLimitError) return Response.json({message:"同步请求过大。"}, {status:413});
       return Response.json({ message: "请求内容无效。" }, { status: 400 });
     }
 

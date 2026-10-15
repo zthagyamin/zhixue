@@ -281,6 +281,29 @@ def _plan_stamp(vault):
     return [(path.as_posix(), (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns) if (stat := path.stat() if path.exists() else None) else None) for path in paths]
 
 
+def practice_completion_eligible(record, catalog):
+    """Project validated history onto current sources without changing that history."""
+    event = record['event']
+    if event['eventType'] != 'practice-attempt' or event['attempt']['correct'] is not True or event['attempt']['stageAfter'] != 3:
+        return False
+    key = event['item']['key']
+    sources = [source for source in catalog.get('practiceSources', []) if source['itemKey'] == key]
+    if sources:
+        identities = {(source['subjectId'], source['sourceHash']) for source in sources}
+        if len(identities) != 1:
+            return False
+        try:
+            evidence = validate_evidence(record.get('planningEvidence'), event)
+        except (ValueError, TypeError, KeyError):
+            return False
+        source = evidence.get('itemSource')
+        subject_id, source_hash = next(iter(identities))
+        return bool(source and record['subjectId'] == subject_id and source == {
+            'itemKey': key, 'subjectId': subject_id, 'sourceHash': source_hash})
+    return any(key in [word['itemKey'], *word.get('legacyKeys', [])]
+               for subject in catalog.get('subjects', []) for word in subject.get('words', []))
+
+
 def build_context(vault, gateway, account_id, validate_event, *, catalog_loader=None):
     # Same lock order as website plan apply: plan authority, then subject journals.
     with plan_area.PLAN_LOCK, index_gateway.LOCK:
@@ -294,8 +317,7 @@ def build_context(vault, gateway, account_id, validate_event, *, catalog_loader=
         records = history['records']
         reports = task_events.read_task_events(vault, gateway, account_id)
         completed_units = {unit for report in reports if report['source'] == 'self-report' for unit in report['unitIds']}
-        completed_items = {row['event']['item']['key'] for row in records if row['event']['eventType'] == 'practice-attempt'
-                           and row['event']['attempt']['correct'] and row['event']['attempt']['stageAfter'] == 3}
+        completed_items = {row['event']['item']['key'] for row in records if practice_completion_eligible(row, catalog)}
         latest = {}
         for subject_id, occurred in [(row['subjectId'], row['event']['occurredAt']) for row in records if row['event']['eventType'] == 'practice-attempt'] + [(report['subjectId'], report['occurredAt']) for report in reports]:
             latest[subject_id] = max(latest.get(subject_id, ''), occurred)

@@ -99,13 +99,13 @@
     },
     {
       "name": "@cloudflare/vite-plugin",
-      "version": "1.54.9",
+      "version": "1.63.1",
       "license": "MIT",
       "repository": "https://github.com/cloudflare/workers-sdk.git"
     },
     {
       "name": "@cloudflare/workers-types",
-      "version": "5.20260915.1",
+      "version": "5.20261006.1",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/cloudflare/workerd"
     },
@@ -255,7 +255,7 @@
     },
     {
       "name": "wrangler",
-      "version": "4.131.2",
+      "version": "4.149.0",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/cloudflare/workers-sdk.git"
     }

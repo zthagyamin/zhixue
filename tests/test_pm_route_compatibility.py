@@ -6,7 +6,6 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
-from http.server import ThreadingHTTPServer
 from unittest import mock
 
 import test_companion as fixtures
@@ -21,7 +20,7 @@ class RouteCompatibilityTests(unittest.TestCase):
         self.fixture.setUp()
         self.original_state = server.STATE
         server.CONFIG['allowed_origins'] = [ORIGIN]
-        self.httpd = ThreadingHTTPServer(('127.0.0.1', 0), server.Handler)
+        self.httpd = server.ThreadingHTTPServer(('127.0.0.1', 0), server.Handler)
         self.worker = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.worker.start()
         self.base = f'http://127.0.0.1:{self.httpd.server_port}'
@@ -81,6 +80,28 @@ class RouteCompatibilityTests(unittest.TestCase):
             status, _, result = self.request('POST', '/v1/refresh', {})
         self.assertEqual(status, 200)
         self.assertEqual(result['marker'], 'after')
+
+    def test_paired_legacy_calculation_returns_pending_for_unreliable_references(self):
+        import practice_engine
+        item = {"questionType": "calculation", "prompt": "计算 1 + 1。", "answer": "NaN"}
+        self.assertEqual(self.request('POST', '/v1/practice/grade', {"item": item, "answer": "2"}, session='bad')[0], 401)
+        for reference in ("NaN", "Infinity", "1e999"):
+            with self.subTest(reference=reference):
+                status, _, result = self.request('POST', '/v1/practice/grade',
+                    {"item": {**item, "answer": reference}, "answer": "2"})
+                self.assertEqual(status, 200)
+                self.assertIsNone(result["correct"])
+                self.assertEqual(result["verdict"], "unknown")
+                self.assertNotEqual(result.get("source"), "self-assess")
+        placeholder = practice_engine.build_base_item({"itemId": "synthetic-placeholder",
+            "abilityId": "synthetic-ability", "domain": "mathematics", "reviewPoints": ["42"]}, {})
+        status, _, result = self.request('POST', '/v1/practice/grade', {"item": placeholder, "answer": "42"})
+        self.assertEqual(status, 200)
+        self.assertIsNone(result["correct"])
+        self.assertEqual(result["verdict"], "unknown")
+        status, _, result = self.request('POST', '/v1/practice/grade', {"item": {**item, "answer": "2"}, "answer": "2"})
+        self.assertEqual(status, 200)
+        self.assertTrue(result["correct"])
 
     def test_route_failure_preserves_status_and_next_request(self):
         with mock.patch.object(server, 'get_hint_deepseek', side_effect=RuntimeError('synthetic-provider-unavailable')):

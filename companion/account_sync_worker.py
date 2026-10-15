@@ -25,6 +25,14 @@ class AccountBindingFailure(ValueError):
     pass
 
 
+class AccountAuthorizationFailure(ValueError):
+    pass
+
+
+class AccountNetworkFailure(OSError):
+    pass
+
+
 class SyncStopped(Exception):
     pass
 
@@ -118,6 +126,7 @@ class BackgroundSync:
         self.plan_processor=plan_processor;self.content_processor=content_processor;self.clock = clock or (lambda: datetime.now(timezone.utc)); self.stop_event = stop_event or threading.Event()
         self.assistance_sync=assistance_sync
         self.lock = threading.Lock()
+        self.authorization = None
 
     def _running(self):
         if self.stop_event.is_set():
@@ -131,7 +140,10 @@ class BackgroundSync:
 
     def _call(self, link, secret, method, action, **kwargs):
         self._running()
-        result = self.transport.request(method, link['origin'], secret, action, **kwargs)
+        try:
+            result = self.transport.request(method, link['origin'], secret, action, **kwargs)
+        except OSError:
+            raise AccountNetworkFailure('account-network-unavailable') from None
         self._running()
         if type(result) is not dict:
             raise ValueError('invalid-account-response-json')
@@ -142,12 +154,20 @@ class BackgroundSync:
             study_object(info, ['kind', 'userId', 'libraryId', 'grantId', 'state', 'expiresAt'])
             study_iso(info['expiresAt'])
             expires = datetime.fromisoformat(info['expiresAt'].replace('Z', '+00:00'))
-            if (info['kind'] != 'device' or info['state'] not in ('pending', 'active') or (active and info['state'] != 'active')
-                    or info['libraryId'] != link['libraryId'] or info['grantId'] != link['grantId'] or expires <= self.clock()
+            if (info['kind'] != 'device' or info['state'] not in ('pending', 'active', 'revoked')
+                    or info['libraryId'] != link['libraryId'] or info['grantId'] != link['grantId']
                     or type(info['userId']) is not str or not self.verify_owner(info['userId'])):
                 raise ValueError('mismatched-principal')
+            checked = self.clock()
+            expired = expires <= checked
         except (ValueError, TypeError, OverflowError):
             raise AccountBindingFailure('account-machine-binding') from None
+        if expired or info['state'] == 'revoked' or (active and info['state'] != 'active'):
+            raise AccountAuthorizationFailure('account-authorization-required')
+        if active:
+            self._running()
+            self.authorization = {'expiresAt': info['expiresAt'],
+                'checkedAt': checked.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')}
 
     def activate(self):
         if not self.lock.acquire(blocking=False):
@@ -346,11 +366,16 @@ class BackgroundSync:
                     'completeThrough': cursor['completeThrough'], **({'error': publication_error} if publication_error else {}),**({'assistance':auxiliary} if auxiliary is not None else {})}
         except SyncStopped:
             return {'status': 'stopped'}
-        except (CloudFailure, AccountBindingFailure) as error:
-            if isinstance(error, AccountBindingFailure) or error.status in (401, 403):
+        except AccountBindingFailure:
+            self.links.mark_state(self.owner_id, self.grant_id, 'paused')
+            return {'status': 'paused', 'error': 'account-cloud-link-changed'}
+        except (CloudFailure, AccountAuthorizationFailure) as error:
+            if isinstance(error, AccountAuthorizationFailure) or error.status in (401, 403):
                 self.links.mark_state(self.owner_id, self.grant_id, 'paused')
                 return {'status': 'paused', 'error': 'account-authorization-required'}
-            return {'status': 'retry', 'error': error.code}
+            return {'status': 'retry', 'error': 'account-cloud-unavailable'}
+        except AccountNetworkFailure:
+            return {'status': 'retry', 'error': 'account-cloud-unavailable'}
         except (OSError, sqlite3.Error):
             return {'status': 'retry', 'error': 'account-network-or-storage-unavailable'}
         except (ValueError, KeyError, TypeError):

@@ -24,6 +24,8 @@ export function createActiveClock<T>(options: {
         clock.last = now;
         if (clock.counting)
             clock.seconds += Math.max(0, delta) / 1000;
+        // These are estimates of the same interval, so combine after advancing.
+        clock.seconds = Math.max(clock.seconds, options.initial(current));
         clock.counting = options.counting();
         return Math.min(86400, Math.floor(clock.seconds));
     };

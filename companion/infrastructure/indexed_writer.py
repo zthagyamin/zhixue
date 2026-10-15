@@ -16,13 +16,13 @@ class IndexedStudyWriter:
     def __init__(self, now):
         self.now = now
 
-    def accept(self, database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault=True, attempt_binding=None, final_check=None):
+    def accept(self, database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault=True, attempt_binding=None, final_check=None, source_route=None):
         # Task evidence must only observe a journal after its owning practice transaction settles.
         with index_gateway.LOCK:
-            return self._accept_locked(database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault, attempt_binding, final_check)
+            return self._accept_locked(database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault, attempt_binding, final_check, source_route)
 
 
-    def _accept_locked(self, database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault=True, attempt_binding=None, final_check=None):
+    def _accept_locked(self, database, vault_root, account_id, event, context_raw, catalog, frozen, write_to_vault=True, attempt_binding=None, final_check=None, source_route=None):
         """Freeze local routing separately from the immutable portable event core."""
         now = self.now().isoformat(timespec="seconds")
         existing = database.execute("SELECT core_hash FROM study_events_v3 WHERE account_id = ? AND event_id = ?", (account_id, event["eventId"])).fetchone()
@@ -33,9 +33,11 @@ class IndexedStudyWriter:
             return {"status": "duplicate", "eventId": event["eventId"], "event": event, "projectionStatus": "applied", "mappingStatus": "mapped" if frozen and json.loads(frozen[0]).get("binding") else "unmapped", "companionReceipt": {"durable": True, "eventId": event["eventId"], "projectionStatus": "applied"}}
         if existing and not frozen:
             raise ValueError("legacy-pending-migration: 旧模式仍有待写回事件；请先完成旧映射写回，不能按新索引重新分配。")
-        if frozen:
-            route = json.loads(frozen[0])
+        if frozen or source_route:
+            route = json.loads(frozen[0]) if frozen else source_route
             binding, context, card_path = route["binding"], route["context"], route["reviewCardPath"]
+            if not frozen:
+                context = _validate_local_context(context, vault_root)
         else:
             binding, resolved = index_gateway.resolve_event_context(vault_root, catalog, event["item"]["key"], context_raw)
             context = _validate_local_context(resolved, vault_root)
@@ -43,6 +45,7 @@ class IndexedStudyWriter:
             card_path = card["path"] if card else None
             review_name = str(card["reviewPoints"][0]).strip() if card and card.get("reviewPoints") else practice_engine.item_to_review_entry(event)["name"]
             route = {"mode": "indexed", "binding": binding, "context": context, "reviewCardPath": card_path, "reviewEntryName": review_name}
+        if not frozen:
             from assistance_binding import admit_binding
             route.update(admit_binding(vault_root, event, binding, attempt_binding))
             if binding:
@@ -71,7 +74,7 @@ class IndexedStudyWriter:
             status = "applied"
             projection_payload = None
             if binding and write_to_vault:
-                journal_path = index_gateway.record_subject_event(vault_root, binding, account_id, event, context, route.get('planningEvidence'))
+                journal_path = index_gateway.record_subject_event(vault_root, binding, account_id, event, context, route.get('planningEvidence'), route.get('sourceAssociationV1'))
                 written[journal_path] = journal_path.read_bytes()
                 roots = {item['recordsRoot']: item for item in [*catalog.get('recordRoots',[]), *catalog.get('bindings',{}).values()]}
                 roots[binding['recordsRoot']] = binding

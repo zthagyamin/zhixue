@@ -19,7 +19,7 @@ function fixture(extra={}){
  const binding=bindInlineNonWordRound(rows,scopeFor);
  const runtime=()=>createNonWordRoundRuntime({scope:{ownerId:owner,libraryId:'library',groupId:JSON.stringify(['group',scopeFor(rows[0]).roundId]),day:binding.scope.day,cloud:false},members:binding.scope.members});
  hooks.mount(load('app/practice-session.tsx').PracticeSession,props);
- return{hooks,props,rows,scopeFor,binding,runtime,done,records,plugin:()=>[...nodes(hooks.view())].find(n=>n.props.onGrade&&n.props.context),description:()=>text(hooks.view())};
+ return{hooks,props,rows,scopeFor,binding,runtime,done,records,help:()=>[...nodes(hooks.view())].find(n=>n.type===load('app/study-guidance.tsx').StudyGuidanceHelp),plugin:()=>[...nodes(hooks.view())].find(n=>n.props.onGrade&&n.props.context),description:()=>text(hooks.view())};
 }
 async function settle(f){
  for(let i=0;i<12;i++){f.hooks.flush();await tick();f.hooks.render();}
@@ -28,6 +28,11 @@ async function settle(f){
  while(loading()&&Date.now()<deadline){f.hooks.flush();await tick();f.hooks.render();}
  assert.equal(loading(),false,'Round initialization did not acknowledge its saved state');
 }
+
+test('actual practice options select pending help only for original nonword content',async t=>{
+ const durable=fixture();t.after(()=>durable.hooks.unmount());await settle(durable);assert.equal(durable.help().props.pendingEvaluation,true);
+ const words=fixture({items:[{...items()[0],questionType:'recall',word:'tree'}]});t.after(()=>words.hooks.unmount());await settle(words);assert.equal(words.help().props.pendingEvaluation,false);
+});
 
 test('round fixture waits for the real initialization reply before reading plugin props',async t=>{
  const gate=deferred(),f=fixture({roundGate:gate});t.after(()=>{gate.resolve();f.hooks.unmount();});

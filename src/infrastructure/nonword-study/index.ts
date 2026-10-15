@@ -1,4 +1,4 @@
-import type { NonWordHostScope } from '../../application/nonword-study';
+import type { NonWordHostScope, NonWordSourceAdmission,NonWordOutcome } from '../../application/nonword-study';
 import type { LocalAttemptOptions } from '../../application/learning-attempt';
 import type { AttemptCheckpoint, LearningAttempt } from '../../domain/learning-attempt';
 // @ts-expect-error TS5097: standalone Node contracts.
@@ -19,6 +19,8 @@ export async function createNonWordRuntime(scope: NonWordHostScope, mode: NonWor
     binding?: LearningAttempt['binding'];
     navigationGroup?:ContinuationGroup;
     continuationMode?:'group'|'direct';
+    sourceAdmission?: (attempt: LearningAttempt,candidate?:NonWordOutcome) => Promise<NonWordSourceAdmission>;
+    isCurrent?:()=>boolean;
 } = {}) {
     if (options.existing && (options.existing.binding.ownerId !== scope.ownerId || options.existing.binding.libraryId !== scope.libraryId || options.existing.binding.itemKey !== scope.itemKey || options.existing.binding.contentHash !== scope.contentHash || options.existing.binding.snapshotId !== scope.snapshotId || options.existing.checkpoint.mode !== mode || options.existing.parentAttemptId || (options.existing.checkpoint.purpose ?? 'first') !== 'first'))
         throw Error('原始作答身份或版本不匹配。');
@@ -32,7 +34,10 @@ export async function createNonWordRuntime(scope: NonWordHostScope, mode: NonWor
     const repository = createLocalAttemptRepository({ userId: scope.ownerId, libraryId: scope.libraryId }, options);
     const cloud = scope.cloud ? createAccountAttemptClient({ ownerId: scope.ownerId, libraryId: scope.libraryId }) : null;
     const session = createNonWordSession({ repository, binding, attemptId: id, formalEventId, mode, purpose, parentAttemptId: options.parentAttemptId, intent: options.intent,
-        now: () => new Date().toISOString(), newId: () => crypto.randomUUID(), fingerprint: attemptFingerprint, evaluationFingerprint });
+        now: () => new Date().toISOString(), newId: () => crypto.randomUUID(), fingerprint: attemptFingerprint, evaluationFingerprint,isCurrent:options.isCurrent,
+        sourceAdmission: options.sourceAdmission ?? (scope.sourceConfirmationRequired
+            ? async () => ({ status: 'pending', reason: '来源尚未确认，临时答案已保留，不计正式成绩。' } as const)
+            : undefined) });
     let syncNotice = '', syncJob: Promise<void> | null = null;
     const statusListeners = new Set<() => void>();
     const sync = async () => {
@@ -141,18 +146,28 @@ export function rawAnswer(mode: NonWordMode, values: Record<string, unknown>): s
 export function restoredFields(attempt: LearningAttempt, mode: NonWordMode): Record<string, unknown> {
     const fields = attempt.checkpoint.pluginFields ?? {}, evaluation = attempt.evaluation;
     if (mode === 'quiz') {
-        if (!fields.selection)
-            return {};
-        try {
-            const state = JSON.parse(fields.selection);
-            return state && Array.isArray(state.selection) && ['answer', 'feedback', 'retry', 'retry-feedback'].includes(state.phase) ? { nonwordQuizState: state } : {};
-        }
-        catch {
-            return {};
-        }
+        const choices = (raw: unknown): string[] => Array.isArray(raw) && raw.length <= 500
+            && raw.every(id => typeof id === 'string' && id.length <= 128) ? [...raw] : [];
+        let selection: string[] = [];
+        try { selection = choices(attempt.submitted ? JSON.parse(attempt.submitted.answer) : JSON.parse(fields.selection ?? '{}')?.selection); }
+        catch { /* Malformed view data cannot supply a saved answer or result. */ }
+        // Checkpoint JSON is a view buffer. Only an admitted aggregate's evaluation
+        // proves the first result; a retry result needs its own child evidence.
+        const first = attempt.submitted && evaluation.status === 'resolved'
+            ? { selection: [...selection], result: { status: evaluation.outcome, matched: [], missing: [], wrong: [] } } : null;
+        return { nonwordQuizState: { selection, first, phase: first ? 'feedback' : 'answer', retry: null } };
     }
-    if (mode === 'code')
-        return { ...(fields.code !== undefined || attempt.answer ? { code: fields.code ?? attempt.answer } : {}), stdin: fields.stdin ?? '', codeState: fields.phase ?? 'coding', firstTestCode: attempt.submitted?.answer ?? '', firstTestOutput: evaluation.feedback ?? '', firstRunKind: fields.firstRunKind ?? (evaluation.status === 'resolved' ? (evaluation.correct ? 'correct' : 'incorrect') : attempt.submitted ? 'pending' : 'not-run'), firstNeedsReview: fields.firstNeedsReview === 'true' || Boolean(attempt.submitted && evaluation.status === 'pending') };
+    if (mode === 'code') {
+        const resolved = attempt.submitted && evaluation.status === 'resolved' ? evaluation : null;
+        const forgotten = resolved?.source === 'self-assess' && !resolved.correct;
+        // Bound execution sidecars still restore the latest run through codeFeedback;
+        // these fields must never grant a checkpoint's execution verdict authority.
+        return { ...(fields.code !== undefined || attempt.answer ? { code: fields.code ?? attempt.answer } : {}),
+            stdin: fields.stdin ?? '', codeState: resolved?.correct ? 'passed' : forgotten ? 'gave_up' : 'coding',
+            firstTestCode: attempt.submitted?.answer ?? '', firstTestOutput: evaluation.feedback ?? '',
+            firstRunKind: resolved ? resolved.correct ? 'correct' : forgotten ? 'forgotten' : 'incorrect' : attempt.submitted ? 'pending' : 'not-run',
+            firstNeedsReview: Boolean(attempt.submitted && evaluation.status === 'pending') };
+    }
     if (mode === 'flashcard')
         return { isFlipped: fields.isFlipped === 'true', flashcardSaved: evaluation.status === 'resolved' && (attempt.checkpoint.purpose !== 'first' || attempt.formal?.status === 'linked'), flashcardRating: evaluation.status === 'resolved' ? evaluation.rating : ['again', 'hard', 'good', 'easy'].includes(fields.flashcardRating) ? fields.flashcardRating : null };
     const result = evaluation.status === 'resolved' ? { correct: evaluation.correct, verdict: evaluation.outcome === 'correct' ? 'correct' : evaluation.outcome === 'partial' ? 'partial' : 'incorrect', rating: evaluation.rating, source: evaluation.source === 'model' ? 'ai' : evaluation.source, feedback: evaluation.feedback, explanation: evaluation.feedback } : null;

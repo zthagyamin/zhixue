@@ -13,9 +13,10 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import UTC, date, datetime, timedelta
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from infrastructure.http_server import CompanionHTTPServer as ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterator
 from zoneinfo import ZoneInfo
@@ -596,6 +597,10 @@ def _restore_bytes(path: Path, previous: bytes | None) -> None:
 def _native_writer():
     from infrastructure.native_writer import NativeStudyWriter, NativeWritePorts
     from infrastructure.course_event_proof import native_course_event_guard
+    from infrastructure.math_event_proof import native_math_event_guard
+    from infrastructure.nonword_event_proof import source_event_guard, catalog_word
+    from infrastructure.nonword_source_adapter import create_source_admission, _approved_entries
+    from infrastructure.word_source_eligibility import WordSourceEligibility
     return NativeStudyWriter(NativeWritePorts(
         now=lambda: datetime.now(LOCAL_TZ), local_tz=LOCAL_TZ, lock=DATA_LOCK,
         gateway=effective_gateway, dashboard=daily_dashboard, log_path=event_log_path,
@@ -603,6 +608,15 @@ def _native_writer():
         render_report=render_daily_report, report_events=dashboard_activity_events,
         relative_path=relative_note_path,
         course_guard=lambda db, root, owner, event, catalog: native_course_event_guard(db, root, owner, event, catalog, catalog_loader=effective_gateway, store_path=LOCAL_DATABASE_PATH),
+        source_guard=lambda db, root, owner, event, catalog, course_check: source_event_guard(
+            db, root, owner, event, catalog,
+            source_store=lambda root, owner: create_source_admission(route_services(), owner, root),
+            original_word=WordSourceEligibility(
+                approved_loader=lambda: [item for item, _, _ in _approved_entries(route_services(), root, db)],
+                seed_loader=lambda: SEED, cache_loader=lambda: STATE).original_word,
+            course_check=course_check,
+            math_check=lambda: native_math_event_guard(db, root, owner, event, catalog,
+                catalog_loader=effective_gateway, store_path=LOCAL_DATABASE_PATH)),
     ))
 
 
@@ -658,8 +672,10 @@ def paper_library_request(owner, action, payload=None, query=''):
     if owner != installation_owner_hash(): raise ValueError('paper-owner-mismatch')
     with NOTE_SOURCE_LOCK:
         vault=source_path('learning_vault_root')
+        runtime=get_note_source_runtime()
         service=paper_library.PaperLibrary(vault,LOCAL_DATABASE_PATH.with_name('paper-library.db'),owner,local_vault_library_id(vault),
-            get_note_source_runtime().service,academic_vocabulary.account_library_for_root(LOCAL_DATABASE_PATH.with_name('account-study.db'),owner,vault))
+            runtime.service,academic_vocabulary.account_library_for_root(LOCAL_DATABASE_PATH.with_name('account-study.db'),owner,vault),
+            source_lookup=runtime.paper_source_lookup)
         if action=='catalog': return service.catalog(query)
         if not isinstance(payload,dict): raise ValueError('paper-invalid-input')
         if action=='read':
@@ -667,6 +683,7 @@ def paper_library_request(owner, action, payload=None, query=''):
             return service.read(payload.get('source'))
         if action=='material': return service.material(payload)
         if action=='figure': return service.figure(payload)
+        if action=='page': return service.original_page(payload)
         if action=='save': return service.save(payload)
         raise ValueError('paper-invalid-request')
 
@@ -681,13 +698,13 @@ def paper_vocabulary_request(owner, source=None, payload=None):
             lambda: effective_gateway(vault, owner=owner), account)
         return writer.append(payload) if payload is not None else writer.target(source)
 
-def effective_gateway(vault_root, refresh=False, owner=None):
+def effective_gateway(vault_root, refresh=False, owner=None, *, mapping_source_hash=None):
     import mapped_source_registry
     actual = installation_owner_hash()
     if owner is not None and owner != actual: raise ValueError('mapping-owner-required')
     indexes,entry = (get_note_source_runtime().service.catalog_refs(actual)
         if actual and LOCAL_DATABASE_PATH.with_name('note-sources.db').exists() else ([],None))
-    return mapped_source_registry.load_catalog(vault_root, LOCAL_DATABASE_PATH.with_name('vault-mappings.db'), actual, refresh=refresh,extra_indexes=indexes,extra_entry_ref=entry)
+    return mapped_source_registry.load_catalog(vault_root, LOCAL_DATABASE_PATH.with_name('vault-mappings.db'), actual, refresh=refresh,extra_indexes=indexes,extra_entry_ref=entry,expected_source_hash=mapping_source_hash)
 
 
 def get_note_source_runtime():
@@ -725,23 +742,9 @@ def mapped_study_payload(payload, vault_root):
 
 
 def vault_mapping_request(owner, payload=None):
-    root = source_path('learning_vault_root')
-    if not root.is_dir(): raise ValueError('vault-root-unavailable')
-    if owner != installation_owner_hash(): raise ValueError('mapping-owner-required')
-    database = LOCAL_DATABASE_PATH.with_name('vault-mappings.db')
-    current = vault_topology.load(database, root, owner)
-    if payload is None: return {**current, **vault_topology.inspect(root)}
-    if not isinstance(payload, dict) or set(payload) - {'action', 'rules', 'revision'}: raise ValueError('invalid-mapping-request')
-    rules = vault_topology.validate(payload.get('rules'))
-    if payload.get('action') == 'preview':
-        diagnostics = []
-        items = vault_topology.extract(root, rules, diagnostics=diagnostics)
-        return {'revision': current['revision'], 'itemCount': len(items), 'items': items[:20], 'diagnostics': diagnostics}
-    if payload.get('action') == 'confirm':
-        saved = vault_topology.save(database, root, owner, rules, payload.get('revision'))
-        catalog = effective_gateway(root, owner=owner)
-        return {**saved, 'diagnostics': catalog.get('mappingDiagnostics', [])}
-    raise ValueError('invalid-mapping-action')
+    import sys
+    from infrastructure.mapping_adapter import mapping_request
+    return mapping_request(sys.modules[__name__], owner, payload)
 
 
 def merge_source_area(
@@ -782,7 +785,8 @@ def validate_cards(payload: dict[str, Any], title: str, scope: str) -> dict[str,
     from application.generated_content import validate_cards as normalize
     from learning_support import has_executable_code_material
     return normalize(payload, title, scope, seed=SEED, stamp=time.strftime,
-                     code_material_available=has_executable_code_material)
+                     code_material_available=has_executable_code_material,
+                     hash_text=lambda text: hashlib.sha256(text.encode('utf-8')).hexdigest())
 
 
 
@@ -836,10 +840,13 @@ def refresh_from_config() -> dict[str, Any]:
     )
 
 
-def set_state(value: dict[str, Any]) -> None:
+def set_state(value: dict[str, Any], *, before_commit=None, commit_lock=None) -> None:
     global STATE
     with DATA_LOCK:
-        STATE = value
+        with commit_lock if commit_lock is not None else nullcontext():
+            if before_commit:
+                before_commit()
+            STATE = value
 
 
 def supported_note_files(root: Path) -> list[Path]:
@@ -1010,7 +1017,8 @@ def _constraint_history(database: sqlite3.Connection, account_id: str) -> list[d
 def effective_constraints(vault_root: Path, account_id: str, now: datetime | None = None) -> dict[str, Any]:
     with constraint_area.CONSTRAINT_LOCK:
         now = now or datetime.now(UTC)
-        document = constraint_area.read_constraints(vault_root, now)
+        preimages = []
+        document = constraint_area.read_constraints(vault_root, now, on_read=preimages.append)
         with local_database() as database:
             events = _constraint_history(database, account_id)
         approved_plans = [
@@ -1031,7 +1039,7 @@ def effective_constraints(vault_root: Path, account_id: str, now: datetime | Non
             document["mode"] = "auto"
             document["override"] = None
             document["temporaryUntil"] = None
-        constraint_area.write_constraints(vault_root, document, now)
+        constraint_area.write_constraints(vault_root, document, now, expected=preimages[0])
         return constraint_area.read_constraints(vault_root, now)
 
 
@@ -1074,6 +1082,7 @@ def normalize_request_path(raw_path: str) -> str:
 def route_services() -> RouteServices:
     """Bind live services per request; background refresh may replace STATE."""
     return RouteServices(
+        authenticate_session=authenticate_session,
         CONFIG=CONFIG,
         DATA_LOCK=DATA_LOCK,
         LOCAL_DATABASE_PATH=LOCAL_DATABASE_PATH,
@@ -1156,7 +1165,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         request_path = normalize_request_path(self.path)
         if request_path == "/v1/health":
-            self.send_json(200, {"ok": True, "status": STATE.get("status"), "pairingRequired": True, "localDatabase": True, "serverVersion": self.server_version, "instanceId":runtime_instance_id(), "capabilities": [STUDY_DAY_CAPABILITY, task_plan_schema.CAPABILITY, task_plan_schema.POLICY_CAPABILITY, task_plan_schema.PRACTICE_BUDGET_CAPABILITY, account_sync_service.CAPABILITY, assistance_sync.CAPABILITY, "assistance-summary-v2", external_sources.CAPABILITY, "paper-library-v1", "native-course-v1", "native-math-v1", "native-math-variants-v1"]})
+            self.send_json(200, {"ok": True, "status": STATE.get("status"), "pairingRequired": True, "localDatabase": True, "serverVersion": self.server_version, "instanceId":runtime_instance_id(), "capabilities": [STUDY_DAY_CAPABILITY, task_plan_schema.CAPABILITY, task_plan_schema.POLICY_CAPABILITY, task_plan_schema.PRACTICE_BUDGET_CAPABILITY, account_sync_service.CAPABILITY, assistance_sync.CAPABILITY, "assistance-summary-v2", external_sources.CAPABILITY, "paper-library-v1", "native-course-v1", "native-math-v1", "native-math-variants-v1", "nonword-source-v1", "nonword-source-code-hint-v1", "local-ai-chat-recovery-v1", "local-ai-chat-executor-v1", "local-ai-chat-deadline-v1"]})
             return
         hashed_user = authenticate_session(self.headers.get("X-Study-Loop-Session"))
         if not hashed_user:

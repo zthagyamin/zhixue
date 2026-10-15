@@ -20,11 +20,15 @@ function fixture({mode='quiz',word=false,recover=true,count=1}={}) {
   const snapshot={scopeKey:`extra-scope-${owner}`,title:'Synthetic extra practice',items:Array.from({length:count},(_,i)=>item(i)),modes:Array(count).fill(mode),sourceModes:Array(count).fill(word?'three-stage':mode),source:{title:'Synthetic approved source',scope:'fixture'},...(recover?{recoveryScopes:Array.from({length:count},(_,i)=>scope(i))}:{})};
   hooks.mount(load('app/extra-practice-session.tsx').ExtraPracticeSession,{snapshot,onExit(){},canOpenLocal:false,getObsidianUri:()=>''});hooks.flush();
   const card=()=>[...nodes(hooks.view())].find(node=>node.props.context&&typeof node.props.onGrade==='function');
-  return {hooks,snapshot,Host,workspaceId,card,
+  return {hooks,snapshot,Host,workspaceId,card,help:()=>[...nodes(hooks.view())].find(node=>node.type===load('app/study-guidance.tsx').StudyGuidanceHelp),
     async settle(){hooks.render();hooks.flush();await tick();hooks.render();},
     async grade(rating,options){const current=card();assert.ok(current);await current.props.onGrade(rating,options);await this.settle();return current;},
   };
 }
+test('actual extra practice help follows original content rather than selected recall mode',async t=>{
+  const durable=fixture({mode:'recall'});t.after(()=>durable.hooks.unmount());await durable.settle();assert.equal(durable.help().props.pendingEvaluation,true);
+  const words=fixture({mode:'recall',word:true});t.after(()=>words.hooks.unmount());await words.settle();assert.equal(words.help().props.pendingEvaluation,false);
+});
 for(const mode of ['quiz','code','calculation','flashcard','recall'])
   test(`temporary ${mode} preserves original-source scope and consumes a wrong-result continuation once without official persistence`,async()=>{
     const f=fixture({mode});const card=f.card();assert.equal(card.type,f.Host);assert.equal(card.props.context.nonWordScope.temporary,true);assert.equal(card.props.context.contentSource.data,f.snapshot.items[0]);

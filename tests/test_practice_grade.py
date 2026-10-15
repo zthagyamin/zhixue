@@ -19,11 +19,45 @@ class PracticeGradeTests(unittest.TestCase):
         self.assertTrue(practice_engine.grade_answer(item, 2.000001, ai_available=False)["correct"])
         self.assertFalse(practice_engine.grade_answer(item, 3.0, ai_available=False)["correct"])
 
-    def test_calculation_with_text_answer_degrades_to_self_assess(self) -> None:
-        # P2：I1 之后，无素材的公式/要点点会产出 answer 为复习要点文本的
-        # calculation 条目——文本答案没有客观数值，判定必须降级自评
-        # （spec §8：表达式不匹配 → 自评），否则用户永远答不对、队列永远
-        # again。数值型答案仍走严格容差判定（见 test_calculation_grade_uses_tolerance）。
+    def test_nonfinite_numeric_reference_cannot_produce_an_incorrect_grade(self):
+        for reference in ("NaN", "Infinity", "1e999"):
+            with self.subTest(reference=reference):
+                result = practice_engine.grade_answer(
+                    {"questionType": "calculation", "prompt": "计算 1 + 1。", "answer": reference},
+                    "2", ai_available=False)
+                self.assertIsNone(result["correct"])
+                self.assertEqual(result["verdict"], "unknown")
+                self.assertNotEqual(result.get("source"), "self-assess")
+
+    def test_taskless_numeric_review_point_does_not_become_a_correct_answer(self):
+        item = practice_engine.build_base_item({"itemId": "synthetic-numeric-note",
+            "abilityId": "synthetic-ability", "domain": "mathematics", "reviewPoints": ["42"]}, {})
+        result = practice_engine.grade_answer(item, "42", ai_available=False)
+        self.assertIsNone(result["correct"])
+        self.assertEqual(result["verdict"], "unknown")
+        self.assertIn("问题", result["explanation"])
+
+    def test_zero_reference_material_preserves_the_actual_question(self):
+        item = practice_engine.build_base_item({"itemId": "synthetic-zero",
+            "abilityId": "synthetic-ability", "domain": "mathematics", "reviewPoints": ["A review label"]},
+            {"level": "C", "prompt": "计算 1 - 1。", "answer": 0})
+        self.assertEqual(item["prompt"], "计算 1 - 1。")
+        self.assertEqual(item["answer"], "0")
+        self.assertTrue(practice_engine.grade_answer(item, "0", ai_available=False)["correct"])
+
+    def test_nonfinite_input_is_pending_and_finite_wrong_answer_stays_wrong(self):
+        item = {"questionType": "calculation", "prompt": "计算 1 + 1。", "answer": "2"}
+        for answer in ("NaN", "Infinity", "1e999"):
+            with self.subTest(answer=answer):
+                result = practice_engine.grade_answer(item, answer, ai_available=False)
+                self.assertIsNone(result["correct"])
+                self.assertEqual(result["verdict"], "unknown")
+        result = practice_engine.grade_answer(item, "3", ai_available=False)
+        self.assertFalse(result["correct"])
+        self.assertEqual(result["verdict"], "wrong")
+
+    def test_calculation_with_text_reference_remains_undetermined(self) -> None:
+        # Unsupported numeric reference cannot become a score or auto self-assessment.
         item = {
             "questionType": "calculation",
             "answer": "Kaiming 初始化方差 $2/D_{in}$；ReLU 杀一半信号",
@@ -31,8 +65,10 @@ class PracticeGradeTests(unittest.TestCase):
         }
         result = practice_engine.grade_answer(item, "任意", ai_available=False)
         self.assertIsNone(result["correct"])
-        self.assertEqual(result["verdict"], "self-assess")
-        self.assertEqual(result["explanation"], "要点")
+        self.assertEqual(result["verdict"], "unknown")
+        self.assertEqual(result["source"], "deterministic")
+        self.assertNotIn("rating",result)
+        self.assertIn("无法可靠核对",result["explanation"])
 
     def test_recall_offline_returns_self_assess(self) -> None:
         item = {"questionType": "recall", "explanation": "要点", "answer": "要点"}

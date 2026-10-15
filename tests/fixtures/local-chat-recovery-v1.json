@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ruleVersion": "local-ai-chat-recovery-v1",
+  "request": {"requestId":"synthetic-chat","provider":"chatgpt","model":"fixture-model","settingsRevision":1,"context":{"id":"q","title":"Synthetic question"},"messages":[{"role":"user","content":"A small hint"}]},
+  "settings": {"provider":"chatgpt","model":"fixture-model","baseUrl":"https://api.openai.com/v1","revision":1,"enabled":true,"configured":true,"maxOutputTokens":2000,"dailyRequestLimit":10,"dailyTokenLimit":20000,"concurrentLimit":1},
+  "done": {"type":"done","provider":"chatgpt","model":"fixture-model","usageTokens":12},
+  "errors": ["ai-request-pending","ai-request-indeterminate","ai-request-conflict","ai-chat-storage-unavailable","ai-chat-authority-changed","ai-library-changed","account-ai-daily-limit","account-ai-token-limit","account-ai-concurrency-limit"]
+}

@@ -5,10 +5,12 @@ import hashlib
 import json
 import os
 import stat
+import threading
 import uuid
 from pathlib import Path
 
 MARKER = 'zhixue-learning-workspace-v1'
+CONFIGURATION_LOCK = threading.RLock()
 
 
 def redirects_path(info):
@@ -100,7 +102,9 @@ def configure_workspace(root, value, *, has_history):
     if current and selected==Path(current).resolve():return config
     if has_history():raise ValueError('setup-workspace-has-history')
     before=(root/'config.local.json').read_bytes()
-    config.update(learning_vault_root=str(selected),workspace_mode='existing')
+    generation=config.get('workspace_generation',0)
+    if type(generation) is not int or generation<0:raise ValueError('setup-existing-config-invalid')
+    config.update(learning_vault_root=str(selected),workspace_mode='existing',workspace_generation=generation+1)
     backup=root/'data'/'setup-backups'/f'{revision}.json'
     if not backup.exists():_create(backup,before)
     if (root/'config.local.json').read_bytes()!=before:raise ValueError('setup-stale')

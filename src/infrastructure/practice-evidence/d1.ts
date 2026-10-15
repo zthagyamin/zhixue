@@ -9,6 +9,8 @@ import {parsePracticeEvidence, parsePracticeEvidenceMutation, applyPracticeEvide
 import {attemptId} from '../../domain/learning-attempt/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {parseCalculationSupport} from '../../domain/content/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {studyWriterCondition,requireCurrentStudyWriter} from '../account-study-writer/index.ts';
 
 type Options = {mapping?:AccountPracticeEvidenceMappingPort;service?:PracticeEvidenceServiceWritePort};
 export class D1PracticeEvidenceStore implements AccountPracticeEvidenceStorePort {
@@ -68,9 +70,10 @@ export class D1PracticeEvidenceStore implements AccountPracticeEvidenceStorePort
         const complete=rows.results.length<=limit;
         return {records,complete,nextCursor:complete?null:records.at(-1)!.attemptId};
     }
-    mutate(scope:AccountPracticeEvidenceScope,mutation:PracticeEvidenceMutationV1) {return this.write(scope,mutation,false);}
+    mutate(scope:AccountPracticeEvidenceScope,mutation:PracticeEvidenceMutationV1,writerGrantId?:string) {return this.write(scope,mutation,false,writerGrantId);}
     trustedWriter() {return {mutate:(scope:AccountPracticeEvidenceScope,mutation:PracticeEvidenceMutationV1)=>this.write(scope,mutation,true)};}
-    private async write(scope:AccountPracticeEvidenceScope,raw:PracticeEvidenceMutationV1,trusted:boolean):Promise<PracticeEvidenceReceipt> {
+    private async write(scope:AccountPracticeEvidenceScope,raw:PracticeEvidenceMutationV1,trusted:boolean,writerGrantId?:string):Promise<PracticeEvidenceReceipt> {
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         this.scope(scope);const m=parsePracticeEvidenceMutation(raw),b=m.binding;
         if(b.ownerId!==scope.userId||b.libraryId!==scope.libraryId)throw Error('practice-evidence-scope-binding');
         if(!trusted&&(m.kind==='step-diagnostic'&&m.diagnostic.source==='model'||m.kind==='code-hint'&&m.hint.source==='model'))throw Error('practice-evidence-trusted-service-required');
@@ -85,8 +88,9 @@ export class D1PracticeEvidenceStore implements AccountPracticeEvidenceStorePort
         // every mutation is guarded
         // in its committing SQL statement, so a submit/formal claim cannot race this write.
         const originals=[authority.attempt,authority.currentPreparedChild,authority.preparedChild,authority.parentAttempt].filter((a):a is LearningAttempt=>Boolean(a));
-        let guard='EXISTS ('+this.memberSql()+')';
-        const guardValues:(string|number|null)[]=[scope.userId,scope.libraryId,b.snapshotId,b.itemKey,b.contentHash];
+        const writer=studyWriterCondition(scope,writerGrantId);
+        let guard='EXISTS ('+this.memberSql()+') AND '+writer.sql;
+        const guardValues:(string|number|null)[]=[scope.userId,scope.libraryId,b.snapshotId,b.itemKey,b.contentHash,...writer.bindings];
         for(const a of originals) {
             const row=await this.q('SELECT attempt_json,revision FROM learning_attempts_v1 WHERE user_id=? AND library_id=? AND attempt_id=?',scope.userId,scope.libraryId,a.attemptId).first<{attempt_json:string;revision:number}>();
             if(!row||row.revision!==a.revision||!evidenceEqual(JSON.parse(row.attempt_json),a))return {status:'conflict',durable:false,operationId:m.operationId,revision:current?.revision??0,record:current};
@@ -96,6 +100,7 @@ export class D1PracticeEvidenceStore implements AccountPracticeEvidenceStorePort
         const saved=next.record!,json=JSON.stringify(saved);
         if(!current)await this.q('INSERT INTO practice_evidence_v1(user_id,library_id,attempt_id,revision,evidence_json,updated_at) SELECT ?,?,?,?,?,? WHERE '+guard+' ON CONFLICT DO NOTHING',scope.userId,scope.libraryId,m.attemptId,saved.revision,json,saved.updatedAt,...guardValues).run();
         else await this.q('UPDATE practice_evidence_v1 SET revision=?,evidence_json=?,updated_at=? WHERE user_id=? AND library_id=? AND attempt_id=? AND revision=? AND '+guard,saved.revision,json,saved.updatedAt,scope.userId,scope.libraryId,m.attemptId,current.revision,...guardValues).run();
+        await requireCurrentStudyWriter(this.database,scope,writerGrantId);
         const record=await this.read(scope,m.attemptId),operation=record?.operations.find(o=>o.operationId===m.operationId);
         if(operation?.fingerprint!==await practiceEvidenceFingerprint(m))return {status:'conflict',durable:false,operationId:m.operationId,revision:record?.revision??0,record};
         return {...next,durable:true,record,revision:record!.revision};

@@ -33,7 +33,7 @@ let browser,failure;
 async function check(name,fn){await fn();records.push({name,passed:true});console.log('PASS',name);}
 try{
  await new Promise(resolve=>server.listen(4193,'127.0.0.1',resolve));
- browser=await chromium.launch({headless:true});
+ browser=await chromium.launch({headless:true,executablePath:process.env.EDU_CHROMIUM_PATH});
  const context=await browser.newContext();
  await context.addCookies([{name:'audit-session',value:'SYNTHETIC_ONLY',url:origin}]);
  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));page.on('console',msg=>console.log('BROWSER',msg.type(),msg.text().slice(0,1000)));
@@ -51,7 +51,36 @@ try{
  await check('real Python, stdin and assertions',async()=>{const r=await run('print(input())\nanswer=6*7','assert answer == 42');assert.equal(r.output,'hello\n');assert.equal(r.assertionsPassed,1);});
  await check('failing assertion cannot count as success',async()=>{await assert.rejects(run('answer=1','assert answer == 2'),/AssertionError/);});
  await check('no executed assertions cannot count as success',async()=>{await assert.rejects(run('answer=1','pass'),/没有执行 assert/);});
+ await check('previous learner import modifications cannot enter scientific preparation',async()=>{
+  const code=['import builtins','_original_import = builtins.__import__',
+   'def _modified_import(name, *args, **kwargs):'," if name in ('numpy', 'pandas'):",
+   "  raise RuntimeError('SYNTHETIC_MODIFIED_IMPORT')",' return _original_import(name, *args, **kwargs)',
+   'builtins.__import__ = _modified_import',"print('modified')"].join('\n');
+  assert.equal((await run(code)).output,'modified\n');
+ });
  await check('NumPy and pandas load through verified asset broker',async()=>{const r=await run('import numpy as np\nimport pandas as pd\nprint(int(np.arange(5).sum()))\nprint(int(pd.Series([1,2,3]).sum()))');assert.equal(r.output,'10\n6\n');});
+ async function expectHostProgramTimeout(){
+  const failure=await page.evaluate(async()=>{
+   const started=performance.now();
+   try{await window.client.run('import numpy','hello',true);return {resolved:true};}
+   catch(error){return {name:error.name,message:error.message,elapsedMs:performance.now()-started};}
+  });
+  assert.equal(failure.name,'TimeoutError');assert.match(failure.message,/运行超过时间限制/);
+  assert.ok(failure.elapsedMs>=9000&&failure.elapsedMs<20000);
+  assert.equal(await page.locator('iframe').count(),0);
+ }
+ await check('later modified imports retain the original program budget',async()=>{
+  await run(['import builtins','_original_import = builtins.__import__',
+   'def _slow_import(name, *args, **kwargs):'," if name == 'numpy':",'  while True: pass',
+   ' return _original_import(name, *args, **kwargs)','builtins.__import__ = _slow_import',"print('modified')"].join('\n'));
+  await expectHostProgramTimeout();
+ });
+ await check('mutable worker globals cannot select a longer host preparation budget',async()=>{
+  await page.evaluate(()=>window.makeClient({loadTimeoutMs:120000,preparationTimeoutMs:120000}));
+  await run('import numpy');
+  await run("import js\njs.eval('python.loadPackagesFromImports = () => new Promise(() => {})')\nprint('modified')");
+  await expectHostProgramTimeout();
+ });
  const probe=`import js, json\nchecks = {}\nchecks['origin'] = str(js.location.origin)\ntry:\n    js.indexedDB.open('zhixue-local-study-v1')\n    checks['storage'] = 'EXPOSED'\nexcept Exception:\n    checks['storage'] = 'denied'\ntry:\n    await js.fetch('${origin}/api/security-probe')\n    checks['fetch'] = 'EXPOSED'\nexcept Exception:\n    checks['fetch'] = 'denied'\ntry:\n    xhr = js.XMLHttpRequest.new()\n    xhr.open('GET', '${origin}/api/security-probe', False)\n    xhr.send()\n    checks['xhr'] = 'EXPOSED'\nexcept Exception:\n    checks['xhr'] = 'denied'\nprint(json.dumps(checks))`;
  await check('learner code cannot access host storage or APIs',async()=>{const r=await run(probe);assert.deepEqual(JSON.parse(r.output),{origin:'null',storage:'denied',fetch:'denied',xhr:'denied'});assert.equal(sensitiveRequests,0);});
  await check('testCode has the same restricted origin and network policy',async()=>{const syncProbe=probe.replace(/try:\n {4}await js\.fetch[\s\S]*?checks\['fetch'\] = 'denied'\n/, '');const r=await run('pass',syncProbe+'\nassert checks["storage"] == "denied"');assert.equal(JSON.parse(r.output).storage,'denied');assert.equal(sensitiveRequests,0);});
@@ -64,4 +93,4 @@ try{
  assert.deepEqual(errors,[]);
  await context.close();
 }catch(error){failure=String(error.stack||error);console.error(failure);process.exitCode=1;}
-finally{await browser?.close();await new Promise(resolve=>server.close(resolve));await writeFile(resolve(out,'results.json'),JSON.stringify({sha:process.env.TARGET_SHA||process.env.GITHUB_SHA,expected:12,passed:records.length,complete:!failure&&records.length===12,failure,records,errors,sensitiveRequests},null,2));}
+finally{await browser?.close();await new Promise(resolve=>server.close(resolve));await writeFile(resolve(out,'results.json'),JSON.stringify({sha:process.env.TARGET_SHA||process.env.GITHUB_SHA,expected:15,passed:records.length,complete:!failure&&records.length===15,failure,records,errors,sensitiveRequests},null,2));}

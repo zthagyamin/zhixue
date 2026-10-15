@@ -107,6 +107,8 @@ jobs:
             expected: 16
           - suite: recall-flow
             expected: 32
+          - suite: nonword-recall
+            expected: 16
           - suite: recall-content
             expected: 20
           - suite: automatic-day

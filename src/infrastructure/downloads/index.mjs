@@ -1,18 +1,18 @@
 export const companionDownloads = {
   "schemaVersion": 1,
-  "version": "1.41.1",
+  "version": "1.42.2",
   "downloads": {
     "installer": {
       "filename": "Zhixue-Companion-Setup.exe",
-      "url": "https://zhixue-downloads.zthagyamin.chatgpt.site/v1.41.1/Zhixue-Companion-Setup.exe",
-      "sha256": "cfac7498346b80ffb415cf741bca34a74db8afc971bf677d37fb502eab0ba55d",
-      "sizeBytes": 13526528
+      "url": "https://zhixue-downloads.zthagyamin.chatgpt.site/v1.42.2/Zhixue-Companion-Setup.exe",
+      "sha256": "9af0465e4e3de872856ff48e50d1c5a0669cb945b79b7f1fdc41ef5facf964e5",
+      "sizeBytes": 13629440
     },
     "portable": {
       "filename": "zhixue-companion-windows.zip",
-      "url": "https://zhixue-portable-downloads.zthagyamin.chatgpt.site/v1.41.1/zhixue-companion-windows.zip",
-      "sha256": "d8c5747e60b3017f775982dfeb7fa20f5ae67898bc1f4058545fc44bd2be140d",
-      "sizeBytes": 13518842
+      "url": "https://zhixue-portable-downloads.zthagyamin.chatgpt.site/v1.42.2/zhixue-companion-windows.zip",
+      "sha256": "d4339f05b7d2cea9fccf017ed66c813c3e428f29c774cdda18e6b98d7eaf564b",
+      "sizeBytes": 13616925
     }
   }
 };

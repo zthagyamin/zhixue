@@ -10,8 +10,12 @@ never touched.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
+
+from infrastructure.vault_documents import checked_literal_path
+from mapped_source_registry import _atomic, _safe
 
 STUDY_LOOP_INTEGRATION_ROOT = "_System/Integrations/Study Loop"
 EVENTS_SUBFOLDER = "events"
@@ -27,12 +31,25 @@ def _month_key(day: str) -> tuple[int, int]:
     return int(day[:4]), int(day[5:7])
 
 
+def _checked_vault(vault_root: Path) -> Path:
+    # Check ancestors before resolving: a redirected root must not acquire authority.
+    supplied = Path(vault_root).absolute()
+    vault = checked_literal_path(supplied)
+    if not vault.is_dir():
+        raise ValueError('maintenance-vault-unavailable')
+    if supplied != vault:
+        raise ValueError("maintenance-noncanonical-root")
+    return vault
+
+
 def archive_old_months(vault_root: Path, cutoff_year: int, cutoff_month: int) -> list[str]:
-    root = events_root(vault_root)
+    vault = _checked_vault(vault_root)
+    root = _safe(vault, events_root(vault))
     if not root.exists():
         return []
-    archived: list[str] = []
+    moves: list[tuple[Path, Path]] = []
     for year_dir in sorted(root.iterdir()):
+        _safe(vault, year_dir)
         if not year_dir.is_dir() or year_dir.name == ARCHIVE_SUBFOLDER:
             continue
         try:
@@ -40,24 +57,40 @@ def archive_old_months(vault_root: Path, cutoff_year: int, cutoff_month: int) ->
         except ValueError:
             continue
         for day_file in sorted(year_dir.glob("*.jsonl")):
+            _safe(vault, day_file)
             if (year, int(day_file.stem[5:7])) >= (cutoff_year, cutoff_month):
                 continue
             month_dir = root / ARCHIVE_SUBFOLDER / f"{year:04d}-{int(day_file.stem[5:7]):02d}"
-            month_dir.mkdir(parents=True, exist_ok=True)
-            target = month_dir / day_file.name
+            target = _safe(vault, month_dir / day_file.name)
             if not target.exists():
-                day_file.rename(target)
-                archived.append(str(target))
+                moves.append((day_file, target))
+    # No mutation until every planned source and destination has passed preflight.
+    archived: list[str] = []
+    for source, target in moves:
+        _safe(vault, source)
+        _safe(vault, target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _safe(vault, source)
+        _safe(vault, target)
+        if target.exists():
+            continue
+        source.rename(target)
+        archived.append(str(target))
     return archived
 
 
 def _read_month_events(vault_root: Path, year: int, month: int) -> list[dict]:
-    root = events_root(vault_root)
+    vault = _checked_vault(vault_root)
+    root = _safe(vault, events_root(vault))
     events: list[dict] = []
-    month_dir = root / f"{year:04d}"
+    month_dir = _safe(vault, root / f"{year:04d}")
     if not month_dir.exists():
         return events
-    for day_file in month_dir.glob(f"{year:04d}-{month:02d}-*.jsonl"):
+    files = list(month_dir.glob(f"{year:04d}-{month:02d}-*.jsonl"))
+    for day_file in files:
+        _safe(vault, day_file)
+    for day_file in files:
+        _safe(vault, day_file)
         for line in day_file.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line:
@@ -69,16 +102,42 @@ def _read_month_events(vault_root: Path, year: int, month: int) -> list[dict]:
     return events
 
 
+def _generated_summary(raw: bytes, year: int, month: int) -> bool:
+    """Recognize the existing generator format, never just a forgeable type label.
+
+    This protects accidental collisions/edits, not authorship against an OS user
+    who already has write access to these derived pages.
+    """
+    try:
+        text = raw.decode("utf-8").replace("\r\n", "\n")
+    except UnicodeDecodeError:
+        return False
+    month_key = f"{year:04d}-{month:02d}"
+    pattern = (
+        r"---\ntype: study-loop-month-summary\nstatus: derived\n"
+        + re.escape(f"month: {month_key}\n")
+        + r"event_count: (?P<count>\d+)\ntotal_minutes: (?P<minutes>-?\d+)\n"
+        + r"updated: \d{4}-\d{2}-\d{2}\n---\n\n"
+        + re.escape(f"# {month_key} 学习记录汇总\n\n")
+        + re.escape("> [!info] 派生记录\n> 由知学按 v3 复习事件生成；不是正式掌握状态，也不修改主学习计划。\n\n")
+        + r"- 练习事件：(?P=count)\n- 记录时长：(?P=minutes) 分钟\n- 领域：[^\n]*\n"
+    )
+    return re.fullmatch(pattern, text) is not None
+
+
 def write_month_summary(vault_root: Path, year: int, month: int) -> Path:
-    events = _read_month_events(vault_root, year, month)
+    vault = _checked_vault(vault_root)
+    summary_dir = vault / STUDY_LOOP_INTEGRATION_ROOT / SUMMARY_FOLDER
+    path = _safe(vault, summary_dir / f"{year:04d}-{month:02d}.md")
+    previous = path.read_bytes() if path.exists() else None
+    if previous is not None and not _generated_summary(previous, year, month):
+        raise ValueError("maintenance-summary-conflict")
+    events = _read_month_events(vault, year, month)
     total_minutes = sum(int(event.get("durationMin", 0) or 0) for event in events)
     domain_counts: dict[str, int] = {}
     for event in events:
         domain = str(event.get("domain", "other"))
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
-    summary_dir = Path(vault_root) / STUDY_LOOP_INTEGRATION_ROOT / SUMMARY_FOLDER
-    summary_dir.mkdir(parents=True, exist_ok=True)
-    path = summary_dir / f"{year:04d}-{month:02d}.md"
     lines = [
         "---",
         "type: study-loop-month-summary",
@@ -99,5 +158,5 @@ def write_month_summary(vault_root: Path, year: int, month: int) -> Path:
         "- 领域：" + ("、".join(f"{key} × {value}" for key, value in sorted(domain_counts.items())) or "暂无"),
         "",
     ]
-    path.write_text("\n".join(lines), encoding="utf-8")
+    _atomic(vault, path, "\n".join(lines).encode("utf-8"), previous)
     return path

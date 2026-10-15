@@ -1,6 +1,6 @@
 import type {NonWordHostScope,NonWordRuntimePort} from '../../application/nonword-study';
 import type {NonWordRuntime} from '../nonword-study';
-import type {NativeMathIdentity,NativeMathItem,NativeMathCapture,NativeMathTransport} from '../../domain/math-study';
+import type {NativeMathIdentity,NativeMathItem,NativeMathCapture,NativeMathTransport,NativeMathFormal} from '../../domain/math-study';
 import type {MathStudyRequestV1,MathStudyResultV1} from '../../application/math-study';
 import type {MathVariant} from '../../domain/guided-math';
 import type {PracticeVariantRecoveryV1} from '../../domain/practice-evidence';
@@ -116,14 +116,25 @@ export async function attachNativeMathDriver<T extends RuntimeDriver>(driver:T,r
         cancelled(signal);return rebuilt;
         });tail=run.catch(()=>{});return run;
     };
+    let formalBarrier:NativeMathFormal|null=null;
     const saveBarrier=async()=>{
         const saved=await runtime.repository.read(initial.attemptId),formal=saved?.formal;
-        if(!formal||formal.status!=='linked')return;
+        if(!formal)return;
         if(saved.parentAttemptId||saved.checkpoint.purpose!=='first'||!saved.submitted||saved.evaluation.status!=='resolved'
-            ||formal.evaluationHash!==saved.evaluation.evaluationHash||!formal.coreHash)throw Error('native-math-formal-binding');
+            ||formal.evaluationHash!==saved.evaluation.evaluationHash||formal.status==='linked'&&!formal.coreHash)throw Error('native-math-formal-binding');
         if(!transport?.supported())throw Error('native-math-unsupported');
-        await transport.formal({schemaVersion:1,action:'formal',attemptId:saved.attemptId,answerRevision:saved.submitted.answerRevision,
-            sourceVersion:saved.binding.contentHash,eventId:formal.eventId,evaluationHash:formal.evaluationHash,occurredAt:saved.submitted.submittedAt,coreHash:formal.coreHash});
+        const original:NativeMathFormal={schemaVersion:1,action:'formal',attemptId:saved.attemptId,
+            answerRevision:saved.submitted.answerRevision,sourceVersion:saved.binding.contentHash,
+            eventId:formal.eventId,evaluationHash:formal.evaluationHash,occurredAt:saved.submitted.submittedAt};
+        const existing=formalBarrier??(await transport.recover(saved.attemptId)).formalBarrier;
+        if(existing){
+            if(!same({...original,...(existing.coreHash?{coreHash:existing.coreHash}:{})},existing)
+                ||existing.coreHash&&formal.coreHash&&existing.coreHash!==formal.coreHash)throw Error('native-math-formal-binding');
+            if(formalBarrier)return;
+        }
+        const request=existing??{...original,...(formal.coreHash?{coreHash:formal.coreHash}:{})};
+        await transport.formal(request);
+        formalBarrier=request;
     };
     async function evaluate(request:MathStudyRequestV1,signal?:AbortSignal):Promise<MathStudyResultV1>{
         const run=tail.then(async()=>{
@@ -188,7 +199,7 @@ export async function attachNativeMathDriver<T extends RuntimeDriver>(driver:T,r
         return JSON.stringify({answerKind:kind,answer:kind==='number'?String(values.value??''):''});
     };
     const originalAfter=attached.runtime.afterWrite;
-    return {...attached,answer,fields:(values:Record<string,unknown>)=>active?{value:answer(values),phase:values.result?'feedback':'answer'}:driver.fields(values),
+    return {...attached,beforeFormal:saveBarrier,answer,fields:(values:Record<string,unknown>)=>active?{value:answer(values),phase:values.result?'feedback':'answer'}:driver.fields(values),
         restore:()=>{
             const values=driver.restore();if(!active)return values;const saved=runtime.session.snapshot()!,raw=saved.checkpoint.pluginFields?.value??saved.submitted?.answer??saved.answer;
             if(!raw)return {...values,value:'',calculationAnswerKind:'number'};

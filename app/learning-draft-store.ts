@@ -146,7 +146,7 @@ export function createLearningDraftStore(scopeKey='page',runtime:{newId?:()=>str
     hasBuffers:()=>hasUnsavedInput()||[...entries.values()].some(entry=>!entry.saved&&entry.values.size>0),
     hasUnsavedInput,
     hasUnrecoverableInput:()=>[...temporary.keys()].some(draft=>draft.hasUnsavedInput())||[...entries.values()].some(entry=>entry.recoveredRevision!==(entry.inputRevision??0)&&[...entry.values].some(([key,value])=>{const field=JSON.parse(key)[1] as string;if(entry.saved&&field!=='tutor.question')return false;const current=inputValue(field,value);return current!==undefined&&current!==(inputValue(field,entry.initials.get(key))??'');})),
-    hasDurableRecovery:()=>hasUnsavedInput()&&[...entries.values()].filter(current=>!current.saved&&current.values.size>0).every(current=>current.recoveredRevision!==undefined&&current.recoveredRevision===(current.inputRevision??0)),
+    hasDurableRecovery:():boolean=>hasUnsavedInput()&&!store.hasUnrecoverableInput(),
     failureTitles:()=>[...failures.values()],
     getSnapshot,
     getMutationVersion:()=>mutation,

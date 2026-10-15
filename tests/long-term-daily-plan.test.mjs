@@ -37,7 +37,7 @@ import {applyLongTermPlan} from '../app/long-term-daily-plan.ts';
 import {deriveLongTermDailyAllocation,parseLongTermDailyAllocation} from '../app/long-term-daily-allocation.ts';
 import {parseTaskPlan} from '../app/task-plan-types.ts';
 import {readFileSync} from 'node:fs';
-import {spawnSync} from 'node:child_process';
+import {spawnPythonSync} from '../scripts/python-runtime.mjs';
 const snapshotFor=input=>{const source=buildLongTermPlanningInput(input);return generateLongTermSchedule(source.inventory,{planId:'long-plan',startDate:input.day,targetDeadline:input.day,dailyMinutesBudget:{workdayMin:0,workdayMax:15,weekendMax:15,minReviewRatio:0},subjectsConfig:input.catalog.subjects.map(s=>({subjectId:s.subjectId,priority:3,completionCriteria:'fixed-rounds'})),bufferRatio:0},{},{asOfDate:input.day,generatedAt:`${input.day}T00:00:00Z`});};
 test('wrapper derives actual physical selection, frozen provenance and stable content across future refresh',async()=>{
  const input=vocabularyInput(),snapshot=snapshotFor(input);const applied=applyLongTermPlan(input,snapshot);assert.equal(applied.longTermAllocation.vocabularyTarget,5);
@@ -66,7 +66,7 @@ test('shared strict signed allocation fixture matches TS and Python hashes and r
  assert.deepEqual(parseTaskPlan(fixture),fixture);const cases=[fixture];
  for(const change of [p=>{p.vocabulary.target=20;},p=>{p.longTermAllocation.day='2026-09-01';},p=>{p.longTermAllocation.items[0].sourceHash='bad';},p=>{p.longTermAllocation.items.push(p.longTermAllocation.items[0]);},p=>{p.longTermAllocation.items[0].extra=1;},p=>{p.longTermAllocation.items[0].itemKeys=['foreign'];},p=>{p.longTermAllocation.vocabularyTarget=1.5;},p=>{delete p.longTermAllocation;}]){const bad=structuredClone(fixture);change(bad);assert.throws(()=>parseTaskPlan(bad));cases.push(bad);}
  const script=`import json,sys\nsys.path.insert(0,'companion')\nfrom task_plan_schema import validate_task_plan,validate_task_plan_integrity\nvalues=json.load(sys.stdin)\nvalidate_task_plan_integrity(values[0])\nout=[]\nfor value in values:\n try: validate_task_plan(value);out.append(True)\n except (ValueError,TypeError):out.append(False)\nprint(json.dumps(out))`;
- const result=spawnSync(process.env.PYTHON??'C:/Users/30972/Documents/ChatGPT/项目/.codex-staging/zhixue-review-python/Scripts/python.exe',['-c',script],{input:JSON.stringify(cases),encoding:'utf8',env:{...process.env,PYTHONUTF8:'1'}});
+ const result=spawnPythonSync(['-c',script],{input:JSON.stringify(cases),encoding:'utf8',env:{...process.env,PYTHONUTF8:'1'}});
  assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),[true,...cases.slice(1).map(()=>false)]);
  assert.throws(()=>parseLongTermDailyAllocation({...fixture.longTermAllocation,items:[{...fixture.longTermAllocation.items[0],lexemeKey:'constructor'}]}));
 });

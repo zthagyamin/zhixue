@@ -7,7 +7,7 @@ import { createSubmissionJournal } from '../study-submission-journal';
 import { getLocalStudyEvent } from '../local-study-events';
 import { createAssistanceObserver, emptyAssistanceObserverState, type AssistanceObserver } from '../assistance-observer';
 import { isNonWordOriginal } from '../../src/domain/content';
-import { NonWordStudyHost, type HostDriver } from '../../src/features/nonword-study';
+import { NonWordStudyHost,sourceCodeHintNotice, type HostDriver } from '../../src/features/nonword-study';
 import { createNonWordRuntime, recoveryFields, rawAnswer, restoredFields, evaluationPhase, type NonWordMode } from '../../src/infrastructure/nonword-study';
 import '../../src/features/nonword-study/study.css';
 import { continueNonWordRound } from '../../src/application/nonword-study';
@@ -17,6 +17,10 @@ import '../../src/features/course-study/course-study.css';
 import {attachPracticeDriver} from '../../src/infrastructure/practice-evidence';
 import {nativeMathTask,attachNativeMathDriver,attachAccountMathDriver} from '../../src/infrastructure/math-study';
 import {parseStudyItem,parseStudySnapshot} from '../account-study-content';
+import {createSourceLearningSession} from '../../src/application/source-admission';
+import {sourceAdmissionFingerprint,createSourceSelfAssessmentRepository} from '../../src/infrastructure/source-admission';
+import {sourceQuestionQuery} from '../../src/infrastructure/source-admission/host';
+import {sourceCodeReports} from '../../src/infrastructure/source-admission/code-reports';
 type Props = {
     recovered?: import('../../src/domain/learning-attempt').LearningAttempt;
     lookupFormal?: (eventId: string) => Promise<import('../../src/application/learning-attempt').VerifiedFormalAttemptEvent | null>;
@@ -51,28 +55,51 @@ function BoundNonWordHost({ plugin: Plugin, data, context, onGrade, round, recov
             ...(accountRecord ? { snapshotId: accountRecord.snapshotId } : {}),
             ...(accountRecord?.provenanceMode === 'verified-round' ? { authoritativeRecord: { attemptId: accountRecord.attemptId, roundId: accountRecord.roundId } } : {}) };
     };
-    const createDriver = async (purpose: 'first' | 'guided' | 'remediation', intent: 'review' | 'learn', parentAttemptId?: string, instanceId?: string,taskId?:string): Promise<HostDriver> => {
+    const createDriver = async (purpose: 'first' | 'guided' | 'remediation', intent: 'review' | 'learn', parentAttemptId?: string, instanceId?: string,taskId?:string,current?:()=>boolean): Promise<HostDriver> => {
         const group = await round?.(), cursor = await group?.read();
         const member = cursor?.members.find(member => member.itemKey === scope.itemKey);
         const prepared=await portableCourseTask(scope,purpose,parentAttemptId,taskId);
         const nativePrepared=prepared?null:await nativeCourseTask(scope,purpose,parentAttemptId,taskId,context.nativeCourse);
         const nativeMathPrepared=mode==='calculation'&&!scope.cloud?await nativeMathTask(scope,purpose,parentAttemptId,context.nativeMath):null;
-        const runtime = await createNonWordRuntime({ ...scope, ...(cursor ? { roundId: cursor.roundId, snapshotId: member?.snapshotId ?? scope.snapshotId } : {}) }, prepared?.task.mode??nativePrepared?.task.mode??mode, { verifyFormalEvent: verified, ...(cursor?{continuationMode:'group',navigationGroup:{anchorAttemptId:cursor.anchorAttemptId,sourceHash:cursor.sourceHash,runId:cursor.runId,roundId:cursor.roundId}}:{}), ...(recovered ? { binding: recovered.binding, ...(purpose === 'first' ? { existing: recovered } : {}) } : {}), purpose: scope.temporary ? 'remediation' : purpose, intent, parentAttemptId, instanceId });
+        const transport=!scope.cloud?context.sourceAdmission?.(scope.libraryId,current):undefined;
+        let readCodeReports:((attempt:import('../../src/domain/learning-attempt').LearningAttempt)=>Promise<readonly import('../../src/domain/code-execution').CodeRunReportV1[]>)|undefined;
+        const source=!scope.cloud&&!prepared&&!nativePrepared&&!nativeMathPrepared&&(transport?.supported()||scope.sourceConfirmationRequired)
+            ?createSourceLearningSession({query:sourceQuestionQuery(scope,context.contentSource!.mode as NonWordMode,context.contentSource!.data),
+                libraryId:scope.libraryId,transport,current,selfAssessment:createSourceSelfAssessmentRepository({ownerId:scope.ownerId,libraryId:scope.libraryId}),
+                fingerprint:sourceAdmissionFingerprint,newId:()=>crypto.randomUUID(),
+                ...(mode==='code'?{readCodeReports:attempt=>{
+                    if(!readCodeReports)throw Error('source-admission-code-report-unavailable');return readCodeReports(attempt);
+                }}:{})}):undefined;
+        const runtime = await createNonWordRuntime({ ...scope, ...(cursor ? { roundId: cursor.roundId, snapshotId: member?.snapshotId ?? scope.snapshotId } : {}) }, prepared?.task.mode??nativePrepared?.task.mode??mode, { verifyFormalEvent: verified,isCurrent:current, ...(source?{sourceAdmission:source.assess}:{}), ...(cursor?{continuationMode:'group',navigationGroup:{anchorAttemptId:cursor.anchorAttemptId,sourceHash:cursor.sourceHash,runId:cursor.runId,roundId:cursor.roundId}}:{}), ...(recovered ? { binding: recovered.binding, ...(purpose === 'first' ? { existing: recovered } : {}) } : {}), purpose: scope.temporary ? 'remediation' : purpose, intent, parentAttemptId, instanceId });
         if (purpose !== 'first' || scope.temporary) {
             const state = emptyAssistanceObserverState();
             temporaryObserver.current = createAssistanceObserver(() => ({ state, writable: true }));
         }
-        const driver:HostDriver = { runtime, ...(group ? { group, continueGroup: async (result: FSRSRating | 'pending' | 'skipped') => { await continueNonWordRound(group, scope.itemKey, result, cursor?.runId,runtime.continuationBoundary); } } : {}), restore: () => restoredFields(runtime.session.snapshot()!, mode), fields: values => recoveryFields(mode, values), answer: values => rawAnswer(mode, values), phase: () => evaluationPhase(runtime.session.snapshot()),
+        await source?.restoreSelf(runtime.session.snapshot()!);
+        const driver:HostDriver = { runtime, ...(source?{source:{supported:source.supported,selfRating:source.selfRating,
+            ...(source.savePending?{savePending:()=>source.savePending!(runtime.session.snapshot()!)}:{}),
+            beforeContinue:()=>source.beforeContinue(runtime.session.snapshot()!),review:async()=>{await runtime.session.assess({status:'undetermined',source:'model',explanation:'恢复核对。'});await runtime.afterWrite();},beforeFormal:()=>source.beforeFormal(runtime.session.snapshot()!)}}:{}), ...(group ? { group, continueGroup: async (result: FSRSRating | 'pending' | 'skipped') => { await continueNonWordRound(group, scope.itemKey, result, cursor?.runId,runtime.continuationBoundary); } } : {}), restore: () => ({...restoredFields(runtime.session.snapshot()!, mode),
+                ...(source?.selfRating()?{flashcardRating:source.selfRating()}:{})}), fields: values => recoveryFields(mode, values), answer: values => rawAnswer(mode, values), phase: () => evaluationPhase(runtime.session.snapshot()),
             verifiedCore: async () => {
                 const formal = runtime.session.snapshot()?.formal;
                 if (!formal)
                     return null;
                 return (await verified(formal.eventId))?.coreHash ?? null;
             } };
-        if(mode==='code'&&!prepared&&!nativePrepared)return attachPracticeDriver(driver,runtime,
-            !scope.cloud&&context.requestAiHint?{requestHint:({answer,report})=>context.requestAiHint!(structuredClone(data),
+        if(mode==='code'&&!prepared&&!nativePrepared){const attached=await attachPracticeDriver(driver,runtime,
+            source?{revalidateHint:true,requestHint:async({report})=>{
+                if(!source.requestHint||!report.identity)throw Error('当前同步助手尚不支持保存编程提示，请更新后重试。');
+                const attempt=await runtime.repository.read(report.identity.attemptId);
+                if(!attempt?.submitted)throw Error('原代码尚未可靠保存，请先运行并保存。');
+                let receipt;
+                try{receipt=await source.requestHint(attempt,report);}
+                catch(error){throw Error(sourceCodeHintNotice(error));}
+                if(receipt.status!=='ready')throw Error('提示尚待核对。');
+                return receipt.hint.text;
+            }}:!scope.cloud&&context.requestAiHint?{requestHint:({answer,report})=>context.requestAiHint!(structuredClone(data),
                 JSON.stringify({code:answer,failure:report.firstFailure??report.exception,sourceVersion:report.identity?.sourceVersion,
                     instruction:'只给定位当前问题的一条小提示，不提供完整题解。'}))}:{});
+            readCodeReports=sourceCodeReports(attached.runtime.practice);return attached;}
         if(mode==='calculation'&&scope.cloud&&scope.courseReference){
             const source=scope.courseReference,item=source.item;
             if(item.itemKey!==scope.itemKey||item.contentHash!==scope.contentHash||item.kind!=='practice'||item.practice.questionType!=='calculation'
@@ -83,7 +110,7 @@ function BoundNonWordHost({ plugin: Plugin, data, context, onGrade, round, recov
         if(nativeMathPrepared)return attachNativeMathDriver(driver,runtime,nativeMathPrepared,context.nativeMath);
         return prepared?attachPortableCourseDriver(driver,runtime,prepared):nativePrepared?attachNativeCourseDriver(driver,runtime,nativePrepared,context.nativeCourse):driver;
     };
-    return <NonWordStudyHost temporary={scope.temporary} key={JSON.stringify([scope, mode])} bindingKey={JSON.stringify([scope, mode])} mode={mode} draft={context.draft!} question={typeof data.prompt === 'string' ? data.prompt : typeof data.front === 'string' ? data.front : undefined} reference={recallReference(data) ?? (typeof data.explanation === 'string' ? data.explanation : '')} recallConfigured={(data.learningSupport as {
+    return <NonWordStudyHost temporary={scope.temporary} sourceConfirmationRequired={scope.sourceConfirmationRequired} key={JSON.stringify([scope, mode])} bindingKey={JSON.stringify([scope, mode])} mode={mode} draft={context.draft!} question={typeof data.prompt === 'string' ? data.prompt : typeof data.front === 'string' ? data.front : undefined} reference={recallReference(data) ?? (typeof data.explanation === 'string' ? data.explanation : '')} recallConfigured={(data.learningSupport as {
             type?: string;
         } | undefined)?.type === 'recall'} createDriver={createDriver} restoreRound={context.nonWordNavigation?.restoreRound} onGrade={onGrade} continuePending={() => context.nonWordNavigation?.continuePending()} resumeFormal={rating => context.nonWordNavigation?.resumeFormal(rating)} renderMath={text => <MathText text={text}/>} renderPlugin={(draft, lifecycle, grade) => lifecycle.course?<CourseInteraction lifecycle={lifecycle} draft={draft} onGrade={grade} renderMath={text=><MathText text={text}/>}/>:<Plugin.renderUI data={data} onGrade={grade} context={{ ...context, nonWordLearning: lifecycle,
                 ...(lifecycle.purpose === 'first' ? {} : { recallScope: undefined, recallPersistenceRequired: false }),

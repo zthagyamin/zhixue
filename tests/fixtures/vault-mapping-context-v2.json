@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "contextId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "previewId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "revision": 0,
+  "rules": [
+    {
+      "pathGlob": "*.md",
+      "subjectId": "mapped:concepts",
+      "subjectLabel": "Concepts",
+      "contentKind": "quiz",
+      "splitMode": "heading",
+      "headingLevel": 2
+    }
+  ],
+  "errors": [
+    {
+      "name": "legacy-confirm",
+      "payload": {
+        "action": "confirm",
+        "rules": [],
+        "revision": 0
+      },
+      "message": "mapping-preview-required"
+    },
+    {
+      "name": "old-context",
+      "payload": {
+        "action": "confirm",
+        "schemaVersion": 2,
+        "contextId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "previewId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "rules": [],
+        "revision": 0
+      },
+      "message": "mapping-context-changed"
+    },
+    {
+      "name": "no-proof",
+      "payload": {
+        "action": "confirm",
+        "schemaVersion": 2,
+        "contextId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [],
+        "revision": 0
+      },
+      "message": "mapping-preview-required"
+    }
+  ],
+  "previewRequest": {
+    "action": "preview",
+    "schemaVersion": 2,
+    "contextId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rules": [
+      {
+        "pathGlob": "*.md",
+        "subjectId": "mapped:concepts",
+        "subjectLabel": "Concepts",
+        "contentKind": "quiz",
+        "splitMode": "heading",
+        "headingLevel": 2
+      }
+    ]
+  },
+  "confirmRequest": {
+    "action": "confirm",
+    "schemaVersion": 2,
+    "contextId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "previewId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "revision": 0,
+    "rules": [
+      {
+        "pathGlob": "*.md",
+        "subjectId": "mapped:concepts",
+        "subjectLabel": "Concepts",
+        "contentKind": "quiz",
+        "splitMode": "heading",
+        "headingLevel": 2
+      }
+    ]
+  }
+}

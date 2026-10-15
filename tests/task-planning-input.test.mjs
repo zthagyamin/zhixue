@@ -62,10 +62,13 @@ test('multi-item practice unit only completes when all exact keys finish on one 
   const data=catalog([]);data.subjects.push(subject);
   const first=await attempt('unit-first','2026-08-30T01:00:00Z',0,3,true,{item:{kind:'due',key:'practice:one'}});
   const second=await attempt('unit-second','2026-08-31T01:00:00Z',0,3,true,{item:{kind:'due',key:'practice:two'}});
-  const incomplete=await compose({context:context(data),localEvents:[first,second]});
+  data.practiceSources=subject.units[0].action.itemKeys.map(itemKey=>({itemKey,subjectId:'course',title:itemKey,sourceHash:subject.units[0].sourceHash,completionRule:'graded-practice'}));
+  const proof=async event=>{const body={schemaVersion:1,eventId:event.eventId,coreHash:event.coreHash,itemSource:{itemKey:event.item.key,subjectId:'course',sourceHash:subject.units[0].sourceHash}};
+    return {event,subjectId:'course',planningEvidence:{...body,evidenceHash:await planningHash(body)}};};
+  const incomplete=await compose({context:context(data),localEvents:[first,second],companionRecords:await Promise.all([first,second].map(proof))});
   assert.equal(incomplete.input.completions.length,0);
   const today=await attempt('unit-first-today','2026-08-31T02:00:00Z',0,3,true,{item:{kind:'due',key:'practice:one'}});
-  const complete=await compose({context:context(data),localEvents:[first,second,today]});
+  const complete=await compose({context:context(data),localEvents:[first,second,today],companionRecords:await Promise.all([first,second,today].map(proof))});
   assert.equal(complete.input.completions.length,1);assert.equal(complete.input.completions[0].occurredAt,today.occurredAt);
 });
 test('same lexeme completion in library B never ticks the pinned physical task in library A',async()=>{

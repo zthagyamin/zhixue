@@ -35,4 +35,4 @@ export type PlanDocumentPayload = {
   history:Array<Omit<PlanHistoryEntry,'after'> & {after?:PlanDocument|null}>;
 };
 export type MutationResult<T extends PlanDocument = PlanCandidate> = { status: "ok" | "stale"; revision?: PlanHistoryEntry<T>; message?: string };
-export type PlanningInputComposition={input:DailyPlanningInput;events:StudyEventV3[];completedTaskIds:string[];taskEvents:TaskEventV1[]};
+export type PlanningInputComposition={input:DailyPlanningInput;events:StudyEventV3[];completionEvents?:StudyEventV3[];completedTaskIds:string[];taskEvents:TaskEventV1[]};

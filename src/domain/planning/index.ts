@@ -75,3 +75,5 @@ export type {PracticeBudgetGroup,PracticeBudgetSummary} from './practice-budget'
 export {restoredSubjectRound,taskRoundIdentity,firstPendingRoundIndex,nativeTaskCompletedKeys} from './round-resume.ts';
 
 export type {CloudAction,CloudUnit,CloudSubject,CloudCatalogBody,CloudPlanningCatalogV1,LocalPlanningMaterial,LocalPlanningMaterials,PlanningFactsBody,CloudPlanningFactsV1,CloudTask,CloudPlanBody,CloudTaskPlanV1} from './account-contracts';
+// @ts-expect-error TS5097: standalone Node source contracts.
+export {currentPracticeCompletionEvents,currentPracticeCompletionReviews} from './practice-completion-source.ts';

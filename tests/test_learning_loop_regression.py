@@ -12,6 +12,7 @@ import test_companion as fixtures
 import review_queue
 import state_projection
 import practice_engine
+from source_admission_fixture import logical_payload, prepare_source_event
 
 
 class LearningLoopRegressionTests(unittest.TestCase):
@@ -33,7 +34,10 @@ class LearningLoopRegressionTests(unittest.TestCase):
             f'---\n# {name}\n\n复习要点：\n- point-{ability}\n',
         )
 
-    def accept(self, payload):
+    def accept(self, payload, source_item_key=None):
+        if payload['event']['item']['key'].startswith('practice:'):
+            payload = logical_payload(fixtures.server, self.vault, payload)
+            prepare_source_event(fixtures.server, self.vault, 'test-account', payload, source_item_key)
         with fixtures.server.local_database() as db:
             return fixtures.server.accept_study_event_v3(db, self.vault, "test-account", payload)
 
@@ -59,7 +63,7 @@ class LearningLoopRegressionTests(unittest.TestCase):
         self.card("card-b", "ability-b")
         result = self.accept(self.fixture.make_v3_activity(
             "precise-card-regression", rating="again", state_ref=self.state_ref,
-            ability_id="ability-b", item_key="practice:new-question-b"))
+            ability_id="ability-b", item_key="practice:new-question-b"), source_item_key='practice:card-b')
         self.assertEqual(result["status"], "accepted")
         self.assertEqual(review_queue.read_queue(self.vault, "01 学习/学习结果/card-a.md"), [])
         self.assertEqual(len(review_queue.read_queue(self.vault, "01 学习/学习结果/card-b.md")), 1)
@@ -167,6 +171,9 @@ console.log(JSON.stringify({candidate,item}));
             payload["event"]["domain"] = "differential-review"
             payload["event"]["item"]["kind"] = "due"
             payload["event"]["coreHash"] = fixtures.server.compute_study_event_core_hash(payload["event"])
+            admission = prepare_source_event(fixtures.server, self.vault,
+                fixtures.server.installation_owner_hash(), payload)
+            self.assertIsNotNone(admission['claim'])
             result = request("/v1/activity", payload)
             self.assertEqual(result["projectionStatus"], "applied")
             self.assertEqual(request("/v1/activity", payload)["status"], "duplicate")

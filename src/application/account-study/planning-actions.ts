@@ -8,7 +8,7 @@ import { fields, id } from './request-values.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import { accountValue as json } from './result.ts';
 export async function executePlanningAction(body: Record<string, unknown>, auth: Authenticated, context: AccountContext): Promise<AccountReply | null> {
-    const { deps, longTermStore, requireRole, scope } = context;
+    const { deps, longTermStore, requireRole, deviceWriter, scope } = context;
     const p = auth.principal, action = body.action;
     if (action === 'publish-planning-catalog') {
         requireRole(p, 'device');
@@ -21,12 +21,12 @@ export async function executePlanningAction(body: Record<string, unknown>, auth:
             throw new ApiFailure(400, 'invalid-study-payload');
         if (!await (await deps.getStudyStore()).getSnapshot(owner, id(raw.snapshotId, 'snapshot')))
             throw new ApiFailure(404, 'unknown-study-snapshot');
-        return json({ status: await (await deps.getPlanStore()).putCatalog(owner, raw) });
+        return json({ status: await (await deps.getPlanStore()).putCatalog(owner, raw, deviceWriter(p)) });
     }
     if (action === 'publish-planning-facts') {
         requireRole(p, 'device');
         fields(body, ['action', 'facts'], ['libraryId']);
-        return json({ status: await (await deps.getPlanStore()).putFacts(await scope(p, body.libraryId), body.facts) });
+        return json({ status: await (await deps.getPlanStore()).putFacts(await scope(p, body.libraryId), body.facts, deviceWriter(p)) });
     }
     if (action === 'mutate-plan') {
         requireRole(p, 'browser');

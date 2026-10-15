@@ -1,6 +1,8 @@
 // @ts-expect-error TS5097: standalone Node contracts.
 import { boundedCodeJSON, codeJSONEqual, codeObject, codeText, parseCodeLearningSupportV1 } from '../content/index.ts';
 import type { CodeFunctionCase, CodeJSON, CodeLearningSupportV1 } from '../content/index.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+export { scientificRuntimeRequirement } from './scientific-input.ts';
 export type CodeRunIdentity = {
     attemptId: string;
     revision: number;

@@ -26,12 +26,12 @@ export async function makeTrialMaterialBackup(owner:string,library:string,raw:un
 /** Restore this owner's current library's material ONLY. Never interpret other backup records. */
 export async function readTrialMaterialBackup(raw:unknown,owner:string,library:string):Promise<BackupTrialMaterial[]>{
  validateOwner(owner);const kind=trialMaterialRecordKind(library),v=object(raw);
- if(v.schemaVersion!==1)throw new Error('不支持这个备份版本。');
+ if(v.format==='zhixue-study-recovery-v2'?v.schemaVersion!==2:v.schemaVersion!==1)throw new Error('不支持这个备份版本。');
  let value:unknown;
  if(v.format==='zhixue-trial-materials-v1'){
   const payload=object(v.payload);if(payload.owner!==owner||payload.library!==library)throw new Error('备份属于其他账号或学习库，请切回原空间恢复。');
   if(v.payloadHash!==await hashLocalJson(payload))throw new Error('备份校验失败。');value=payload.items;
- }else if(v.format==='zhixue-study-recovery-v1'){
+ }else if(v.format==='zhixue-study-recovery-v1'||v.format==='zhixue-study-recovery-v2'){
   if(v.workspaceId!==owner)throw new Error('恢复包属于其他账号。');const payload=object(v.payload);
   if(v.payloadHash!==await hashLocalJson(payload))throw new Error('恢复包校验失败。');
   if(!Array.isArray(payload.workspaceRecords))throw new Error('恢复包缺少材料记录。');

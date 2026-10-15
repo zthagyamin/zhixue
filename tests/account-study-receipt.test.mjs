@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createHash} from 'node:crypto';
 import {openD1} from './helpers/sqlite-d1.mjs';
+import {activateSyntheticWriter,changeWriterAtCommit} from './helpers/study-writer-race.mjs';
 import {AccountStudyAccessStore} from '../db/account-study-access-store.ts';
 import {AccountStudyStore} from '../db/account-study-store.ts';
 import {sealStudyItem,sealStudySnapshot} from '../app/account-study-content.ts';
@@ -11,7 +12,8 @@ let api;
 try {api=await import('../db/account-study-receipt-store.ts');}catch(error){if(error.code!=='ERR_MODULE_NOT_FOUND') throw error;}
 const scope={userId:'user-a',libraryId:'library-a'},writer='grant-one';
 async function setup(t){assert.equal(typeof api?.AccountStudyReceiptStore,'function','Verified writeback receipt storage must exist');
-  const db=await openD1();t.after(()=>db.sqlite.close());const clock=()=>new Date('2026-09-01T00:00:00.000Z'),access=new AccountStudyAccessStore(db.binding,clock),study=new AccountStudyStore(db.binding);
+  // Receipt timestamps remain fixed; live grant qualification uses the database clock.
+  const db=await openD1();t.after(()=>db.sqlite.close());const clock=()=>new Date('2026-09-01T00:00:00.000Z'),access=new AccountStudyAccessStore(db.binding),study=new AccountStudyStore(db.binding);
   const secret=Buffer.alloc(32,9).toString('base64url');await access.register('user-a',{grantId:writer,libraryId:'library-a',tokenHash:createHash('sha256').update(secret).digest('hex'),label:'Desktop',expectedProfileRevision:0,replaceLibrary:false});await access.activate(secret);
   const items=[await sealStudyItem(wordBody())],snapshot=await sealStudySnapshot(snapshotBody(items));await study.putSnapshot(scope,{items,snapshot},0);
   const record=await sealStudyRecord(await recordBody({contentHash:items[0].contentHash}));await study.appendRecord(scope,record);
@@ -19,6 +21,13 @@ async function setup(t){assert.equal(typeof api?.AccountStudyReceiptStore,'funct
     ...(status==='blocked'?{reason:'source-changed'}:{}),...(status==='applied'?{proof:{coreHash:record.event.coreHash,proofHash:'c'.repeat(64),targetCount:2}}:{})});
   return {...db,access,record,receipt,receipts:new api.AccountStudyReceiptStore(db.binding,clock)};
 }
+for(const change of ['revoke','expire','replace-library'])test(`writeback receipt does not certify when qualification changes at commit: ${change}`,async t=>{
+ const f=await setup(t),actor=await activateSyntheticWriter(f.binding,scope),before=f.sqlite.prepare('SELECT * FROM account_study_writeback_receipts').all();
+ const reached=changeWriterAtCommit(f.binding,f.sqlite,scope,actor,change,'account_study_writeback_receipts');
+ await assert.rejects(f.receipts.append(scope,f.receipt('writer-window'),actor.grantId),/study-writer-required/);
+ assert.equal(reached(),true);assert.deepEqual(f.sqlite.prepare('SELECT * FROM account_study_writeback_receipts').all(),before);
+});
+
 test('received and applied receipts are distinct and bound to the actual stored core',async t=>{
   const {receipts,receipt}=await setup(t);const a=await receipts.append(scope,receipt('receipt-one'),writer);
   const b=await receipts.append(scope,receipt('receipt-two','applied'),writer);

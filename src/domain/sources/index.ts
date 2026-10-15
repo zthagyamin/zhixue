@@ -6,4 +6,6 @@ export {parseStudyIdentity,accountLoadError,accountLoadLabel,accountLoadDetail,a
 export {sourceVersionRegresses} from './version.ts';
 export type {CompanionSourcePayload} from './companion-state';
 // @ts-expect-error TS5097: standalone Node source contracts.
+export {parseAccountSyncStatus,accountSyncNotice,accountSyncError,type AccountSyncStatus,type AccountSyncLink,type AccountSyncNotice} from './account-sync-state.ts';
+// @ts-expect-error TS5097: standalone Node source contracts.
 export {COMPANION_READ_MESSAGES,updateCompanionReadMessage,usableCompanionSource} from './companion-state.ts';

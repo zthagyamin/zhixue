@@ -87,7 +87,8 @@ class MappingTests(unittest.TestCase):
         with patch.object(server,'LOCAL_DATABASE_PATH',self.db),patch.object(server,'installation_owner_hash',return_value='owner'),patch.object(server,'source_path',return_value=self.root):
             with self.assertRaisesRegex(ValueError,'mapping-owner-required'): server.vault_mapping_request('other')
             with self.assertRaisesRegex(ValueError,'invalid-mapping-request'): server.vault_mapping_request('owner',{'rules':[],'action':'confirm','root':'C:/private'})
-            preview=server.vault_mapping_request('owner',{'action':'preview','rules':[self.rule()]})
+            context=server.vault_mapping_request('owner')['contextId']
+            preview=server.vault_mapping_request('owner',{'action':'preview','schemaVersion':2,'contextId':context,'rules':[self.rule()]})
             self.assertEqual(preview['itemCount'],1)
             self.assertEqual(server.vault_mapping_request('owner')['rules'],[])
 
@@ -130,11 +131,15 @@ class MappingTests(unittest.TestCase):
                 self.assertEqual(request('GET',token='missing')[0],401)
                 self.assertEqual(request('GET',origin='http://unapproved.local')[0],403)
                 self.assertEqual(request('POST',{'action':'preview','rules':[]},origin='http://unapproved.local')[0],403)
-                self.assertEqual(request('GET')[1]['rules'],[])
-                self.assertEqual(request('POST',{'action':'preview','rules':[self.rule()]})[1]['itemCount'],1)
-                body={'action':'confirm','rules':[self.rule()],'revision':0}
+                inspection=request('GET')[1]
+                self.assertEqual(inspection['rules'],[])
+                preview=request('POST',{'action':'preview','rules':[self.rule()],'schemaVersion':2,'contextId':inspection['contextId']})[1]
+                self.assertEqual(preview['itemCount'],1)
+                stale=request('POST',{'action':'preview','rules':[self.rule()],'schemaVersion':2,'contextId':inspection['contextId']})[1]
+                body={'action':'confirm','rules':[self.rule()],'revision':0,'schemaVersion':2,'contextId':preview['contextId'],'previewId':preview['previewId']}
                 self.assertEqual(request('POST',body)[0],200)
-                self.assertEqual(request('POST',body)[0],409)
+                self.assertEqual(request('POST',body)[0],200)
+                self.assertEqual(request('POST',{**body,'previewId':stale['previewId']})[0],409)
         finally: http_server.shutdown();http_server.server_close();thread.join()
 
     def test_scaffold_roundtrip(self):

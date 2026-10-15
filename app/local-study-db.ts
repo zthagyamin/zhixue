@@ -1,12 +1,14 @@
 // @ts-expect-error TS5097: standalone Node regression tests.
 import {parseBackupTrialMaterials} from './trial-material-backup-model.ts';
+// @ts-expect-error TS5097: standalone Node regression tests.
+import {importLegacyLocalRecord} from '../src/infrastructure/sources/index.ts';
 const DATABASE_NAME = "zhixue-local-study-v1";
 const DATABASE_VERSION = 3;
 const RECORD_STORE = "workspace-records";
 const STUDY_EVENTS_V3_STORE = "study-events-v3";
 const TASK_EVENTS_V1_STORE = 'task-events-v1';
 
-export type WorkspaceRecordKind = `note-trial-materials:${string}` | `recall-attempt:${string}` | `subject-organization:${string}` | `paper-draft:${string}` | `paper-document:${string}` | "progress" | "pending-activities" | "companion-session" | `companion-session:${string}` | "cloud-outbox" | "cloud-sync-metadata" | "plugin-overrides" | "plan-constraints" | "practice-cache" | "module-catalog" | "vocab-pacing" | "vocab-pacing-by-subject" | "task-plan-drafts" | "task-planning-cache" | "task-plan-backups" | "account-study-preference" | "account-study-device" | "account-plan-ai-requests" | "account-question-ai-requests" | "long-term-plan";
+export type WorkspaceRecordKind = `ai-chat-recovery:v1:${string}` | `paper-original:v1:${string}` | `note-trial-materials:${string}` | `recall-attempt:${string}` | `subject-organization:${string}` | `paper-draft:${string}` | `paper-document:${string}` | "progress" | "pending-activities" | "companion-session" | `companion-session:${string}` | "cloud-outbox" | "cloud-sync-metadata" | "plugin-overrides" | "plan-constraints" | "practice-cache" | "module-catalog" | "vocab-pacing" | "vocab-pacing-by-subject" | "task-plan-drafts" | "task-planning-cache" | "task-plan-backups" | "account-study-preference" | "account-study-device" | "account-plan-ai-requests" | "account-question-ai-requests" | "long-term-plan";
 
 type WorkspaceRecord<T> = {
   id: string;
@@ -18,6 +20,14 @@ type WorkspaceRecord<T> = {
 
 function recordId(workspaceId: string, kind: WorkspaceRecordKind) {
   return `${workspaceId}:${kind}`;
+}
+
+type RecordReadOptions={requireValue?:boolean};
+function recordValue<T>(row:WorkspaceRecord<T>|undefined,workspaceId:string,kind:WorkspaceRecordKind,fallback:T,options:RecordReadOptions={}){
+  if(options.requireValue&&row!==undefined&&(row===null||typeof row!=='object'||
+      row.id!==recordId(workspaceId,kind)||row.workspaceId!==workspaceId||row.kind!==kind||
+      !Object.hasOwn(row,'value')||row.value===null||row.value===undefined))throw new Error('workspace-record-value-invalid');
+  return row?.value??fallback;
 }
 
 export function openStudyDb(): Promise<IDBDatabase> {
@@ -59,13 +69,14 @@ export async function loadWorkspaceRecord<T>(
   workspaceId: string,
   kind: WorkspaceRecordKind,
   fallback: T,
+  options: RecordReadOptions = {},
 ): Promise<T> {
   if (typeof indexedDB === "undefined") return fallback;
   const database = await openStudyDb();
   try {
     return await new Promise<T>((resolve, reject) => {
       const request = database.transaction(RECORD_STORE, "readonly").objectStore(RECORD_STORE).get(recordId(workspaceId, kind));
-      request.onsuccess = () => resolve((request.result as WorkspaceRecord<T> | undefined)?.value ?? fallback);
+      request.onsuccess = () => {try{resolve(recordValue(request.result,workspaceId,kind,fallback,options));}catch(error){reject(error);}};
       request.onerror = () => reject(request.error ?? new Error("无法读取本地学习空间。"));
     });
   } finally {
@@ -107,26 +118,22 @@ export async function migrateLegacyLocalStorage<T>(
 ): Promise<T> {
   const existing = await loadWorkspaceRecord<T | null>(workspaceId, kind, null);
   if (existing !== null) return existing;
-  if (typeof localStorage === "undefined") return fallback;
-
-  const migrationOwnerKey = `zhixue-migration-owner:${legacyKey}`;
-  const migrationOwner = localStorage.getItem(migrationOwnerKey);
-  if (migrationOwner && migrationOwner !== workspaceId) return fallback;
+  if (typeof localStorage === "undefined" || typeof indexedDB === "undefined") return fallback;
 
   try {
     const raw = localStorage.getItem(legacyKey);
     if (!raw) return fallback;
     const value = JSON.parse(raw) as T;
-    await saveWorkspaceRecord(workspaceId, kind, value);
-    localStorage.setItem(migrationOwnerKey, workspaceId);
-    return value;
+    return await importLegacyLocalRecord({open: openStudyDb, storeName: RECORD_STORE,
+      workspaceId, destinationId: recordId(workspaceId, kind), kind, legacyKey,
+      raw, value, fallback, storage: localStorage});
   } catch {
     return fallback;
   }
 }
 
 /** Atomic read/modify/write, including across tabs sharing this database. */
-export async function updateWorkspaceRecord<T>(workspaceId:string,kind:WorkspaceRecordKind,fallback:T,update:(current:T)=>T):Promise<void> {
+export async function updateWorkspaceRecord<T>(workspaceId:string,kind:WorkspaceRecordKind,fallback:T,update:(current:T)=>T,options:RecordReadOptions={}):Promise<void> {
   if (typeof indexedDB==='undefined') throw new Error('本地学习数据库不可用，尚未保存草稿。');
   const database=await openStudyDb();
   try {
@@ -136,7 +143,7 @@ export async function updateWorkspaceRecord<T>(workspaceId:string,kind:Workspace
       const request=store.get(recordId(workspaceId,kind));
       request.onsuccess=()=>{
         try {
-          const value=update((request.result as WorkspaceRecord<T>|undefined)?.value??fallback);
+          const value=update(recordValue(request.result,workspaceId,kind,fallback,options));
           store.put({id:recordId(workspaceId,kind),workspaceId,kind,value,updatedAt:new Date().toISOString()} satisfies WorkspaceRecord<T>);
         } catch(error) {transaction.abort();reject(error);}
       };

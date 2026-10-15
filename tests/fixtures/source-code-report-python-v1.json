@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "Actual SourceAdmissionStore and public route DTO over a temporary registered-code query with resolver temporarily unavailable; no execution/model/V3 writes.",
+  "query": {
+    "itemKey": "practice:original-code:code:q1",
+    "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+    "presentation": {
+      "prompt": "Implement add.",
+      "initialCode": "def add(a,b): return 4",
+      "learningSupport": {
+        "schemaVersion": 1,
+        "type": "code",
+        "functionNames": [
+          "add"
+        ],
+        "cases": [
+          {
+            "id": "sum",
+            "functionName": "add",
+            "args": [
+              1,
+              2
+            ],
+            "kwargs": {},
+            "expected": 3
+          }
+        ]
+      },
+      "questionType": "code"
+    }
+  },
+  "capture": {
+    "schemaVersion": 1,
+    "status": "pending",
+    "durable": true,
+    "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260",
+    "binding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "originalBinding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "reason": "source-unverified"
+  },
+  "submission": {
+    "attemptId": "code-report-first-zero",
+    "binding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "answerRevision": 0,
+    "answer": "def add(a,b): return 4",
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "purpose": "first",
+    "parentAttemptId": null,
+    "assistance": "unknown"
+  },
+  "readReceipt": {
+    "submission": {
+      "answer": "def add(a,b): return 4",
+      "answerRevision": 0,
+      "assistance": "unknown",
+      "attemptId": "code-report-first-zero",
+      "binding": {
+        "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260",
+        "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+        "itemKey": "practice:original-code:code:q1",
+        "libraryId": "library-a",
+        "ownerId": "owner-a"
+      },
+      "parentAttemptId": null,
+      "purpose": "first",
+      "submittedAt": "2026-10-10T09:00:00.000Z"
+    },
+    "binding": {
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "itemKey": "practice:original-code:code:q1",
+      "libraryId": "library-a",
+      "ownerId": "owner-a"
+    },
+    "sourceBinding": null,
+    "evaluation": null,
+    "receipt": {
+      "schemaVersion": 1,
+      "status": "saved",
+      "durable": true,
+      "attemptId": "code-report-first-zero",
+      "answerRevision": 0,
+      "submissionHash": "d75407c312e4e5e98678c0ba36f5e8005cd23fac542c6c9a28cb69de69af47db",
+      "submittedAt": "2026-10-10T09:00:00.000Z",
+      "savedAt": "2026-10-10T10:00:00+00:00"
+    },
+    "schemaVersion": 1,
+    "status": "saved",
+    "durable": true,
+    "activeRequestId": null,
+    "selfAssessment": null,
+    "codeReports": [
+      {
+        "schemaVersion": 1,
+        "durable": true,
+        "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "evidence": {
+          "answerRevision": 0,
+          "attemptId": "code-report-first-zero",
+          "binding": {
+            "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260",
+            "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+            "itemKey": "practice:original-code:code:q1",
+            "libraryId": "library-a",
+            "ownerId": "owner-a"
+          },
+          "report": {
+            "assertionsExecuted": 1,
+            "assertionsPassed": 0,
+            "firstFailure": {
+              "actual": 4,
+              "args": [
+                1,
+                2
+              ],
+              "caseId": "sum",
+              "expected": 3,
+              "functionName": "add",
+              "kwargs": {}
+            },
+            "identity": {
+              "attemptId": "code-report-first-zero",
+              "revision": 0,
+              "sourceVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+              "testVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2"
+            },
+            "mapping": {
+              "originalLineCount": 1,
+              "prefixLineCount": 0
+            },
+            "outcome": "student-error",
+            "phase": "tests",
+            "runId": 1,
+            "schemaVersion": 1,
+            "status": "failed"
+          },
+          "schemaVersion": 1,
+          "submittedAt": "2026-10-10T09:00:00.000Z"
+        },
+        "evidenceHash": "3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+        "provenance": "client-public-tests"
+      }
+    ]
+  },
+  "codeReportRequest": {
+    "schemaVersion": 1,
+    "attemptId": "code-report-first-zero",
+    "binding": {
+      "ownerId": "owner-a",
+      "libraryId": "library-a",
+      "itemKey": "practice:original-code:code:q1",
+      "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+      "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260"
+    },
+    "answerRevision": 0,
+    "submittedAt": "2026-10-10T09:00:00.000Z",
+    "report": {
+      "schemaVersion": 1,
+      "runId": 1,
+      "identity": {
+        "attemptId": "code-report-first-zero",
+        "revision": 0,
+        "sourceVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+        "testVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2"
+      },
+      "status": "failed",
+      "phase": "tests",
+      "outcome": "student-error",
+      "assertionsPassed": 0,
+      "assertionsExecuted": 1,
+      "mapping": {
+        "prefixLineCount": 0,
+        "originalLineCount": 1
+      },
+      "firstFailure": {
+        "caseId": "sum",
+        "functionName": "add",
+        "args": [
+          1,
+          2
+        ],
+        "kwargs": {},
+        "expected": 3,
+        "actual": 4
+      }
+    }
+  },
+  "codeReportReceipt": {
+    "schemaVersion": 1,
+    "durable": true,
+    "reportId": "code-report:3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+    "evidence": {
+      "answerRevision": 0,
+      "attemptId": "code-report-first-zero",
+      "binding": {
+        "captureId": "source-capture:bb7356b32b5de1c35d0e0cd569f5aaa6b0cf2d336c32ef0259d5bc96961db260",
+        "contentHash": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+        "itemKey": "practice:original-code:code:q1",
+        "libraryId": "library-a",
+        "ownerId": "owner-a"
+      },
+      "report": {
+        "assertionsExecuted": 1,
+        "assertionsPassed": 0,
+        "firstFailure": {
+          "actual": 4,
+          "args": [
+            1,
+            2
+          ],
+          "caseId": "sum",
+          "expected": 3,
+          "functionName": "add",
+          "kwargs": {}
+        },
+        "identity": {
+          "attemptId": "code-report-first-zero",
+          "revision": 0,
+          "sourceVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2",
+          "testVersion": "e7f85fadcae176d292b4f40eafccf1fe267792c5df8a2c4625eb9fb4a7c026b2"
+        },
+        "mapping": {
+          "originalLineCount": 1,
+          "prefixLineCount": 0
+        },
+        "outcome": "student-error",
+        "phase": "tests",
+        "runId": 1,
+        "schemaVersion": 1,
+        "status": "failed"
+      },
+      "schemaVersion": 1,
+      "submittedAt": "2026-10-10T09:00:00.000Z"
+    },
+    "evidenceHash": "3c1f14f00683fa2ec7f5d9e79aead6c143c37cdfb4a496553c07117ecad6ed10",
+    "provenance": "client-public-tests"
+  }
+}

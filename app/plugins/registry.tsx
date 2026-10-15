@@ -12,6 +12,8 @@ export interface PluginContext {
   /** Host-only paired native course service; plugins use the controlled course lifecycle. */
   nativeCourse?: import('../../src/application/course-study').NativeCourseTransport;
   nativeMath?: import('../../src/domain/math-study').NativeMathTransport;
+  /** Host-only source ledger; plugins use the controlled learning lifecycle. */
+  sourceAdmission?: (libraryId:string,current?:()=>boolean)=>import('../../src/application/source-admission').SourceAdmissionTransport;
   /** Opt-in original non-vocabulary lifecycle; absent for vocabulary and old callers. */
   nonWordLearning?:NonWordLearningPort;
   nonWordScope?:NonWordHostScope;

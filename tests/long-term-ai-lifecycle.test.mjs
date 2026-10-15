@@ -17,7 +17,7 @@ function mount(workspace,props){
  const exports={};new Function('require','exports',compiled)(name=>name==='react'?react:name==='./long-term-ai-advice'?advice:name.includes('study-ai-workspace')?{useOptionalStudyAIWorkspace:()=>workspace}:name.includes('study-ai-errors')?{studyAIErrorMessage:error=>error.message}:require(name),exports);
  const render=()=>{cursor=0;tree=exports.LongTermAIPlanner(props);while(pending.length)pending.shift()();return tree;};
  function nodes(node){if(!node||typeof node!=='object')return[];return[node,...[node.props?.children].flat(Infinity).flatMap(nodes)];}
- render();return{render,props,canGenerate(){return nodes(tree).some(n=>n.type==='button'&&n.props.children==='生成 AI 计划建议'&&!n.props.disabled);},unmount(){for(const slot of slots)slot?.cleanup?.();},start(){nodes(tree).find(n=>n.type==='textarea').props.onChange({target:{value:'未来30天'}});render();nodes(tree).find(n=>n.type==='button'&&n.props.children==='生成 AI 计划建议').props.onClick();render();}};
+ render();return{render,props,canGenerate(){return nodes(tree).some(n=>n.type==='button'&&n.props.children==='生成 AI 计划建议'&&!n.props.disabled);},unmount(){for(const slot of slots)slot?.cleanup?.();},prepare(){nodes(tree).find(n=>n.type==='textarea').props.onChange({target:{value:'未来30天'}});render();return nodes(tree).find(n=>n.type==='button'&&n.props.children==='生成 AI 计划建议').props.onClick;},start(){nodes(tree).find(n=>n.type==='textarea').props.onChange({target:{value:'未来30天'}});render();nodes(tree).find(n=>n.type==='button'&&n.props.children==='生成 AI 计划建议').props.onClick();render();}};
 }
 test('a delayed aborted request cannot release a reopened planner busy lock',async()=>{
  const first=deferred(),second=deferred();let calls=0,parentBusy=false,applied=0;
@@ -38,4 +38,31 @@ test('returning controls to their former values does not revive a cancelled busy
  const pending=deferred();const workspace={scope:{ownerId:'o',libraryId:'l',mode:'local'},settings:{enabled:true,configured:true,model:'mock',provider:'deepseek',revision:1},service:{async *chat(){await pending.promise;yield{type:'delta',text:answer};}}};
  const props={spec,subjects:[],planningStart:'2026-09-09',active:true,disabled:false,onApply(){throw new Error('Cancelled request cannot apply');},currentSourceStamp:()=> 'fixed',onBusyChange(){}};
  const mounted=mount(workspace,props);mounted.start();props.spec={...spec,dailyReviewTarget:21};mounted.render();props.spec=spec;mounted.render();assert.equal(mounted.canGenerate(),true);pending.resolve();await tick();mounted.unmount();
+});
+
+test('same-tick repeated AI plan click starts one real component request',async()=>{
+ const pending=deferred();let calls=0,applied=0,busy=false;
+ const workspace={scope:{ownerId:'synthetic',libraryId:'l',mode:'local'},settings:{enabled:true,configured:true,model:'mock',provider:'deepseek',revision:1},service:{async *chat(){calls++;await pending.promise;yield{type:'delta',text:answer};}}};
+ const props={spec,subjects:[],planningStart:'2026-09-09',active:true,disabled:false,onApply(){applied++;},currentSourceStamp:()=> 'fixed',onBusyChange:value=>busy=value};
+ const mounted=mount(workspace,props),click=mounted.prepare();
+ try{
+  click();click();assert.equal(calls,1);assert.equal(busy,true);
+  pending.resolve();await tick();assert.equal(applied,1);assert.equal(busy,false);
+ }finally{pending.resolve();await tick();mounted.unmount();}
+});
+
+test('retired plan button cannot start a request after source settings change',async()=>{
+ let calls=0;
+ const workspace={scope:{ownerId:'synthetic',libraryId:'l',mode:'local'},settings:{enabled:true,configured:true,model:'mock',provider:'deepseek',revision:1},service:{async *chat(){calls++;yield{type:'delta',text:answer};}}};
+ const props={spec,subjects:[],planningStart:'2026-09-09',active:true,disabled:false,onApply(){},currentSourceStamp:()=> 'fixed',onBusyChange(){}};
+ const mounted=mount(workspace,props),oldClick=mounted.prepare();
+ try{props.spec={...spec,dailyReviewTarget:2};mounted.render();oldClick();await tick();assert.equal(calls,0);}finally{mounted.unmount();}
+});
+
+test('closed planner does not call its configured model',async()=>{
+ let calls=0;
+ const workspace={scope:{ownerId:'synthetic',libraryId:'l',mode:'local'},settings:{enabled:true,configured:true,model:'mock',provider:'deepseek',revision:1},service:{async *chat(){calls++;yield{type:'delta',text:answer};}}};
+ const props={spec,subjects:[],planningStart:'2026-09-09',active:false,disabled:false,onApply(){},currentSourceStamp:()=> 'fixed',onBusyChange(){}};
+ const mounted=mount(workspace,props);
+ try{mounted.start();await tick();assert.equal(calls,0);}finally{mounted.unmount();}
 });

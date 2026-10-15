@@ -10,6 +10,7 @@ from pathlib import Path
 import index_gateway as gateway
 import vault_topology as topology
 from companion_setup import redirects_path
+from infrastructure.mapping_snapshot import capture, fingerprint
 
 ROOT = Path('_System/Integrations/Study Loop/mapped')
 MARKER = 'zhixue-mapped-derived-v1'
@@ -44,13 +45,15 @@ def _atomic(vault, path, raw, expected):
     finally:
         if temp.exists(): temp.unlink()
 
-def _register(vault, owner, rules):
+def _register(vault, owner, rules, *, expected_source_hash=None):
     diagnostics = []
-    originals = {rel: path.read_bytes() for path, rel in topology.files(vault, diagnostics)
-                 if any(topology._matches(rel, rule['pathGlob']) for rule in rules)}
+    originals, diagnostics = capture(vault, rules, diagnostics)
+    before = fingerprint(originals, diagnostics)
+    if expected_source_hash is not None and before != expected_source_hash:
+        raise ValueError('mapping-source-changed')
     items = topology.extract(vault, rules, diagnostics=diagnostics)
-    if originals != {rel: path.read_bytes() for path, rel in topology.files(vault, diagnostics)
-                     if any(topology._matches(rel, rule['pathGlob']) for rule in rules)}:
+    after, source_diagnostics = capture(vault, rules)
+    if before != fingerprint(after, source_diagnostics):
         raise ValueError('mapping-source-changed')
     identity = {'owner': owner, 'vault': str(vault)}
     scope = ROOT / topology._digest(identity)[:24]
@@ -123,8 +126,8 @@ def _register(vault, owner, rules):
     if next_manifest != previous: mutations.append((manifest_path, next_manifest, previous))
     applied = []
     try:
-        for ref, raw in originals.items():
-            if _safe(vault, vault/ref).read_bytes() != raw: raise ValueError('mapping-source-changed')
+        current, source_diagnostics = capture(vault, rules)
+        if before != fingerprint(current, source_diagnostics): raise ValueError('mapping-source-changed')
         for path, raw, old in mutations:
             _atomic(vault, path, raw, old); applied.append((path, raw, old))
     except Exception:
@@ -159,14 +162,14 @@ def parse_items(vault, text, subject):
         if _hash(source.read_bytes()) != item.pop('mappedSourceHash'): raise ValueError('mapping-source-changed')
     return rows
 
-def load_catalog(vault_root, db_path, owner, refresh=False, *, extra_indexes=(), extra_entry_ref=None):
+def load_catalog(vault_root, db_path, owner, refresh=False, *, extra_indexes=(), extra_entry_ref=None, expected_source_hash=None):
     vault = Path(vault_root).resolve()
     with gateway.LOCK:
         diagnostics = []; indexes = []
         try:
             saved = topology.load(db_path, vault, owner)
             if saved['revision']:
-                indexes, diagnostics = _register(vault, owner, saved['rules'])
+                indexes, diagnostics = _register(vault, owner, saved['rules'], expected_source_hash=expected_source_hash)
         except (ValueError, OSError, KeyError, sqlite3.Error) as error:
             diagnostics.append({'code':str(error), 'message':'映射资料登记未完成，请检查来源或生成文件冲突。', 'reference':ROOT.as_posix(), 'path':ROOT.as_posix()})
         entry_ref = None

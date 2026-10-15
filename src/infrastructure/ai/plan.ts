@@ -1,6 +1,8 @@
 // @ts-expect-error TS5097: standalone Node contracts.
 import {providerRequest} from './provider.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
+import {readProviderText} from './bounded-response.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
 import {accountStudyPlanAiTrace,parsePlanAiRequest} from '../../domain/ai/index.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {studyObject,studyText,studyCount} from '../../domain/sync/index.ts';
@@ -16,7 +18,10 @@ export function createAccountStudyPlanAi(options:Options){
     const body={model:options.model,messages:[{role:'system',content:'Return JSON only: {"selectedUnitIds":[],"optionalOrder":[],"message":""}. Select at most 3 candidate unit IDs, at most one per subject. Never invent IDs.'},
       {role:'user',content:`JSON candidate input: ${prompt}`}],response_format:{type:'json_object'},thinking:{type:'disabled'},stream:false,max_tokens:budget.maxOutputTokens};
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);let response:Response,text:string;
-    try{response=await providerRequest(options,body,controller.signal);text=await response.text();}
+    try{
+      response=await providerRequest(options,body,controller.signal);
+      text=await readProviderText(response,{maxBytes:65536,limitError:'cloud-ai-provider-error',signal:controller.signal});
+    }
     catch{throw new Error('cloud-ai-provider-error');}finally{clearTimeout(timer);}
     if(!response.ok||new TextEncoder().encode(text).byteLength>65536)throw new Error('cloud-ai-provider-error');
     let provider:unknown;try{provider=JSON.parse(text);}catch{throw new Error('cloud-ai-output-invalid');}

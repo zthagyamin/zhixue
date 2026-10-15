@@ -10,6 +10,7 @@ async function request<T>(parent:AbortSignal,milliseconds:number,run:(signal:Abo
   try{return await Promise.race([Promise.resolve().then(()=>{controller.signal.throwIfAborted();return run(controller.signal);}),ended]);}
   finally{if(timer!==undefined)clearTimeout(timer);parent.removeEventListener('abort',stop);}
 }
+export {request as requestCompanion};
 export function createCompanionHttp<Source extends CompanionSourcePayload>(endpoint:string,fetcher:typeof fetch=fetch){
   return {
     generate:async(connection:PairedCompanion,file:{name:string;size:number;text:()=>Promise<string>},signal:AbortSignal)=>{

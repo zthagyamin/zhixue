@@ -9,5 +9,5 @@ export { bindInlineNonWordRound, projectInlineNonWordRound } from './inline-roun
 export type { InlineNonWordRoundBinding } from './inline-round';
 export { bindExtraNonWordRound, projectExtraNonWordRound } from './extra-round';
 export { selectNonWordQueueItem, createNonWordQuestionSelection } from './queue-selection';
-export { sourceUpdateNotice } from './source-notice';
+export { sourceUpdateNotice,sourceCodeHintNotice } from './source-notice';
 export type { ExtraNonWordRoundBinding } from './extra-round';

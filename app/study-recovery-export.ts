@@ -20,17 +20,19 @@ import {studyId} from './account-study-content.ts';
 import {checkStudyRecordBinding} from './account-study-record.ts';
 // @ts-expect-error TS5097: standalone Node contracts.
 import {scopeRecoveryRecords} from './recovery-causal-scope.ts';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {collectNonwordRecovery,nonwordPending,nonwordMissingDependencies,readRecoveryArchives} from '../src/infrastructure/nonword-recovery/index.ts';
 
 function owner(workspaceId:string){if(!workspaceId.startsWith('account:'))throw new Error('recovery-account-required');studyId(workspaceId.slice(8),'owner');}
 /** Every reader validates its own stored evidence. No current-library parameter:
  * historical libraries and independently queued summaries remain discoverable. */
 export async function collectStudyRecovery(workspaceId:string){
   owner(workspaceId);const journal=createSubmissionJournal();
-  const [accountLibraries,coreEvents,submissions,assistanceViews,accountProgress,workspaceRecords,taskEvents]=await Promise.all([
+  const [accountLibraries,coreEvents,submissions,assistanceViews,accountProgress,workspaceRecords,taskEvents,nonword,nonwordArchives]=await Promise.all([
     exportAllLocalAccountStudy(workspaceId),readRecoverableStudyEvents(workspaceId,journal),journal.list(workspaceId),createAssistanceReadCache().exportOwner(workspaceId),
-    exportAccountProgress(workspaceId),exportRecoveryWorkspaceRecords(workspaceId),exportTaskEventRecords(workspaceId),
+    exportAccountProgress(workspaceId),exportRecoveryWorkspaceRecords(workspaceId),exportTaskEventRecords(workspaceId),collectNonwordRecovery(workspaceId),readRecoveryArchives(workspaceId),
   ]);
-  return{accountLibraries,coreEvents,submissions,assistanceViews,accountProgress,workspaceRecords,taskEvents};
+  return{accountLibraries,coreEvents,submissions,assistanceViews,accountProgress,workspaceRecords,taskEvents,nonword,nonwordArchives};
 }
 export type StudyRecoveryPayload=Awaited<ReturnType<typeof collectStudyRecovery>>;
 function describe(payload:StudyRecoveryPayload){
@@ -38,6 +40,8 @@ function describe(payload:StudyRecoveryPayload){
   const assigned=new Set(payload.submissions.map(row=>row.eventId)),missing=new Set<string>();
   const scoped=scopeRecoveryRecords([...payload.accountLibraries.flatMap(library=>library.records.map(row=>row.record)),...payload.submissions.flatMap(row=>row.payload.route.kind==='account'?[row.payload.route.record]:[]),...payload.assistanceViews.flatMap(view=>view.summaries.map(row=>row.parent))]);
   const records=scoped.records;
+  const formalCores=[...payload.coreEvents.map(row=>row.event),...records.map(record=>record.event)];
+  for(const dependency of nonwordMissingDependencies(payload.nonword,formalCores))missing.add(dependency);
   for(const record of records){assigned.add(record.event.eventId);const snapshot=snapshots.get(JSON.stringify([record.libraryId,record.snapshotId]));
     if(!snapshot)missing.add(`snapshot:${record.libraryId}:${record.snapshotId}`);
     else if(record.provenanceMode!=='task'){
@@ -57,7 +61,7 @@ function describe(payload:StudyRecoveryPayload){
   }
   for(const view of payload.assistanceViews)for(const row of view.summaries)if(!appliedAuxiliary.has(row.record.associationHash))assistance.add(row.record.summary.summaryId);
   const legacyQueues=payload.workspaceRecords.filter(row=>row.kind==='pending-activities'||row.kind==='cloud-outbox');
-  const pending={coreUploads:[...coreUploads].sort(),coreWritebacks:[...coreWritebacks].sort(),recovery:[...recovery].sort(),assistance:[...assistance].sort(),tasks:payload.taskEvents.filter(row=>!row.delivered).map(row=>row.eventId).sort(),legacyQueues:legacyQueues.some(row=>!Array.isArray(row.value)||row.value.length>0)};
+  const pending={coreUploads:[...coreUploads].sort(),coreWritebacks:[...coreWritebacks].sort(),recovery:[...recovery].sort(),assistance:[...assistance].sort(),tasks:payload.taskEvents.filter(row=>!row.delivered).map(row=>row.eventId).sort(),nonword:[...nonwordPending(payload.nonword),...payload.nonwordArchives.filter(row=>row.pendingReview!==false).map(row=>'archive:'+row.sourceHash)],legacyQueues:legacyQueues.some(row=>!Array.isArray(row.value)||row.value.length>0)};
   return{missingDependencies:[...missing].sort(),unassignedLegacyEventIds:payload.coreEvents.filter(row=>!assigned.has(row.eventId)).map(row=>row.eventId).sort(),pending};
 }
 /** Cross-database reads are not atomic. Compare complete validated captures,
@@ -66,9 +70,9 @@ export async function exportStudyRecovery(workspaceId:string,options:{collect?:(
   owner(workspaceId);const now=options.now??(()=>new Date()),read=options.collect??(()=>collectStudyRecovery(workspaceId)),startedAt=now().toISOString();
   let payload=await read(),payloadHash=await hashLocalJson(payload),consistency:'stable'|'changed-during-read'='changed-during-read';
   for(let attempt=0;attempt<3;attempt++){const next=await read(),hash=await hashLocalJson(next);payload=next;if(hash===payloadHash){consistency='stable';break;}payloadHash=hash;}
-  const description=describe(payload);return{schemaVersion:1 as const,format:'zhixue-study-recovery-v1' as const,workspaceId,startedAt,finishedAt:now().toISOString(),consistency,
+  const description=describe(payload);return{schemaVersion:2 as const,format:'zhixue-study-recovery-v2' as const,workspaceId,startedAt,finishedAt:now().toISOString(),consistency,
     complete:consistency==='stable'&&description.missingDependencies.length===0,...description,payload,payloadHash};
 }
 export function hasPendingStudyRecovery(value:Awaited<ReturnType<typeof exportStudyRecovery>>):boolean{
-  const p=value.pending;return !value.complete||p.legacyQueues||[p.coreUploads,p.coreWritebacks,p.recovery,p.assistance,p.tasks].some(ids=>ids.length>0);
+  const p=value.pending;return !value.complete||p.legacyQueues||[p.coreUploads,p.coreWritebacks,p.recovery,p.assistance,p.tasks,p.nonword].some(ids=>ids.length>0);
 }

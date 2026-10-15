@@ -7,11 +7,13 @@ from pathlib import Path
 import companion_setup
 import source_results
 from external_sources import safe_error
+from infrastructure.registered_paper_sources import RegisteredPaperSources
 
 
 class SourceRuntime:
     def __init__(self, service, validate_event):
         self.service=service;self.validate_event=validate_event;self.lock=threading.RLock()
+        self.paper_source_lookup = RegisteredPaperSources()
         with service.db() as db:
             db.execute('CREATE TABLE IF NOT EXISTS source_scan_cursor(owner TEXT,source TEXT,cursor_json TEXT,error TEXT,PRIMARY KEY(owner,source))')
 

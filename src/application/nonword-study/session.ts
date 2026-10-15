@@ -1,10 +1,14 @@
 import type { AttemptBinding, AttemptCheckpoint, AttemptEvaluation, AttemptMutation, AttemptReceipt, LearningAttempt } from '../../domain/learning-attempt';
 import type { NonWordOutcome } from './index';
+// @ts-expect-error TS5097: standalone Node contracts.
+import {AttemptRevisionConflict,isAttemptRevisionConflict,pendingCheckpointCore} from './checkpoint-recovery.ts';
 export interface AttemptRepository {
     read(id: string): Promise<LearningAttempt | null>;
     mutate(mutation: AttemptMutation): Promise<AttemptReceipt>;
 }
 type Mode = NonNullable<AttemptCheckpoint['mode']>;
+export type NonWordSourceAdmission = { status: 'confirmed'; outcome?: NonWordOutcome }
+    | { status: 'pending'; reason: string; reasonCode?: 'offline' | 'invalid' | 'no-reference' };
 type Options = {
     repository: AttemptRepository;
     binding: AttemptBinding;
@@ -20,6 +24,9 @@ type Options = {
     evaluationFingerprint: (input: Extract<AttemptEvaluation, {
         status: 'resolved';
     }>) => Promise<string>;
+    /** A controlled source service, never a plugin or provider-supplied flag. */
+    sourceAdmission?: (attempt: LearningAttempt, candidate?:NonWordOutcome) => Promise<NonWordSourceAdmission>;
+    isCurrent?:()=>boolean;
 };
 /** Serial application use case. The repository owns durability; the original writer owns grades. */
 export function createNonWordSession(options: Options) {
@@ -54,7 +61,8 @@ export function createNonWordSession(options: Options) {
             notify();
             return saved;
         }
-        if (!receipt.durable || receipt.status === 'conflict' || !receipt.attempt)
+        if(receipt.status==='conflict')throw new AttemptRevisionConflict();
+        if (!receipt.durable || !receipt.attempt)
             throw Error('另一设备已修改这份作答。当前输入已保留，请核对后恢复。');
         state = receipt.attempt;
         notify();
@@ -69,6 +77,15 @@ export function createNonWordSession(options: Options) {
         notify();
         return state!;
     });
+    /** Explicit pending-review recovery, never automatic overwrite or formal reconciliation. */
+    const readCompatibleCheckpoint=async()=>{
+        if(!state?.submitted||state.formal||state.evaluation.status!=='pending'||options.isCurrent?.()===false)return false;
+        const saved=await options.repository.read(options.attemptId);
+        if(!saved||saved.revision<=state.revision||saved.formal||saved.evaluation.status!=='pending'||options.isCurrent?.()===false)return false;
+        if(await options.fingerprint(pendingCheckpointCore(saved))!==await options.fingerprint(pendingCheckpointCore(state))||options.isCurrent?.()===false)return false;
+        state=saved;notify();return true;
+    };
+    const recoverCheckpointConflict=()=>serial(readCompatibleCheckpoint);
     const updateView = (patch: Pick<AttemptCheckpoint, 'view' | 'intent' | 'activeSeconds' | 'targetMinutes'>) => serial(async () => {
         if (!state)
             throw Error('作答尚未恢复。');
@@ -101,22 +118,43 @@ export function createNonWordSession(options: Options) {
             await apply({ kind: 'checkpoint', answer, checkpoint: checkpoint('answering', state.checkpoint.pluginFields), parentAttemptId: state.parentAttemptId });
         return apply({ kind: 'submit', answerRevision: state.answerRevision, assistance, ...observation });
     });
+    async function evaluationFor(outcome: NonWordOutcome): Promise<AttemptEvaluation> {
+        if (outcome.status === 'undetermined')
+            return { status: 'pending', reason: 'invalid', feedback: outcome.explanation };
+        const rating = outcome.rating ?? (outcome.status === 'correct' ? 'good' : outcome.status === 'partial' ? 'hard' : 'again');
+        const evaluation: Extract<AttemptEvaluation, {status: 'resolved'}> = {
+            status: 'resolved', rating, correct: outcome.status === 'correct', outcome: outcome.status,
+            source: outcome.source, feedback: outcome.explanation, referenceHash: options.binding.contentHash, evaluationHash: '' };
+        evaluation.evaluationHash = await options.evaluationFingerprint(evaluation);
+        return evaluation;
+    }
     const assess = (outcome: NonWordOutcome) => serial(async () => {
         if (!state?.submitted)
             throw Error('请先可靠保存首轮答案。');
-        if (outcome.status === 'undetermined')
-            return apply({ kind: 'evaluate', answerRevision: state.answerRevision, evaluation: { status: 'pending', reason: 'invalid', feedback: outcome.explanation } });
-        const rating = outcome.rating ?? (outcome.status === 'correct' ? 'good' : outcome.status === 'partial' ? 'hard' : 'again');
-        const evaluation: Extract<AttemptEvaluation, {
-            status: 'resolved';
-        }> = { status: 'resolved', rating, correct: outcome.status === 'correct', outcome: outcome.status, source: outcome.source, feedback: outcome.explanation, referenceHash: options.binding.contentHash, evaluationHash: '' };
-        evaluation.evaluationHash = await options.evaluationFingerprint(evaluation);
+        if (options.sourceAdmission && state.formal?.status !== 'linked') {
+            const source = await options.sourceAdmission(structuredClone(state),structuredClone(outcome));
+            if (source?.status !== 'confirmed') {
+                if (state.evaluation.status === 'resolved')
+                    throw Error('来源尚待确认，已保存的核对结果保留，不能生成正式成绩。');
+                return apply({ kind: 'evaluate', answerRevision: state.answerRevision,
+                    evaluation: { status: 'pending', reason: source?.status === 'pending' ? source.reasonCode ?? 'no-reference' : 'no-reference',
+                        feedback: source?.status === 'pending' ? source.reason : '来源尚待确认，临时答案已保留。' } });
+            }
+            if (source.outcome)
+                outcome = source.outcome;
+        }
+        const evaluation = await evaluationFor(outcome);
         if (state.evaluation.status === 'resolved') {
-            if (state.evaluation.evaluationHash !== evaluation.evaluationHash)
+            if (evaluation.status !== 'resolved' || state.evaluation.evaluationHash !== evaluation.evaluationHash)
                 throw Error('首轮已有核对结果，不能静默覆盖。');
             return state;
         }
-        return apply({ kind: 'evaluate', answerRevision: state.answerRevision, evaluation });
+        try{return await apply({ kind: 'evaluate', answerRevision: state.answerRevision, evaluation });}
+        catch(error){
+            if(!isAttemptRevisionConflict(error)||!await readCompatibleCheckpoint()||options.isCurrent?.()===false)throw error;
+            // Preserve the computed response: retry the local write, never the grader.
+            return apply({kind:'evaluate',answerRevision:state.answerRevision,evaluation});
+        }
     });
     const pending = (reason: 'offline' | 'invalid' | 'no-reference', feedback?: string) => serial(async () => {
         if (!state?.submitted)
@@ -135,6 +173,16 @@ export function createNonWordSession(options: Options) {
     const reserve = (rating: 'again' | 'hard' | 'good' | 'easy') => serial(async () => {
         if (!state?.submitted || state.evaluation.status !== 'resolved')
             throw Error('本次作答仍待核对，不能产生正式成绩。');
+        if (options.sourceAdmission && state.formal?.status !== 'linked') {
+            const source = await options.sourceAdmission(structuredClone(state));
+            if (source?.status !== 'confirmed')
+                throw Error('来源尚待确认，原答案保留，不能生成正式成绩。');
+            if (source.outcome) {
+                const checked = await evaluationFor(source.outcome);
+                if (checked.status !== 'resolved' || checked.evaluationHash !== state.evaluation.evaluationHash)
+                    throw Error('来源核对结果已变化，原评价保留，不能生成冲突成绩。');
+            }
+        }
         if (state.formal) {
             if (state.formal.rating !== rating)
                 throw Error('本次正式成绩已固定，不能更换评级。');
@@ -160,7 +208,7 @@ export function createNonWordSession(options: Options) {
             throw Error('辅助尝试尚未可靠核对。');
         return apply({ kind: 'checkpoint', answer: state.answer, checkpoint: checkpoint('feedback', state.checkpoint.pluginFields, true), parentAttemptId: state.parentAttemptId });
     });
-    return { open, save, updateView, submit, assess, pending, traversePending, reserve, link, markTraversed, markAuxiliaryTraversed,
+    return { open, save, updateView, submit, assess, pending, traversePending, reserve, link, markTraversed, markAuxiliaryTraversed,recoverCheckpointConflict,
         snapshot: () => state ? structuredClone(state) : null, flush: () => queue,
         subscribe: (listener: () => void) => { listeners.add(listener); return () => listeners.delete(listener); }, getSnapshot: () => revision,
     };

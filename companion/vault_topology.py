@@ -197,16 +197,21 @@ def load(db_path,root,owner):
     return dict(revision=row[0],rules=json.loads(row[1])) if row else dict(revision=0,rules=[])
 
 def save(db_path,root,owner,rules,revision):
+    with closing(sqlite3.connect(db_path)) as db:
+        db.execute('BEGIN IMMEDIATE')
+        result=save_in_transaction(db,root,owner,rules,revision)
+        db.commit()
+    return result
+
+def save_in_transaction(db,root,owner,rules,revision):
+    """Shared CAS primitive; caller owns the receipt/mapping transaction."""
     if not owner: raise ValueError('mapping-owner-required')
     rules=validate(rules)
     if type(revision)!=int or revision<0: raise ValueError('invalid-mapping-revision')
-    with closing(sqlite3.connect(db_path)) as db:
-        db.execute('CREATE TABLE IF NOT EXISTS vault_mapping(identity TEXT PRIMARY KEY,revision INTEGER NOT NULL,rules TEXT NOT NULL)')
-        db.execute('BEGIN IMMEDIATE')
-        key=_key(root,owner); row=db.execute('SELECT revision FROM vault_mapping WHERE identity=?',(key,)).fetchone()
-        if (row[0] if row else 0)!=revision: raise ValueError('stale-mapping')
-        db.execute('INSERT INTO vault_mapping VALUES(?,?,?) ON CONFLICT(identity) DO UPDATE SET revision=excluded.revision,rules=excluded.rules',(key,revision+1,json.dumps(rules)))
-        db.commit()
+    db.execute('CREATE TABLE IF NOT EXISTS vault_mapping(identity TEXT PRIMARY KEY,revision INTEGER NOT NULL,rules TEXT NOT NULL)')
+    key=_key(root,owner); row=db.execute('SELECT revision FROM vault_mapping WHERE identity=?',(key,)).fetchone()
+    if (row[0] if row else 0)!=revision: raise ValueError('stale-mapping')
+    db.execute('INSERT INTO vault_mapping VALUES(?,?,?) ON CONFLICT(identity) DO UPDATE SET revision=excluded.revision,rules=excluded.rules',(key,revision+1,json.dumps(rules)))
     return dict(revision=revision+1,rules=rules)
 
 def merge(payload,root,db_path,owner):

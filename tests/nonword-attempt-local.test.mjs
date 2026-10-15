@@ -15,10 +15,13 @@ function fixture() {
   return {scope,checkpoint,repo:createLocalAttemptRepository(scope)};
 }
 test('real IndexedDB atomic writes survive reload, keep a durable outbox and reject stale tab edits',async()=>{
-  const {scope,checkpoint,repo}=fixture(); const [one,two]=await Promise.all([repo.mutate(checkpoint),repo.mutate({...checkpoint,operationId:'second-tab',answer:'other'})]);
-  assert.deepEqual([one.status,two.status].sort(),['accepted','conflict']);assert.equal(one.durable,true);
-  const loaded=createLocalAttemptRepository(scope);assert.equal((await loaded.read('attempt')).answer,'independent original');assert.equal(await loaded.status('attempt'),'device-only');assert.equal((await loaded.pending()).length,1);
-  assert.equal((await loaded.mutate(checkpoint)).status,'duplicate');
+  const {scope,checkpoint,repo}=fixture(),mutations=[checkpoint,{...checkpoint,operationId:'second-tab',answer:'other'}];
+  const receipts=await Promise.all(mutations.map(mutation=>repo.mutate(mutation)));
+  assert.deepEqual(receipts.map(receipt=>receipt.status).sort(),['accepted','conflict']);
+  const accepted=receipts.findIndex(receipt=>receipt.status==='accepted'),winner=mutations[accepted];
+  assert.equal(receipts[accepted].durable,true);assert.equal(receipts[1-accepted].durable,false);
+  const loaded=createLocalAttemptRepository(scope);assert.equal((await loaded.read('attempt')).answer,winner.answer);assert.equal(await loaded.status('attempt'),'device-only');assert.equal((await loaded.pending()).length,1);
+  assert.equal((await loaded.mutate(winner)).status,'duplicate');
   assert.equal(await createLocalAttemptRepository({...scope,libraryId:'other'}).read('attempt'),null);
 });
 test('offline sync does not discard work; lost cloud receipt retries logical operation and clears outbox only after validated receipt',async()=>{

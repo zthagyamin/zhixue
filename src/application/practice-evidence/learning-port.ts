@@ -18,6 +18,7 @@ export interface CalculationLearningPort{
 export interface PracticeLearningPort{
     readonly calculation?:CalculationLearningPort;
     snapshot():PracticeEvidenceV1|null;
+    readSaved?(attemptId:string):Promise<PracticeEvidenceV1|null>;
     refresh():Promise<void>;
     recordPrepared(pointer:PreparedPracticeEvidenceChild):Promise<void>;
     recordCodeReport(report:CodeRunReportV1,output?:string):Promise<void>;

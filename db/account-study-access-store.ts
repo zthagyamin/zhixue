@@ -71,10 +71,16 @@ export class AccountStudyAccessStore {
   async authenticate(secret:unknown):Promise<StudyDevicePrincipal|null> {
     let hash:string;
     try {hash=await machineTokenHash(secret);}catch(error){if(error instanceof Error&&error.message==='invalid-machine-token') return null;throw error;}
-    const row=await this.byHash(hash),now=this.now();
+    // Grant state and the active library must come from the same database read.
+    const row=await this.q('SELECT g.*,p.library_id AS profile_library_id,p.revision AS profile_revision FROM account_study_grants g LEFT JOIN account_study_profiles p ON p.user_id=g.user_id WHERE g.token_hash=?',hash)
+      .first<GrantRow & {profile_library_id:string|null;profile_revision:number|null}>(),now=this.now();
     if(!row||!['pending','active'].includes(row.state)||row.expires_at<=now) return null;
     studyIso(row.expires_at);studyId(row.user_id,'user');studyId(row.library_id,'library');studyId(row.grant_id,'grant');
-    if(row.state==='active'&&(await this.profile(row.user_id)).libraryId!==row.library_id) return null;
+    if(row.state==='active'){
+      studyCount(row.profile_revision??0,'profile-revision');
+      if(row.profile_library_id!==null)studyId(row.profile_library_id,'library');
+      if(row.profile_library_id!==row.library_id)return null;
+    }
     return {kind:'device',userId:row.user_id,libraryId:row.library_id,grantId:row.grant_id,state:row.state as 'pending'|'active',expiresAt:row.expires_at};
   }
   async activate(secret:unknown):Promise<StudyDevicePrincipal> {

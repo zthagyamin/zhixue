@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "ruleVersion": "provider-stream-budget-v1",
+  "maxResponseBytes": 8388608,
+  "cases": [
+    {"name": "hidden-reasoning", "kind": "hidden", "size": 240000, "repeat": 36, "reject": true},
+    {"name": "ignored-heartbeats", "kind": "comment", "size": 240000, "repeat": 36, "reject": true},
+    {"name": "unicode-content", "kind": "text", "text": "你好，world。", "repeat": 1, "reject": false}
+  ]
+}

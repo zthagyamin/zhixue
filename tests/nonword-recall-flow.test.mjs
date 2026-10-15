@@ -73,6 +73,22 @@ async function fixture({gradeRecall, submitGate, assessmentGate, remediationGate
 }
 function radio(f, value) {return [...nodes(f.view())].find(node => node.type === 'input' && node.props.type === 'radio' && node.props.value === value);}
 
+test('zero matched reference points cannot resolve a nonword attempt as correct', async () => {
+  const f = await fixture({data: {learningSupport: {schemaVersion: 1, type: 'recall',
+    criteria: [{id: 'p', text: '参考要点'}]}}, gradeRecall: async () => ({source: 'ai',
+    verdict: 'correct', rating: 'good', matchedPointIds: [], missedPointIds: ['p']})});
+  await f.type('原始回答'); await f.click('提交并核对');
+  assert.equal(f.first.snapshot().evaluation.status, 'pending');
+  assert.equal(f.first.snapshot().submitted.answer, '原始回答');
+  assert.equal(radio(f, 'good'), undefined);
+  assert.equal(f.calls.some(row => ['assess', 'formal'].includes(row[0])), false);
+  assert.deepEqual(f.records, []);
+  await f.click('保存的答案稍后核对，继续');
+  assert.deepEqual(f.moves, ['pending']);
+  assert.equal(f.first.snapshot().evaluation.status, 'pending');
+  f.hooks.unmount();
+});
+
 test('original answer is durable before AI starts; trusted model feedback is assessed without an implicit formal grade', {timeout: 10000}, async () => {
   const gate = deferred(); let ai = 0;
   const f = await fixture({submitGate: gate, gradeRecall: async () => {ai++; return {source: 'ai', verdict: 'partial', rating: 'hard', feedback: '遗漏边界。'};}});

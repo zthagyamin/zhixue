@@ -14,7 +14,7 @@ const binding={ownerId:'synthetic-owner',libraryId:'synthetic-library',snapshotI
 const repository=createLocalAttemptRepository({userId:binding.ownerId,libraryId:binding.libraryId});
 const session=createNonWordSession({repository,binding,attemptId:'synthetic-first',formalEventId:'synthetic-formal',
   mode:'recall',purpose:'first',now:()=>new Date().toISOString(),newId:()=>crypto.randomUUID(),fingerprint:attemptFingerprint,evaluationFingerprint});
-const probe={calls:[],read:()=>repository.read('synthetic-first')};
+const probe={calls:[],read:()=>repository.read('synthetic-first'),evaluationStatus:()=>session.snapshot()?.evaluation.status};
 Object.assign(window,{__nonwordProbe:probe});
 const data={itemId:'synthetic-question',fingerprint:binding.contentHash,questionType:'recall',
   prompt:'为什么修改需求后要核对相关测试？',answer:'需求变化可能影响原来的行为，因此需核对相关测试。',
@@ -38,7 +38,9 @@ function App(){
     async assess(outcome){probe.calls.push('assess');await session.assess(outcome);},
     async waitForReview(){probe.calls.push('pending');await session.pending('offline');},
     async continuePending(){await session.traversePending();setDone(true);}};
-  const gradeRecall=async()=>{probe.calls.push('ai');return {source:'ai',verdict:mode==='zero'?'correct':mode,
+  const gradeRecall=async()=>{probe.calls.push('ai');
+    // Keep a controlled pending interval so the browser must await completed evaluation.
+    await new Promise(resolve=>setTimeout(resolve,250));return {source:'ai',verdict:mode==='zero'?'correct':mode,
     rating:mode==='zero'||mode==='correct'?'good':mode==='partial'?'hard':'again',
     matchedPointIds:mode==='zero'||mode==='incorrect'?[]:['p'],missedPointIds:mode==='zero'||mode==='incorrect'?['p']:[],
     feedback:'依据合成参考核对。'};};

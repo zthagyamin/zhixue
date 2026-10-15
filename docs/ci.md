@@ -87,3 +87,7 @@ node --test tests/ci-report.test.mjs tests/browser-storage-fixture.test.mjs
 ```
 
 完整 `npm test` 保持原入口；Windows 下先准备 Python、原 requirements、`PYTHON`、`PYTHONUTF8=1` 与规范临时目录。浏览器脚本的 `UX_BROWSER_DRIVER` 指向隔离 Playwright 安装目录，`UX_EVIDENCE` 指向证据目录。可从最新 Actions 运行的具体步骤复用完整命令。
+
+## Stacked pull requests
+
+Regular verification and public-distribution checks run for pull requests against every base branch, including a prerequisite PR branch. Source identity and results belong to that PR merge candidate; do not replace them with the prerequisite PR’s successful run.

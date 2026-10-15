@@ -7,8 +7,9 @@ import {PendingAnswerWorkspace} from './study-dashboard/pending-workspace';
 import { ReleaseAnnouncement } from './release-announcement';
 import './study-settings-readability.css';
 
-export default function Home(){
+export default function Home({paperReading=false}:{paperReading?:boolean}={}){
  const model=useDashboardController();
+ if(paperReading)return <DashboardView model={model} paperReading/>;
  // A first arrival sees an inline guide. Only returning version upgrades can interrupt an idle workspace.
  return <><DashboardView model={model}/>{(model.accountLibraryId||model.data.localLibraryId)&&<PendingAnswerWorkspace
    key={JSON.stringify([model.workspaceId,model.accountLibraryId??model.data.localLibraryId])}

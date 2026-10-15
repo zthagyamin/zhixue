@@ -1,16 +1,29 @@
+import {existsSync,statSync} from 'node:fs';
 // Browser acceptance for the psychology-driven UX remedies.
 // Real React components, synthetic content only; all external requests are blocked.
 import assert from 'node:assert/strict';
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {createServer} from 'vite';
 import react from '@vitejs/plugin-react';
 const {chromium}=createRequire(resolve(process.env.UX_BROWSER_DRIVER,'package.json'))('playwright');
-const root=resolve('scratch/ci-remedies'),evidence=resolve(process.env.UX_EVIDENCE||'scratch/ci-evidence/remedies');
+const project=process.cwd().replaceAll('\\','/');
+const root=await mkdtemp(resolve(tmpdir(),'zhixue-remedies-browser-'));
+const evidence=resolve(process.env.UX_EVIDENCE||resolve(root,'evidence'));
+/** Generated fixtures live outside the repository; retain exact source extensions. */
+function fixtureSource(text){
+ return text.replace(/(['"])\.\.\/\.\.\/([^'"]+)\1/g,(_match,quote,specifier)=>{
+  const base=resolve(project,specifier),candidates=[base,...['.ts','.tsx','.mjs','.js','.json','.css'].map(extension=>base+extension),...['index.ts','index.tsx','index.mjs','index.js'].map(name=>resolve(base,name))];
+  const file=candidates.find(path=>existsSync(path)&&statSync(path).isFile());
+  if(!file)throw Error('Browser fixture source unavailable: '+specifier);
+  return quote+'/@fs/'+file.replaceAll('\\','/')+quote;
+ });
+}
 await mkdir(root,{recursive:true});await mkdir(evidence,{recursive:true});
 await writeFile(resolve(root,'index.html'),'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div><script type="module" src="/entry.tsx"></script></body></html>');
-await writeFile(resolve(root,'entry.tsx'),String.raw`
+await writeFile(resolve(root,'entry.tsx'),fixtureSource(String.raw`
 import React,{useRef,useState} from 'react';import {createRoot} from 'react-dom/client';
 import {LearningLibrary} from '../../app/learning-library';
 import {NoteTrial} from '../../app/note-trial';
@@ -18,10 +31,16 @@ import {StudyItemSource} from '../../app/study-item-source';
 import {GeneratedPlanStart} from '../../app/generated-plan-start';
 import {PaperWorkspacePanels} from '../../app/paper-workspace-panels';
 import {PaperWorkshopLauncher} from '../../app/paper-workshop-launcher';
+import {PaperReadingEntry} from '../../app/paper-reading/entry';
+import {PaperWorkshop} from '../../app/plugins/plugin-paper';
 import {PAPER_SLOT_TEMPLATES,currentPaperSlots,paperOutlineMarkdown,paperTemplate,setPaperSlot,setPaperTemplate} from '../../app/paper-slot-templates';
 import {emptyPaperDraft} from '../../app/paper-study';import {ReviewContext} from '../../app/review-context';
-import '../../app/globals.css';import '../../app/c-study.css';import '../../app/study-overview.css';import '../../app/plugins/paper.css';
-document.documentElement.classList.toggle('dark',location.search.includes('theme=dark'));
+import '../../app/globals.css';import '../../app/c-study.css';import '../../app/study-overview.css';
+import '../../app/study-interactions.css';import '../../app/study-core-ui.css';
+import '../../app/site-hierarchy.css';import '../../app/settings-progress-hierarchy.css';import '../../app/plugins/paper.css';
+const requestedTheme=new URLSearchParams(location.search).get('theme');
+if(requestedTheme)sessionStorage.setItem('remedies-theme',requestedTheme);
+document.documentElement.classList.toggle('dark',(requestedTheme??sessionStorage.getItem('remedies-theme'))==='dark');
 const probe={generates:0,starts:0,resolve:null as null|((mode:'match'|'other')=>void)};Object.assign(window,{__remediesProbe:probe});
 const subjects=[
  ...Array.from({length:3},(_,i)=>({id:'lang-'+i,name:'语言课程 '+(i+1),pluginType:'recall',disciplineId:'language',items:[{}]})),
@@ -35,21 +54,49 @@ function StartProbe(){const [hash,setHash]=useState<string|undefined>(),[disable
  return <section aria-label="生成并开始验证" data-starts={probe.starts} data-generates={probe.generates}><GeneratedPlanStart key={scope} scope={scope} hash={hash} visible disabled={disabled} generate={generate} onStart={()=>{probe.starts++;document.body.dataset.started=String(probe.starts);}}/><button onClick={()=>probe.resolve?.('match')}>完成生成</button><button onClick={()=>probe.resolve?.('other')}>完成为其他计划</button><button onClick={()=>setDisabled(true)}>禁用入口</button><button onClick={()=>setScope('scope-b')}>切换范围</button></section>;}
 function PaperProbe(){const [active,setActive]=useState<0|1>(0),[draft,setDraft]=useState(emptyPaperDraft()),[reading,setReading]=useState(''),[figure,setFigure]=useState(false),[exported,setExported]=useState('');const template=paperTemplate(draft.slotTemplate);
  return <section aria-label="论文响应式验证"><PaperWorkspacePanels active={active} onActiveChange={setActive} reading={<section><h2>文献阅读</h2><label>阅读批注<textarea value={reading} onChange={e=>setReading(e.target.value)}/></label><button onClick={()=>setFigure(value=>!value)}>切换图表</button>{figure&&<p>图表仍在当前阅读状态</p>}</section>} board={<section><h2>主线填答</h2><label>整理模板<select aria-label="测试论文主线模板" value={template.id} onChange={e=>setDraft(value=>setPaperTemplate(value,e.target.value))}>{PAPER_SLOT_TEMPLATES.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}</select></label>{currentPaperSlots(draft).map(field=><label key={template.id+field.key}>{field.label}<textarea aria-label={'模板字段 '+field.label} value={field.value} onChange={e=>setDraft(value=>setPaperSlot(value,field.key,e.target.value))}/></label>)}<button onClick={()=>setExported(paperOutlineMarkdown(draft))}>导出主线</button><pre aria-label="主线导出结果">{exported}</pre></section>}/></section>;}
-function App(){const [chosen,setChosen]=useState(''),[owner,setOwner]=useState('remedies-owner-a');const library=owner+'-library',featured=location.search.includes('featured=1');return <main className="study-app" data-page="today" data-chosen={chosen} data-owner={owner}><div className="workspace"><h1>心理阻抗修复 · 隔离浏览器验收</h1>
+function App(){
+ const [chosen,setChosen]=useState(''),[owner,setOwner]=useState('remedies-owner-a');
+ const library=owner+'-library',featured=location.search.includes('featured=1');
+ if(location.pathname==='/study/paper'){
+  const services={owner,library};
+  return <main className="study-app paper-reading-route" data-page="paper-reading">
+   <PaperReadingEntry services={services} returnHref={'/?theme='+(document.documentElement.classList.contains('dark')?'dark':'light')}
+    renderTools={paper=><PaperWorkshop services={services} initialPaper={paper} restoreLast={false} showMaterialManager={false}/>}/>
+  </main>;
+ }
+ return <main className="study-app" data-page="today" data-chosen={chosen} data-owner={owner}><div className="workspace"><h1>心理阻抗修复 · 隔离浏览器验收</h1>
  {featured&&<NoteTrial featured owner={owner} library={library} onConnect={()=>setChosen('sources')}/>}
  <section><h2>本页笔记试学与出处</h2><button onClick={()=>setOwner(value=>value.endsWith('-a')?'remedies-owner-b':'remedies-owner-a')}>切换折叠测试学习库</button><LearningLibrary showTrial={!featured} subjects={subjects} owner={owner} library={library} onChoose={setChosen} onSources={()=>setChosen('sources')} paper={<PaperWorkshopLauncher services={{owner,library}}/>}/><StudyItemSource item={{sourceNote:'课程/讲义.md#卷积公式'}} source={{title:'测试课程',scope:'当前题目'}} canOpenLocal={false} getObsidianUri={()=>''} preferenceScope="remedies-owner/remedies-library"/></section>
  <PaperProbe/><StartProbe/><section aria-label="复习说明验证"><ReviewContext/><ReviewContext recorded due="2026-09-20T00:00:00Z"/><ReviewContext temporary due="2026-09-20T00:00:00Z"/></section>
  </div></main>;}createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
-`);
+`));
 const origin='http://127.0.0.1:4183';
-const server=await createServer({configFile:false,root,plugins:[react()],server:{host:'127.0.0.1',port:4183,strictPort:true,fs:{allow:[process.cwd()]}},logLevel:'error'});
+const server=await createServer({configFile:false,root,publicDir:false,css:{postcss:project},cacheDir:resolve(root,'.vite'),resolve:{alias:{react:resolve(project,'node_modules/react'),'react-dom':resolve(project,'node_modules/react-dom')}},plugins:[react()],server:{host:'127.0.0.1',port:4183,strictPort:true,fs:{allow:[project,root]}},logLevel:'error'});
 let browser,failure=null;const results=[];
 async function settle(page){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));}
 async function open(viewport,theme,denyStorage=false){const context=await browser.newContext({viewport,colorScheme:theme});context.setDefaultTimeout(20000);const errors=[],outside=[];context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));await context.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin){outside.push(url.href);return route.abort('blockedbyclient');}if(url.pathname.startsWith('/api/'))return route.abort('blockedbyclient');return route.continue();});await context.addInitScript(({origin,denyStorage})=>{if(location.origin!==origin)return;Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>Promise.reject(new DOMException('denied','NotAllowedError'))}});if(denyStorage)Object.defineProperty(window,'localStorage',{configurable:true,get(){throw new DOMException('blocked','SecurityError');}});},{origin,denyStorage});const page=await context.newPage();await page.goto(origin+'/?theme='+theme);await page.getByRole('heading',{name:'心理阻抗修复 · 隔离浏览器验收'}).waitFor();await settle(page);return{context,page,errors,outside};}
 function common(viewport,theme){return{viewport:viewport.width,theme};}
 async function assertClean(page,errors,outside){assert.deepEqual(errors,[]);assert.deepEqual(outside,[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
+// Check the explicit site theme and readable original text after route navigation.
+async function assertPaperReadable(page,theme){
+ assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('dark')),theme==='dark');
+ const metric=await page.getByRole('article',{name:'当前单元原文'}).evaluate(element=>{
+  const rgba=value=>(value.match(/[\d.]+/g)||[]).map(Number);
+  const style=getComputedStyle(element),foreground=rgba(style.color);
+  let background;
+  for(let node=element;node;node=node.parentElement){
+   const color=rgba(getComputedStyle(node).backgroundColor);
+   if(color.length>=3&&(color[3]??1)>0){background=color;break;}
+  }
+  background??=[255,255,255];
+  const luminance=color=>color.slice(0,3).map(channel=>channel/255).map(channel=>channel<=.04045?channel/12.92:((channel+.055)/1.055)**2.4).reduce((sum,channel,index)=>sum+channel*[.2126,.7152,.0722][index],0);
+  const a=luminance(foreground),b=luminance(background);
+  return {contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),foreground,background};
+ });
+ assert.ok(metric.contrast>=4.5,'Original text contrast must be readable: '+JSON.stringify(metric));
+}
 try{
- await server.listen();browser=await chromium.launch({headless:true});
+ await server.listen();browser=await chromium.launch({headless:true,...(process.env.EDU_CHROMIUM_PATH?{executablePath:process.env.EDU_CHROMIUM_PATH}:{})});
  for(const viewport of [{width:1440,height:900},{width:390,height:844}])for(const theme of ['light','dark']){
   {
    const {context,page,errors,outside}=await open(viewport,theme);await page.goto(origin+'/?theme='+theme+'&featured=1');const trial=page.locator('.note-trial');await trial.getByText('用自己的笔记，开始第一轮练习',{exact:true}).waitFor();assert.equal(await trial.count(),1);const input=trial.locator('input[type=file][multiple]');assert.equal(await input.isVisible(),true);assert.equal(await input.evaluate(el=>el.getBoundingClientRect().bottom<innerHeight),true);await page.screenshot({path:resolve(evidence,'featured-trial-'+theme+'-'+viewport.width+'.png')});
@@ -68,9 +115,58 @@ try{
   {
    const {context,page,errors,outside}=await open(viewport,theme);const narrow=viewport.width<=800;if(narrow)await page.getByRole('tab',{name:'文献阅读'}).waitFor();else assert.equal(await page.getByRole('tab').count(),0);await page.getByRole('textbox',{name:'阅读批注'}).fill('阅读状态');await page.getByRole('button',{name:'切换图表'}).click();if(narrow)await page.getByRole('tab',{name:'主线填答'}).click();const select=page.getByRole('combobox',{name:'测试论文主线模板'});await select.selectOption('empirical');await page.getByRole('textbox',{name:'模板字段 研究问题'}).fill('实验问题');await select.selectOption('theory');await page.getByRole('textbox',{name:'模板字段 核心论题'}).fill('理论论题');await select.selectOption('free');await page.getByRole('textbox',{name:'模板字段 它解决了什么'}).fill('自由问题');await select.selectOption('empirical');assert.equal(await page.getByRole('textbox',{name:'模板字段 研究问题'}).inputValue(),'实验问题');await page.getByRole('button',{name:'导出主线'}).click();const exported=await page.getByLabel('主线导出结果').innerText();assert.match(exported,/实验问题/);assert.match(exported,/理论论题/);assert.match(exported,/自由问题/);
    await page.setViewportSize(narrow?{width:1440,height:900}:{width:390,height:844});await settle(page);assert.equal(await page.getByLabel('阅读批注').inputValue(),'阅读状态');assert.equal(await page.getByText('图表仍在当前阅读状态',{exact:true}).count(),1);await page.setViewportSize(viewport);await settle(page);
-   await page.getByRole('button',{name:'论文精读工坊',exact:true}).click();let dialog=page.getByRole('dialog',{name:'论文精读工坊'});await dialog.waitFor();if(narrow)await dialog.getByRole('tab',{name:'主线填答'}).click();let realTemplate=dialog.getByRole('combobox',{name:'论文主线模板'});await realTemplate.selectOption('empirical');await dialog.getByRole('textbox',{name:'研究问题'}).fill('真实实验草稿');await realTemplate.selectOption('theory');await dialog.getByRole('textbox',{name:'核心论题'}).fill('真实理论草稿');await dialog.getByRole('button',{name:'关闭论文精读工坊'}).click();await dialog.waitFor({state:'detached'});
-   await page.getByRole('button',{name:'论文精读工坊',exact:true}).click();dialog=page.getByRole('dialog',{name:'论文精读工坊'});await dialog.waitFor();if(narrow)await dialog.getByRole('tab',{name:'主线填答'}).click();realTemplate=dialog.getByRole('combobox',{name:'论文主线模板'});assert.equal(await realTemplate.inputValue(),'theory');assert.equal(await dialog.getByRole('textbox',{name:'核心论题'}).inputValue(),'真实理论草稿');await dialog.getByRole('button',{name:'关闭论文精读工坊'}).click();await page.reload();await page.getByRole('heading',{name:'心理阻抗修复 · 隔离浏览器验收'}).waitFor();await page.getByRole('button',{name:'论文精读工坊',exact:true}).click();dialog=page.getByRole('dialog',{name:'论文精读工坊'});await dialog.waitFor();if(narrow)await dialog.getByRole('tab',{name:'主线填答'}).click();assert.equal(await dialog.getByRole('combobox',{name:'论文主线模板'}).inputValue(),'theory');assert.equal(await dialog.getByRole('textbox',{name:'核心论题'}).inputValue(),'真实理论草稿');const [download]=await Promise.all([page.waitForEvent('download'),dialog.getByRole('button',{name:'导出阅读笔记'}).click()]);const downloaded=await readFile(await download.path(),'utf8');assert.match(downloaded,/真实理论草稿/);assert.match(downloaded,/真实实验草稿/);await dialog.getByRole('button',{name:'关闭论文精读工坊'}).click();
-   await assertClean(page,errors,outside);results.push({...common(viewport,theme),case:'paper tabs, resize, close/reopen/refresh and 5/4/3 template export retain drafts',passed:true});await context.close();
+   const readingLink=page.getByRole('link',{name:'论文精读',exact:true});
+   assert.equal(await readingLink.getAttribute('href'),'/study/paper');
+   assert.equal(await page.getByRole('button',{name:'论文精读工坊',exact:true}).count(),0);
+   await readingLink.click();
+   assert.equal(new URL(page.url()).pathname,'/study/paper');
+   const focused=page.getByRole('region',{name:'论文专注阅读'});
+   await focused.waitFor();
+   await focused.getByRole('button',{name:'开始学习',exact:true}).waitFor();
+   assert.equal(await focused.getByRole('combobox',{name:'论文主线模板'}).isVisible(),false);
+   assert.equal(await focused.getByRole('article',{name:'当前单元原文'}).isVisible(),true);
+   const tools=focused.locator('details').filter({has:page.locator('summary',{hasText:'更多工具'})}).first();
+   await tools.locator(':scope > summary').click();
+   const workshop=tools.getByRole('group',{name:'论文精读工作区'});
+   await workshop.waitFor();
+   if(narrow)await workshop.getByRole('tab',{name:'主线填答'}).click();
+   const realTemplate=workshop.getByRole('combobox',{name:'论文主线模板'});
+   await realTemplate.selectOption('empirical');
+   await workshop.getByRole('textbox',{name:'研究问题',exact:true}).fill('真实实验草稿');
+   await realTemplate.selectOption('theory');
+   await workshop.getByRole('textbox',{name:'核心论题',exact:true}).fill('真实理论草稿');
+   await workshop.getByText('草稿已就绪',{exact:true}).waitFor();
+   await tools.locator(':scope > summary').click();
+   assert.equal(await realTemplate.isVisible(),false);
+   await tools.locator(':scope > summary').click();
+   assert.equal(await realTemplate.inputValue(),'theory');
+   assert.equal(await workshop.getByRole('textbox',{name:'核心论题',exact:true}).inputValue(),'真实理论草稿');
+   await workshop.getByText('草稿已就绪',{exact:true}).waitFor();
+   await focused.getByRole('link',{name:'返回学习',exact:true}).click();
+   await page.getByRole('heading',{name:'心理阻抗修复 · 隔离浏览器验收'}).waitFor();
+   await page.getByRole('link',{name:'论文精读',exact:true}).click();
+   await focused.getByRole('button',{name:'开始学习',exact:true}).waitFor();
+   await tools.locator(':scope > summary').click();
+   await workshop.waitFor();
+   if(narrow)await workshop.getByRole('tab',{name:'主线填答'}).click();
+   assert.equal(await workshop.getByRole('combobox',{name:'论文主线模板'}).inputValue(),'theory');
+   assert.equal(await workshop.getByRole('textbox',{name:'核心论题',exact:true}).inputValue(),'真实理论草稿');
+   await page.reload();
+   await focused.getByRole('button',{name:'开始学习',exact:true}).waitFor();
+   await tools.locator(':scope > summary').click();
+   await workshop.waitFor();
+   if(narrow)await workshop.getByRole('tab',{name:'主线填答'}).click();
+   assert.equal(await workshop.getByRole('combobox',{name:'论文主线模板'}).inputValue(),'theory');
+   assert.equal(await workshop.getByRole('textbox',{name:'核心论题',exact:true}).inputValue(),'真实理论草稿');
+   const [download]=await Promise.all([page.waitForEvent('download'),workshop.getByRole('button',{name:'导出阅读笔记'}).click()]);
+   const downloaded=await readFile(await download.path(),'utf8');
+   assert.match(downloaded,/真实理论草稿/);
+   assert.match(downloaded,/真实实验草稿/);
+   await assertPaperReadable(page,theme);
+   await page.screenshot({path:resolve(evidence,'paper-focused-tools-'+theme+'-'+viewport.width+'.png'),fullPage:true});
+   await focused.getByRole('link',{name:'返回学习',exact:true}).click();
+   await page.getByRole('heading',{name:'心理阻抗修复 · 隔离浏览器验收'}).waitFor();
+   await assertClean(page,errors,outside);results.push({...common(viewport,theme),case:'paper tabs, resize, focused route and MoreTools close/reopen/return/refresh plus 5/4/3 template export retain drafts',passed:true});await context.close();
   }
   {
    let opened=await open(viewport,theme);let {page}=opened;const start=page.getByRole('button',{name:'开始今日练习'});await start.dblclick();await page.getByRole('button',{name:'完成生成'}).click();await page.waitForFunction(()=>document.body.dataset.started==='1');assert.deepEqual(await page.evaluate(()=>({generates:window.__remediesProbe.generates,starts:window.__remediesProbe.starts})),{generates:1,starts:1});await assertClean(page,opened.errors,opened.outside);await opened.context.close();

@@ -3,7 +3,7 @@
 ## [1.42.2] — selective public maintenance
 
 - Improve authorization, persistence, retry and local-service recovery while retaining original attempts and pending evaluation.
-- Add account paper-workspace storage and recovery foundations; focused paper/flashcard UI follows separately.
+- Add account paper-workspace storage/recovery foundations, followed by focused paper questions, pause/resume, safe source rendering and compact nonword-card references in a separate UI selection.
 - Enforce the reviewed public distribution policy and preserve the independent public baseline, examples and notices.
 - See [scope and compatibility](docs/releases/v1.42.2.md). This source update does not deploy the website or install Companion.
 

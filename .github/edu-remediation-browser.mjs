@@ -1,18 +1,31 @@
+import {existsSync,statSync} from 'node:fs';
 // Real plugins and temporary drafts; isolated synthetic state, no production writes or model calls.
 import assert from 'node:assert/strict';
-import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {readFile,mkdir,writeFile,mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {createServer} from 'vite';
 import react from '@vitejs/plugin-react';
 const {chromium}=createRequire(resolve(process.env.UX_BROWSER_DRIVER,'package.json'))('playwright');
-const root=resolve('scratch/edu-remediation'),evidence=resolve(process.env.UX_EVIDENCE);
+const project=process.cwd().replaceAll('\\','/');
+const root=await mkdtemp(resolve(tmpdir(),'zhixue-edu-remediation-browser-'));
+const evidence=resolve(process.env.UX_EVIDENCE||resolve(root,'evidence'));
+/** Generated fixtures live outside the repository; retain exact source extensions. */
+function fixtureSource(text){
+ return text.replace(/(['"])\.\.\/\.\.\/([^'"]+)\1/g,(_match,quote,specifier)=>{
+  const base=resolve(project,specifier),candidates=[base,...['.ts','.tsx','.mjs','.js','.json','.css'].map(extension=>base+extension),...['index.ts','index.tsx','index.mjs','index.js'].map(name=>resolve(base,name))];
+  const file=candidates.find(path=>existsSync(path)&&statSync(path).isFile());
+  if(!file)throw Error('Browser fixture source unavailable: '+specifier);
+  return quote+'/@fs/'+file.replaceAll('\\','/')+quote;
+ });
+}
 await mkdir(root,{recursive:true});await mkdir(evidence,{recursive:true});
-await writeFile(resolve(root,'entry.tsx'),await readFile(new URL('./edu-remediation-fixture.txt',import.meta.url),'utf8'));
-await writeFile(resolve(root,'python-port.ts'),await readFile(new URL('./edu-remediation-python-port.txt',import.meta.url),'utf8'));
+await writeFile(resolve(root,'entry.tsx'),fixtureSource(await readFile(new URL('./edu-remediation-fixture.txt',import.meta.url),'utf8')));
+await writeFile(resolve(root,'python-port.ts'),fixtureSource(await readFile(new URL('./edu-remediation-python-port.txt',import.meta.url),'utf8')));
 await writeFile(resolve(root,'index.html'),'<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module" src="/entry.tsx"></script></html>');
 const origin='http://127.0.0.1:4189';
-const server=await createServer({configFile:false,root,plugins:[{name:'synthetic-python-port',enforce:'pre',resolveId(id){if(id.endsWith('/hooks/use-pyodide'))return resolve(root,'python-port.ts');}},react()],server:{host:'127.0.0.1',port:4189,strictPort:true,fs:{allow:[process.cwd()]}},logLevel:'error'});
+const server=await createServer({configFile:false,root,publicDir:false,css:{postcss:project},cacheDir:resolve(root,'.vite'),resolve:{alias:{react:resolve(project,'node_modules/react'),'react-dom':resolve(project,'node_modules/react-dom')}},plugins:[{name:'synthetic-python-port',enforce:'pre',resolveId(id){if(id.endsWith('/hooks/use-pyodide'))return resolve(root,'python-port.ts');}},react()],server:{host:'127.0.0.1',port:4189,strictPort:true,fs:{allow:[project,root]}},logLevel:'error'});
 const cases=['recall','calculation','quiz','multiple','code','spelling','spelling-errors','flashcard','paper'];
 const expected=cases.length*4,results=[];let browser,failure=null,activePage;
 const frame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -40,7 +53,7 @@ async function approveFile(page,dialog){
  return JSON.parse(await readFile(await download.path(),'utf8'));
 }
 try{
- await server.listen();browser=await chromium.launch({headless:true});
+ await server.listen();browser=await chromium.launch({headless:true,...(process.env.EDU_CHROMIUM_PATH?{executablePath:process.env.EDU_CHROMIUM_PATH}:{})});
  for(const viewport of [{width:1440,height:900},{width:390,height:844}])for(const theme of ['light','dark'])for(const mode of cases){
   const context=await browser.newContext({viewport});context.setDefaultTimeout(15000);const errors=[];
   context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));
@@ -128,6 +141,13 @@ try{
    await input.pressSequentially('tree');
   }else if(mode==='flashcard'){
    await page.getByRole('button',{name:/显示答案/}).click();
+   const tools=page.locator('[data-study-activity="flashcard"] details').filter({has:page.locator('summary').filter({hasText:/^更多工具$/})});
+   assert.equal(await tools.count(),1);
+   assert.equal(await tools.evaluate(node=>node.open),false);
+   const splitCandidate=tools.getByRole('button',{name:'把复杂背面整理为子卡候选',exact:true});
+   assert.equal(await splitCandidate.isVisible(),false);
+   await tools.locator('summary').click();
+   assert.equal(await tools.evaluate(node=>node.open),true);
    await page.getByRole('button',{name:'把复杂背面整理为子卡候选',exact:true}).click();
    assert.equal(await dialog.getByRole('checkbox',{name:'候选 1',exact:true}).isChecked(),true);
    assert.equal(await dialog.getByRole('checkbox',{name:'候选 2',exact:true}).isChecked(),false);

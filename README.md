@@ -6,7 +6,7 @@
 
 Zhixue is a learning workspace for course study, vocabulary, programming, mathematics, and paper reading. It connects selected personal materials to practice, records what you actually attempted, and helps you revisit weak points. Your Obsidian vault or connected source remains the home of the original material; the website is the learning interface.
 
-**Public beta · source 1.42.2 · maintenance selection.** Engineering checks and isolated browser tests do not establish teaching effectiveness or reliable AI grading on arbitrary materials. The hosted website can advance independently of a checkout; check its displayed version.
+**Public beta · source 1.42.2 · maintenance and reading selection.** Engineering checks and isolated browser tests do not establish teaching effectiveness or reliable AI grading on arbitrary materials. The hosted website can advance independently of a checkout; check its displayed version.
 
 ## Start small
 
@@ -26,7 +26,7 @@ This first trial needs neither Companion nor an AI key. Its answers are temporar
 | Course practice | Source-aware recall, single/multiple-choice practice, feedback, and in-place remediation | AI may abstain; pending evaluation is not a correct or incorrect grade. |
 | Programming | Python exercise execution, public-case feedback, hints, and in-place correction | Passing supplied tests does not prove complete correctness. C/C++ is not a supported production execution promise. |
 | Mathematics | Bounded numeric/symbolic checks, optional step review, and supported related exercises | Arbitrary proofs and arbitrary expressions are not covered; unsupported answers may remain pending. |
-| Paper reading | PDF/text reading, notes, selection tools, and supported figure references | Extraction quality varies; scans, complex layouts, and source fidelity need human checking. |
+| Paper reading | PDF/text reading, focused source questions, pause/resume, draft recovery, notes and supported figures | Source extraction and AI feedback need checking; reading feedback does not create formal grades. |
 
 Course, code, calculation, and paper workflows are **beta capabilities**. Real-material evaluation, model quality, physical mobile-device behavior, cross-device learning, and learning outcomes remain areas for validation. See the [roadmap](docs/en/roadmap.md).
 

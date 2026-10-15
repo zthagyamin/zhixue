@@ -1,0 +1,25 @@
+/* Nonword eligibility comes from the original content, never the display mode. */
+.study-app .study-flashcard--nonword,
+.study-app .study-flashcard--nonword .study-card,
+.study-app .study-flashcard--nonword .study-card > div,
+.study-app .study-flashcard--nonword .study-flashcard-front,
+.study-app .study-flashcard--nonword .nonword-text {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+.study-app .study-flashcard--nonword .nonword-text pre,
+.study-app .study-flashcard--nonword .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.study-app .study-flashcard--nonword {
+  max-width: min(100%, 48rem);
+}
+.study-app .study-flashcard--nonword .study-card .whitespace-pre-line {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  text-align: left;
+}

@@ -5,7 +5,6 @@ on:
   push:
     branches: [main, refactor/ui-redesign-s1-settings]
   pull_request:
-    branches: [main, refactor/ui-redesign-s1-settings]
   workflow_dispatch:
 
 # Verification only: no write token, patch application, deployment or production secrets.

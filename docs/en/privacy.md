@@ -18,6 +18,7 @@ Connect only material you are entitled to read and process. Access rights do not
 | Saved trial materials | Explicit saving retains material/questions in the current browser's scoped storage; it does not automatically synchronize with the account or write to Obsidian. |
 | Local Companion | Reads authorized sources, manages local source mappings/credentials, and performs supported writeback. Local configuration, databases, caches, and backups remain local artifacts. |
 | Account learning | Enabled services receive structured practice content, plan/progress data, and supported immutable learning events. Such content can contain question/reference text derived from notes. Source mapping and account data have separate roles. |
+| Focused paper reading | Browser-scoped material/draft caches and authorized local sources remain distinct. Account mode sends bounded selected source text and the reading workspace, including answers and recovery state, to the account service. Enabled AI also receives relevant text/answers. Drafts, retries and reading feedback do not themselves create formal grades. |
 | AI | Enabled requests transmit the question, quoted/selected/page context, learner answer, code, or errors as relevant to the operation. The selected provider processes these according to its own terms. |
 | Notion | Reads explicitly authorized pages; optional learning-record writeback uses a separately configured parent page. Source and destination permissions matter independently. |
 

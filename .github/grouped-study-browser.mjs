@@ -9,13 +9,21 @@ import {createAccountPreview} from '../tests/fixtures/account-preview.mjs';
 import {startAccountPagePreview} from '../tests/fixtures/automatic-day-preview.mjs';
 import {createAccountStudyClient} from '../app/account-study-client.ts';
 import {installGroupedStudyProbe,groupedStudyTrace} from './grouped-study-probe.mjs';
+import {studyDay} from '../src/domain/planning/study-day.ts';
+// The suite tests grouping, not a live midnight transition. Freeze Date only;
+// Playwright timers and the original 45-second deadlines continue in real time.
+const fixtureInstant='2026-10-26T12:00:00.000Z',fixtureDay=studyDay(fixtureInstant);
 const {chromium}=createRequire(resolve(process.env.UX_BROWSER_DRIVER,'package.json'))('playwright');
 const evidence=resolve(process.env.UX_EVIDENCE||'scratch/grouped-study-evidence');await mkdir(evidence,{recursive:true});
 const log=createWriteStream(resolve(evidence,'application.log'));
 const dev=spawn(process.execPath,['node_modules/vinext/dist/cli.js','dev','--hostname','127.0.0.1','--port','4188'],{env:{...process.env,NEXT_TELEMETRY_DISABLED:'1'},stdio:['ignore','pipe','pipe']});
 dev.stdout.pipe(log);dev.stderr.pipe(log);
-const results=[];let browser,preview,activePage,failure=null;
+const results=[];let browser,preview,activePage,failure=null,browserVersion=null;
 async function until(check){const deadline=Date.now()+45000;while(Date.now()<deadline){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('expected persisted fixture condition');}
+async function assertFixtureDay(page,seedDay){
+  assert.equal(studyDay(await page.evaluate(()=>new Date().toISOString())),seedDay,'Browser and fixture must share the same learning day');
+  await page.getByText(seedDay.replaceAll('-',' / '),{exact:true}).waitFor();
+}
 async function recallPass(page,temporary=false){
   await page.getByRole('heading',{name:'回忆练习 A：请说明适用条件。',exact:true}).waitFor();
   if(temporary)await page.getByRole('textbox',{name:'写下你回忆到的内容'}).fill('合成巩固输入');
@@ -28,18 +36,22 @@ async function recallPass(page,temporary=false){
 }
 try{
   await until(async()=>{try{return(await fetch('http://127.0.0.1:4188/',{redirect:'manual',signal:AbortSignal.timeout(5000)})).status<500;}catch{return false;}});
-  browser=await chromium.launch({headless:true});
+  if(process.env.UX_BROWSER_CHANNEL&&process.env.UX_BROWSER_CHANNEL!=='chrome')throw Error('Only the existing local Chrome test channel is supported');
+  browser=await chromium.launch({headless:true,...(process.env.UX_BROWSER_CHANNEL?{channel:'chrome'}:{})});browserVersion=browser.version();
   for(const width of [1440,390])for(const theme of ['light','dark']){
-    const origin='http://127.0.0.1:4187',account=await createAccountPreview({origin,userId:'e'.repeat(64),groupedStudy:true,manyReviews:true,reviewTarget:width===390?1:6});
+    const origin='http://127.0.0.1:4187',account=await createAccountPreview({origin,userId:'e'.repeat(64),groupedStudy:true,manyReviews:true,reviewTarget:width===390?1:6,now:()=>new Date(fixtureInstant)});
+    assert.equal(account.day,fixtureDay,'Fixture seed must use the explicit suite clock');
     const client=createAccountStudyClient({companionUrl:origin,expectedUserId:account.userId,cache:null,fetcher:(path,init)=>account.handle(new Request(new URL(path,origin),{...init,headers:{...init?.headers,Origin:origin}}))});
     preview=await startAccountPagePreview({account,client,port:4187,devPort:4188});
     const context=await browser.newContext({viewport:{width,height:900},colorScheme:theme}),page=await context.newPage(),errors=[];activePage=page;page.setDefaultTimeout(45000);
+    await page.clock.setFixedTime(new Date(fixtureInstant));
     await installGroupedStudyProbe(context,origin);
     await context.addInitScript(({origin,theme})=>{if(location.origin===origin)localStorage.setItem('zhixue:appearance:theme:v1',theme);},{origin,theme});
     page.on('pageerror',error=>errors.push(error.message));
     await context.route('**/*',route=>[origin,'http://127.0.0.1:4188'].includes(new URL(route.request().url()).origin)?route.continue():route.abort('blockedbyclient'));
     await page.goto(origin+'/study');
     await page.waitForFunction(theme=>document.documentElement.classList.contains('dark')===(theme==='dark'),theme);
+    await assertFixtureDay(page,account.day);
     await page.getByRole('button',{name:'开始今日自测',exact:true}).waitFor();
     if(width===390){
       const planDisclosure=page.getByText('查看今日任务与进度',{exact:true});
@@ -55,6 +67,7 @@ try{
     await page.getByRole('region',{name:'今日自测入口'}).getByText(/今日待自测\s*3\s*组/).waitFor();
     // The account may briefly reconcile again; click only while the same three-group entry is ready.
     await page.waitForLoadState('networkidle');
+    await assertFixtureDay(page,account.day);
     await page.getByRole('region',{name:'今日自测入口'}).filter({hasText:/今日待自测\s*3\s*组/}).getByRole('button',{name:'开始今日自测',exact:true}).click();
     await page.getByText('到期复习 · 本组 2 题',{exact:true}).waitFor();await recallPass(page);
     await until(()=>preview.inspect().records===2);
@@ -89,4 +102,4 @@ try{
     await context.close();await preview.close();preview=null;
   }
 }catch(error){failure=String(error.stack||error);if(activePage&&!activePage.isClosed()){await activePage.screenshot({path:resolve(evidence,'failure.png'),fullPage:true}).catch(()=>{});await writeFile(resolve(evidence,'failure-page.txt'),await activePage.locator('body').innerText().catch(()=>''));await writeFile(resolve(evidence,'failure-interaction.json'),JSON.stringify(await groupedStudyTrace(activePage).catch(()=>null),null,2));}throw error;}
-finally{const report={sha:process.env.GITHUB_SHA||null,expected:4,passed:results.length,complete:!failure&&results.length===4,failure,results};await writeFile(resolve(evidence,'results.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();await preview?.close();dev.kill();log.end();}
+finally{const report={sha:process.env.GITHUB_SHA||null,expected:4,passed:results.length,complete:!failure&&results.length===4,failure,results,fixtureClock:{instant:fixtureInstant,day:fixtureDay},browserVersion,browserChannel:process.env.UX_BROWSER_CHANNEL||'bundled-chromium'};await writeFile(resolve(evidence,'results.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();await preview?.close();dev.kill();log.end();}

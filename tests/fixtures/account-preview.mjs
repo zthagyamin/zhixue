@@ -52,7 +52,7 @@ const dictionary=[
   ['resolve','解决','Resolve the question with evidence.'],
 ];
 
-export async function createAccountPreview({origin,scenario='approved-15',userId='study-preview-account',longReading=false,syntheticAi=false,paperReadingProvider,stage3=false,stage3Mapping=false,stage3Semantic=false,stage3Stress=false,manyReviews=false,groupedStudy=false,vagueRecall=false,reviewTarget=6,day=studyDay(new Date().toISOString())}){
+export async function createAccountPreview({origin,scenario='approved-15',userId='study-preview-account',longReading=false,syntheticAi=false,paperReadingProvider,stage3=false,stage3Mapping=false,stage3Semantic=false,stage3Stress=false,manyReviews=false,groupedStudy=false,vagueRecall=false,reviewTarget=6,now=()=>new Date(),day=studyDay(now().toISOString())}){
   const url=new URL(origin);
   if(!['127.0.0.1','localhost'].includes(url.hostname)||url.protocol!=='http:')throw new Error('Preview requires localhost');
   if(!['no-plan','draft-15','approved-15','completed-15','partial-15','all-plugins','account-writeback','visual-reference'].includes(scenario))throw new Error('Unknown preview scenario');
@@ -62,7 +62,7 @@ export async function createAccountPreview({origin,scenario='approved-15',userId
   const mappings=new D1MathMappingStore(binding,study),reviewed=reviewedCases[1];
   let lastAIContext=null;
   const unavailable=async()=>{throw new Error('Preview never calls an external AI provider');};
-  const make=browser=>createAccountStudyHandlers({enabled:true,getBrowserUser:async()=>browser?{userId}:null,
+  const make=browser=>createAccountStudyHandlers({enabled:true,now,getBrowserUser:async()=>browser?{userId}:null,
     getPaperReadingStore:async()=>new D1PaperReadingStore(binding),...(paperReadingProvider?{getPaperReadingProvider:async()=>paperReadingProvider}:{}),
     ...(stage3?{getPracticeEvidenceStore:async service=>new D1PracticeEvidenceStore(binding,courseEvidenceOriginal(study,new D1LearningAttemptStore(binding)),{service,mapping:mappings}),
       getMathMappingStore:async()=>mappings,getPracticeEvidenceMapping:async()=>mappings}:{}),
@@ -103,7 +103,7 @@ export async function createAccountPreview({origin,scenario='approved-15',userId
         ...(stage3?{schemaVersion:2,learningSupport:{schemaVersion:1,type:'code',functionNames:['add'],cases:[{id:'positive',functionName:'add',args:[1,2],expected:3,hint:'检查两个参数是否都参与了求和。'},{id:'negative',functionName:'add',args:[-1,2],expected:1,hint:'返回值需要处理负数输入。'}]}}:{}),
         practice:{itemId:'code',abilityId:'code',domain:'python',questionType:'code',prompt:'实现 add(a, b)，返回两数之和。'+stressContext,initialCode:stressCode+'def add(a, b):\n    pass',testCode:stage3?'':'assert add(1, 2) == 3',solutionCode:stressCode+'def add(a, b):\n    return a + b',explanation:'return 把结果返回给调用者。'+stressContext+(stage3Stress?'\n\n```python\ndef add(a, b):\n    return a + b\n```':''),sourceLabel:'隔离代码示例'}})));
     }
-    const snapshot=await sealStudySnapshot(snapshotBody(items,{generatedAt:new Date().toISOString()}));
+    const snapshot=await sealStudySnapshot(snapshotBody(items,{generatedAt:now().toISOString()}));
     await post('register-grant',{grantId:'preview-grant',libraryId:'library-a',tokenHash:createHash('sha256').update(token).digest('hex'),label:'隔离预览',expectedProfileRevision:0,replaceLibrary:false});
     await post('activate-grant',{},true);if(syntheticAi){for(const [revision,provider]of [[0,'deepseek'],[1,'chatgpt']])await ai.configure({userId,libraryId:'library-a'},{provider,model:`synthetic-${provider}`,enabled:true,dailyRequestLimit:10,dailyTokenLimit:20000,maxOutputTokens:1000,expectedRevision:revision,confirmCosts:true,providerKey:`synthetic-${provider}-not-a-real-key`});}await post('begin-snapshot',{snapshot},true);
     for(let position=0;position<items.length;position+=20)await post('stage-items',{snapshotId:snapshot.snapshotId,entries:items.slice(position,position+20).map((item,index)=>({position:position+index,item}))},true);
@@ -126,7 +126,7 @@ export async function createAccountPreview({origin,scenario='approved-15',userId
     }
     const {catalog}=await toCloudPlanningCatalog(native,{snapshot,items});
     await post('publish-planning-catalog',{catalog},true);
-    const facts=await sealCloudPlanningFacts({schemaVersion:1,libraryId:'library-a',snapshotId:snapshot.snapshotId,catalogHash:catalog.catalogHash,observedAt:new Date().toISOString(),nativePlanRevision:0,sourceReviews:manyReviews?[...catalog.subjects.flatMap(subject=>subject.words),...catalog.practiceSources].map(source=>({itemKey:source.itemKey,subjectId:source.subjectId,sourceHash:source.sourceHash,completionRule:source.completionRule,state:{enabled:true,dueAt:day+'T00:00:00+08:00'}})):[],captureReviews:[],legacyEvents:[],legacyTaskEvents:[],contentCandidates:[],historyComplete:true});
+    const facts=await sealCloudPlanningFacts({schemaVersion:1,libraryId:'library-a',snapshotId:snapshot.snapshotId,catalogHash:catalog.catalogHash,observedAt:now().toISOString(),nativePlanRevision:0,sourceReviews:manyReviews?[...catalog.subjects.flatMap(subject=>subject.words),...catalog.practiceSources].map(source=>({itemKey:source.itemKey,subjectId:source.subjectId,sourceHash:source.sourceHash,completionRule:source.completionRule,state:{enabled:true,dueAt:day+'T00:00:00+08:00'}})):[],captureReviews:[],legacyEvents:[],legacyTaskEvents:[],contentCandidates:[],historyComplete:true});
     await post('publish-planning-facts',{facts},true);
     if(!['no-plan','all-plugins'].includes(scenario)){
       let plan=await generateTaskPlan({day,catalog:await toEnginePlanningCatalog(catalog),words:words.slice(0,scenario==='visual-reference'?20:15).map(word=>({lexemeKey:`en:${word.word}`,itemKeys:[word.itemKey],status:'unseen'})),reviews:[],completions:[],previous:null});
@@ -151,7 +151,7 @@ export async function createAccountPreview({origin,scenario='approved-15',userId
         for(const [index,item] of items.slice(0,scenario==='partial-15'?1:scenario==='visual-reference'?8:15).entries()){
           let parent=null;
           for(let stage=0;stage<3;stage++){
-            const eventId=`preview-event-${index}-${stage}`,event=await attempt(eventId,new Date().toISOString(),stage,stage+1,true,{item:{kind:'word',key:item.itemKey}});
+            const eventId=`preview-event-${index}-${stage}`,event=await attempt(eventId,now().toISOString(),stage,stage+1,true,{item:{kind:'word',key:item.itemKey}});
             const record=await sealStudyRecord(await recordBody({contentHash:item.contentHash,roundId:`preview-round-${index}`,attemptId:`preview-attempt-${index}-${stage}`,parentEventId:parent,event}));
             const result=await post('append-records',{records:[record]});if(!result.results[0].durable)throw new Error('Preview record rejected: '+JSON.stringify(result.results[0]));parent=eventId;
           }

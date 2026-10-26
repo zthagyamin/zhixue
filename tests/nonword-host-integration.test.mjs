@@ -248,14 +248,35 @@ test('deferred feedback links its formal result but does not traverse until dura
   } finally {await f.close();}
 });
 test('failed traversal persistence leaves feedback unconsumed and permits an explicit host retry after a plugin latched acceptance',async()=>{
-  const f=await fixture({commitFeedback:true});try {
-    await savedDeferred(f);const runtime=f.drivers[0].runtime,write=runtime.repository.mutate;let fail=true;
-    runtime.repository.mutate=mutation=>{if(fail&&mutation.kind==='checkpoint'&&mutation.checkpoint.traversed){fail=false;return Promise.reject(Error('Synthetic traversal storage failure'));}return write(mutation);};
-    const accepted=f.handles.draft.continueAfterFeedback();assert.equal(accepted,true);await settle(f.hooks);
+  const f=await fixture({commitFeedback:true}),continuationGate=deferred();let continuationWriteEntered=false,continuationCompleted=false;
+  try {
+    await savedDeferred(f);const runtime=f.drivers[0].runtime,write=runtime.repository.mutate,markTraversed=runtime.session.markTraversed;
+    const original=structuredClone(runtime.session.snapshot());let fail=true;
+    runtime.session.markTraversed=()=>{
+      const completion=markTraversed();void completion.then(()=>{continuationCompleted=true;},()=>{});return completion;
+    };
+    runtime.repository.mutate=async mutation=>{
+      if(fail&&mutation.kind==='checkpoint'&&mutation.checkpoint.traversed){fail=false;throw Error('Synthetic traversal storage failure');}
+      if(mutation.kind==='checkpoint'&&mutation.attemptId.startsWith('nw-continue:')){
+        continuationWriteEntered=true;await continuationGate.promise;
+      }
+      return write(mutation);
+    };
+    const accepted=f.handles.draft.continueAfterFeedback();assert.equal(accepted,true);
+    await waitForObservation(()=>settle(f.hooks),()=>/traversal storage failure/.test(text(f.hooks.view())),{label:'failed traversal is reported before retry'});
     assert.equal(f.moves.length,0);assert.equal(runtime.session.snapshot().checkpoint.traversed,false);assert.equal(f.rawDraft.hasSavedFeedback(),true);assert.match(text(f.hooks.view()),/traversal storage failure/);
     const retry=button(f.hooks.view(),'重试继续');assert.ok(retry,'Plugins that latch accepted=true need a host-owned retry after asynchronous save failure');
-    await retry.props.onClick();await settle(f.hooks);assert.equal(runtime.session.snapshot().checkpoint.traversed,true);assert.equal(f.moves.length,1);
-  } finally {await f.close();}
+    retry.props.onClick();
+    await waitForObservation(tick,()=>continuationWriteEntered,{label:'retry reaches the real continuation receipt gate'});
+    // The primary flag is durable before the continuation proof; it is not an advancement receipt.
+    assert.equal(runtime.session.snapshot().checkpoint.traversed,true);assert.equal(continuationCompleted,false);
+    assert.equal(f.moves.length,0);assert.equal(f.rawDraft.hasSavedFeedback(),true);
+    continuationGate.resolve();
+    await waitForObservation(()=>settle(f.hooks),()=>continuationCompleted&&runtime.session.snapshot().checkpoint.traversed
+      &&f.moves.length===1&&!f.rawDraft.hasSavedFeedback(),{label:'retry completes the durable continuation and consumes feedback exactly once'});
+    assert.equal(runtime.session.snapshot().checkpoint.traversed,true);assert.equal(f.moves.length,1);assert.equal(f.rawDraft.hasSavedFeedback(),false);
+    assert.equal(f.formal.length,1);assert.deepEqual(runtime.session.snapshot().submitted,original.submitted);assert.deepEqual(runtime.session.snapshot().evaluation,original.evaluation);
+  } finally {continuationGate.resolve();await f.close();}
 });
 test('remediation draft cannot consume its parent continuation and repeated finishes advance the original result once',async()=>{
   const f=await fixture({commitFeedback:true});try {

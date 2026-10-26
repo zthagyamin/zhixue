@@ -1,9 +1,9 @@
 "use client";
 import {StudyTermHelp,RecoveryDataControls} from './recovery-data-controls';
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { AccountStudyConnection } from "../account-study-controls";
 import { CompanionSettingsCard } from "../companion-settings-card";
-import { StudyAISettings } from "../components/ai-sidebar";
+import { SettingsAiOverview, SettingsAiSection } from "./settings-ai-panels";
 import { KnowledgeStarterDialog } from "../knowledge-starter-dialog";
 import { KNOWLEDGE_STARTER_LABEL } from "../knowledge-starter-prompts";
 import { LongTermPlanPanel } from "../long-term-plan-panel";
@@ -124,7 +124,7 @@ const NAV_ITEMS: NavItem[] = [
 export function SourcesView({ model }: Props) {
   const {
     appearance: {theme, setTheme, canApplyDemoPacing, currentDay, loadLongTermSource, longTerm, longTermOpenRequest, longTermScopeKey, setLongTermEditing, applyDemoPacing, currentLongTermSourceStamp, finishLongTermOpenRequest},
-    connection: {acceptCurrentAccountLibrary, accountClient, accountDailyPlan, accountLoaded, accountWorkspaceId, companionCapabilities, companionDetected, companionSession, companionVersion, connections, detectExistingCompanion, pairCompanion, pairingCode, pairingMessage, prepareCompanionLaunch, readAccountAgain, refreshSources, refreshing, sessionResolved, sessionUser, storageReady, switchToLocalMode, syncState, visibleAccountStatus, acceptCompanionCapabilities},
+    connection: {acceptCurrentAccountLibrary, accountClient, accountDailyPlan, accountLoaded, accountWorkspaceId, companionCapabilities, companionDetected, companionSession, companionVersion, connections, detectExistingCompanion, pairCompanion, pairingCode, pairingMessage, pairing, prepareCompanionLaunch, readAccountAgain, refreshSources, refreshing, sessionResolved, sessionUser, storageReady, switchToLocalMode, syncState, visibleAccountStatus, acceptCompanionCapabilities},
     catalog: {changeCandidates, changeDecisionId, changeDecisionMessage, changesLoading, data, decideChange, importFile, importMessage, isDemoMode, lastChangeScan, mappingClient, scanChanges, taskLearning},
     sync: {cloudFlushing, cloudMessage, cloudStatus, cloudStatusDetail, cloudStatusLabel, diagnosticsLoading, keepProgressLocal, manualSyncing, migrateLocalProgress, refreshReviewDiagnostics, requestCloudSync, reviewDiagnostics, syncCloudNow, retryCloudSync},
     recovery: {dismissSettingsModal, handleClearCacheConfirmed, handleExportRecovery, openSettingsAi, refreshSettingsOverview, requestClearCache, settingsAccountStatus, settingsActionMessage, settingsActionOwner, settingsAiStatus, settingsCompanionStatus, settingsDeliveryLabel, settingsModal, settingsReadView, settingsRecordCount, settingsRegisteredCount, settingsUsesAccount},
@@ -141,10 +141,25 @@ export function SourcesView({ model }: Props) {
       ? "appearance"
       : (sourceView as SettingsSectionId);
 
+  const connectionFocus=useRef<{owner:string|null;connection:typeof companionSession;opener:Element|null}|null>(null);
   const handleSelectSection = (id: SettingsSectionId) => {
+    connectionFocus.current=null;
     setUserSection({ sourceView: id, section: id });
     setSourceView(id);
   };
+  const openConnections=()=>{
+    connectionFocus.current={owner:accountWorkspaceId,connection:companionSession,opener:document.activeElement};
+    setUserSection({sourceView:'connections',section:'connections'});setSourceView('connections');
+  };
+  useLayoutEffect(()=>{
+    const request=connectionFocus.current;
+    if(!request)return;
+    connectionFocus.current=null;
+    if(activeSection!=='connections'||request.owner!==accountWorkspaceId||request.connection!==companionSession)return;
+    if(document.activeElement!==request.opener&&document.activeElement!==document.body)return;
+    const target=document.getElementById('companion-pairing');
+    target?.focus({preventScroll:true});target?.scrollIntoView({block:'start',behavior:'auto'});
+  },[activeSection,accountWorkspaceId,companionSession]);
 
   return (
     <>
@@ -346,6 +361,7 @@ export function SourcesView({ model }: Props) {
                     message={pairingMessage}
                     code={pairingCode}
                     refreshing={refreshing}
+                    pairing={pairing}
                     onCode={setPairingCode}
                     onLaunch={prepareCompanionLaunch}
                     onDetect={() => void detectExistingCompanion()}
@@ -452,52 +468,12 @@ export function SourcesView({ model }: Props) {
                         </div>
                       </div>
 
-                      {/* 3. AI 辅助服务（保留被单测点击测试的字面契约） */}
-                      <button
-                        type="button"
-                        className="c-settings-connection-row flex items-center justify-between p-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[rgba(0,0,0,0.02)] dark:hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer text-left w-full"
-                        onClick={openSettingsAi}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <h5 className="font-bold text-sm text-[var(--ink)]">
-                              {settingsUsesAccount ? "账号 AI" : "本机 AI"}
-                            </h5>
-                            <p className="text-xs text-[var(--ink)] opacity-60">智能辅助服务</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 text-right">
-                          <div>
-                            <div
-                              className={`flex items-center justify-end gap-1.5 text-xs font-bold ${
-                                settingsAiStatus.tone === "good"
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-amber-500"
-                              }`}
-                            >
-                              <span
-                                className={`w-2 h-2 rounded-full ${
-                                  settingsAiStatus.tone === "good"
-                                    ? "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.2)]"
-                                    : "bg-amber-400"
-                                }`}
-                              />
-                              {settingsAiStatus.label}
-                            </div>
-                            <p className="text-[11px] text-[var(--ink)] opacity-50 mt-0.5">
-                              {settingsAiStatus.detail}
-                            </p>
-                          </div>
-                          <span className="text-[var(--ink)] opacity-30 text-lg" aria-hidden="true">
-                            &gt;
-                          </span>
-                        </div>
-                      </button>
+                      <SettingsAiOverview
+                        scope={JSON.stringify([accountWorkspaceId,settingsUsesAccount,accountLoaded?.bundle.snapshot.libraryId??data.localLibraryId??null])}
+                        resource={accountClient} account={settingsUsesAccount} signedIn={Boolean(sessionUser)}
+                        localOnline={companionDetected==='online'||syncState==='connected'}
+                        read={()=>accountClient.getAiSettings()} fallback={settingsAiStatus} onOpen={openSettingsAi}
+                      />
                     </div>
                   </section>
                 </div>
@@ -520,7 +496,7 @@ export function SourcesView({ model }: Props) {
                       <button
                         type="button"
                         className="study-secondary-action shrink-0 text-xs px-3 py-1.5 font-bold"
-                        onClick={() => handleSelectSection("connections")}
+                        onClick={openConnections}
                       >
                         前往连接设备 →
                       </button>
@@ -540,6 +516,7 @@ export function SourcesView({ model }: Props) {
                         capabilities={companionCapabilities}
                         onChanged={() => void refreshSources()}
                         onDetected={acceptCompanionCapabilities}
+                        onConnect={openConnections}
                       />
                     </div>
                   </section>
@@ -586,11 +563,12 @@ export function SourcesView({ model }: Props) {
                         type="button"
                         className="study-secondary-action"
                         onClick={() => void scanChanges()}
-                        disabled={changesLoading}
+                        disabled={changesLoading||changeDecisionId!==null||!companionSession}
                       >
                         {changesLoading ? "扫描中…" : "立即扫描"}
                       </button>
                     </div>
+                    {!companionSession&&<p role="status" className="mb-4 text-sm">连接本地资料助手后可扫描资料变更。<button type="button" className="study-secondary-action" onClick={openConnections}>前往连接设备</button></p>}
                     {changeDecisionMessage && (
                       <p role="status" className="mb-4 text-sm font-medium text-[var(--ink)]">
                         {changeDecisionMessage}
@@ -690,23 +668,7 @@ export function SourcesView({ model }: Props) {
                   </div>
 
                   <section className="settings-card">
-                    {studyAI ? (
-                      <StudyAISettings />
-                    ) : (
-                      <div>
-                        <h4 className="font-bold text-sm text-[var(--ink)] mb-1">AI 学习助手</h4>
-                        <p className="text-xs text-[var(--ink)] opacity-60 mb-4">
-                          支持配置云端服务商或个人 API Key。密钥将在客户端安全使用。
-                        </p>
-                        <button
-                          type="button"
-                          className="study-primary-action"
-                          onClick={() => setAiEntryOpen(true)}
-                        >
-                          打开 AI 与 API Key 设置
-                        </button>
-                      </div>
-                    )}
+                    <SettingsAiSection available={Boolean(studyAI)} onOpen={openSettingsAi}/>
                   </section>
                 </div>
               )}

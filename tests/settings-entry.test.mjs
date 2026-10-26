@@ -1,19 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {dashboardDeclaredFunction,dashboardJsxProp,dashboardClick} from './fixtures/dashboard-functions.mjs';
+import {dashboardDeclaredFunction} from './fixtures/dashboard-functions.mjs';
 
-test('account AI overview opens the account editor instead of local Companion settings',()=>{
+test('account AI status opens the dedicated settings panel without entering daily-plan editing',()=>{
   const trace=[];
-  const env={settingsUsesAccount:true,accountLoaded:{},accountWorkspaceId:'account:a',setAccountAiEntryOwner:v=>trace.push(['owner',v]),setTab:v=>trace.push(['tab',v]),setSourceView:v=>trace.push(['source',v])};
-  dashboardClick('智能辅助服务',{...env,openSettingsAi:()=>dashboardDeclaredFunction('openSettingsAi',env)()})();
-  assert.deepEqual(trace,[['owner','account:a'],['tab','today']]);
-  assert.equal(dashboardJsxProp('AccountStudyPlan','initialSection',{accountAiEntryOwner:'account:a',accountWorkspaceId:'account:a'}),'ai');
-  assert.equal(dashboardJsxProp('AccountStudyPlan','initialSection',{accountAiEntryOwner:'account:a',accountWorkspaceId:'account:b'}),undefined);
+  dashboardDeclaredFunction('openSettingsAi',{settingsUsesAccount:true,accountLoaded:{},accountWorkspaceId:'account:a',setAiEntryOpen:value=>trace.push(['settings',value]),setAccountAiEntryOwner:()=>assert.fail('must not enter planner'),setTab:()=>assert.fail('must retain current page'),setSourceView:()=>assert.fail('must retain current section')})();
+  assert.deepEqual(trace,[['settings',true]]);
 });
-test('local AI and accounts without a loaded library retain the connection setup route',()=>{
+test('local and not-yet-loaded AI status entries use the same dedicated connection-aware panel',()=>{
   for(const state of [{settingsUsesAccount:false,accountLoaded:null},{settingsUsesAccount:true,accountLoaded:null}]){
-    const trace=[];dashboardDeclaredFunction('openSettingsAi',{...state,accountWorkspaceId:'account:a',setAccountAiEntryOwner:()=>assert.fail('must not open unloaded editor'),setTab:()=>assert.fail('must stay in setup'),setSourceView:v=>trace.push(v)})();
-    assert.deepEqual(trace,['connections']);
+    const trace=[];
+    dashboardDeclaredFunction('openSettingsAi',{...state,accountWorkspaceId:'account:a',setAiEntryOpen:value=>trace.push(value),setAccountAiEntryOwner:()=>assert.fail('must not open unloaded planner'),setTab:()=>assert.fail('must retain current page'),setSourceView:()=>assert.fail('must not silently remain in connections')})();
+    assert.deepEqual(trace,[true]);
   }
 });
 

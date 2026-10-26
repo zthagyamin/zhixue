@@ -5,22 +5,22 @@ import {countSettingsPractice,settingsPendingSummary} from '../app/study-setting
 
 const recovery={complete:true,finishedAt:'2026-09-07T12:00:00Z',pending:{coreUploads:['attempt-a'],coreWritebacks:['attempt-a'],recovery:[],assistance:[],tasks:[],legacyQueues:false},payload:{workspaceRecords:[]}};
 function fixture(){
-  const updates=[];
+  const updates=[];let aiReads=0;
   const env={accountWorkspaceId:'account:a',storageReady:true,sessionResolved:true,deliveryOwnerRef:{current:'account:a'},settingsReadScope:'scope:a',settingsReadEpoch:{current:0},
     settingsUsesAccount:true,setSettingsOverview:value=>updates.push(value),exportStudyRecovery:async()=>recovery,settingsPendingSummary,
-    accountClient:{getAiSettings:async()=>({serverAvailable:true,settings:{revision:1,enabled:false,configured:false}})}};
-  return{env,updates,read:()=>dashboardFunction('refreshSettingsOverview',env)()};
+    accountClient:{getAiSettings:async()=>{aiReads++;return{serverAvailable:true,settings:{revision:1,enabled:false,configured:false}};}}};
+  return{env,updates,aiReads:()=>aiReads,read:()=>dashboardFunction('refreshSettingsOverview',env)()};
 }
 
-test('overview reads the real durable summary and independent AI configuration',async()=>{
+test('overview reads the durable summary without starting unrelated AI configuration requests',async()=>{
   const f=fixture();await f.read();const result=f.updates.at(-1);
   assert.equal(result.phase,'ready');assert.equal(result.pending.total,1);
-  assert.equal(result.accountAi.settings.enabled,false);assert.equal(result.checkedAt,recovery.finishedAt);
+  assert.equal(f.aiReads(),0);assert.equal(result.checkedAt,recovery.finishedAt);
 });
-test('failed queue reads remain unknown while an independent AI result can still be shown',async()=>{
+test('failed queue reads remain unknown without affecting the independent AI reader',async()=>{
   const f=fixture();f.env.exportStudyRecovery=async()=>{throw new Error('unavailable');};await f.read();
   assert.equal(f.updates.at(-1).pending,null);assert.equal(f.updates.at(-1).phase,'failed');
-  assert.equal(f.updates.at(-1).accountAi.settings.configured,false);
+  assert.equal(f.aiReads(),0);assert.equal(f.updates.at(-1).accountAi,null);
 });
 test('late overview reads cannot update a different account',async()=>{
   const f=fixture();f.env.exportStudyRecovery=async()=>{f.env.deliveryOwnerRef.current='account:b';return recovery;};await f.read();

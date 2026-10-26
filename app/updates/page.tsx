@@ -22,7 +22,17 @@ const webUpdate = {
     '复习入口改为“准备复习候选”，更新历史按日期从新到旧排列。已有学习记录保留。',
   ],
 };
-const history = [...announcements, experienceUpdate, webUpdate].sort((a, b) => b.date.localeCompare(a.date));
+const reliabilityUpdate = {
+  version: '', date: '2026-10-27', title: '保存可重试，接入与按钮反馈更可靠',
+  changes: [
+    '论文保存失败后可在原页重试同一次操作；遇到版本冲突时分别保留已保存回答和本页未保存输入。',
+    '多选题漏选但没有错选时记为部分正确，继续与补练沿用首轮的困难评级。',
+    '配对期间保护正在进行的请求，重复点击不会打断已发送的配对；资料接入快捷入口正确打开连接区域。',
+    'AI 状态与同步统计独立核对，配置入口统一；扫描的未连接、成功和失败状态在资料页面说明。',
+    '选择题反馈接续键盘焦点，题内追问失败可被通知，论文来源页签支持方向键。已有答案与学习记录保留。',
+  ],
+};
+const history = [...announcements, experienceUpdate, webUpdate, reliabilityUpdate].sort((a, b) => b.date.localeCompare(a.date));
 
 export default function UpdatesPage() {
   return <main className="support-page">

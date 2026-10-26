@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef,useState } from "react";
+import { useId,useRef,useState } from "react";
 import {useLearningDraftState} from '../learning-draft';
 import {useAssistanceDisplay} from '../assistance-display';
 import type {LearningDraftAdapter} from '../learning-draft-store';
@@ -24,6 +24,7 @@ export function TutorFollowUp({
   const [answerDisplayId,setAnswerDisplayId]=useLearningDraftState<string|null>(draft,'tutor.answerDisplayId',null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useLearningDraftState(draft,'tutor.error',"");
+  const errorId=useId();
   useAssistanceDisplay(draft?.assistance,'ai-tutor',answerDisplayId,Boolean(askTutor&&answer.trim()));
 
   if (!askTutor) return null;
@@ -66,6 +67,8 @@ export function TutorFollowUp({
           }}
           placeholder="针对这道题追问，例如：为什么第二种情况不成立？"
           aria-label="向 AI 导师追问"
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
           className="flex-1 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--ink)]"
         />
         <button
@@ -76,7 +79,7 @@ export function TutorFollowUp({
           {loading ? "思考中…" : "提问"}
         </button>
       </div>
-      {error && <p className="mt-2 text-xs font-bold text-[var(--orange)]">{error}</p>}
+      <p id={errorId} role="status" aria-live="polite" aria-atomic="true" className={error ? "mt-2 text-xs font-bold text-[var(--orange)]" : "sr-only"}>{error}</p>
       {answer && (
         <div className="mt-3 p-3 rounded-lg border border-[var(--line)] bg-[rgba(0,0,0,0.02)] dark:bg-[rgba(255,255,255,0.04)]">
           <p className="text-[10px] font-black uppercase tracking-widest text-[var(--ink)] opacity-40 mb-1">AI 导师</p>

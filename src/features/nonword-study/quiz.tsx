@@ -1,6 +1,7 @@
 'use client';
-import { useRef, useState, type Dispatch, type SetStateAction, type RefObject, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction, type RefObject, type ReactNode } from 'react';
 import type { NonWordLearningPort } from '../../application/nonword-study';
+import type { FSRSRating } from '../../domain/assessment';
 import { quizMaterial, transitionQuiz, evaluateSelection, type NonWordQuizState, type QuizMaterial } from '../../domain/content';
 import { LearningText, LearningFeedback } from './text';
 type Data = {
@@ -15,7 +16,7 @@ type Props = {
     data: Data;
     state: NonWordQuizState;
     setState: Dispatch<SetStateAction<NonWordQuizState>>;
-    onGrade: (rating: 'good' | 'again') => void | Promise<unknown>;
+    onGrade: (rating: FSRSRating) => void | Promise<unknown>;
     rootRef?: RefObject<HTMLDivElement | null>;
     submitObservation?: () => void;
     renderMath?: (text: string) => ReactNode;
@@ -39,6 +40,8 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
 }) {
     const [error, setError] = useState(''), [busy, setBusy] = useState(false);
     const finishing = useRef(false), retry = state.phase.startsWith('retry');
+    const feedbackTitle = useRef<HTMLHeadingElement>(null);
+    const feedbackFocus = useRef<{origin: Element | null} | null>(null);
     const choose = (id: string) => setState(current => transitionQuiz(current, { type: 'choose', id }, material));
     const submit = async () => {
         if (busy)
@@ -48,6 +51,7 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
             return;
         setBusy(true);
         setError('');
+        const origin = document.activeElement;
         try {
             if (!retry) {
                 submitObservation?.();
@@ -59,6 +63,7 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
                 const result = next.retry!;
                 await lifecycle?.recordRemediation?.(JSON.stringify(next.selection), { status: result.status, source: 'deterministic', rating: result.status === 'correct' ? 'good' : result.status === 'partial' ? 'hard' : 'again', explanation: `错选：${result.wrong.join('、') || '无'}；漏选：${result.missing.join('、') || '无'}。` });
             }
+            feedbackFocus.current = {origin};
             setState(next);
         }
         catch (reason) {
@@ -77,7 +82,8 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
         }
         finishing.current = true;
         try {
-            await onGrade(state.first.result.status === 'correct' ? 'good' : 'again');
+            const status = state.first.result.status;
+            await onGrade(status === 'correct' ? 'good' : status === 'partial' ? 'hard' : 'again');
         }
         catch (reason) {
             finishing.current = false;
@@ -92,6 +98,15 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
     const feedback=referenceConflict?savedFeedback:checkedFeedback;
     const labels = (ids: string[]) => ids.map(id => material.options.find(option => option.id === id)?.text ?? id).join('；') || '无';
     const firstCorrect = state.first?.result.status === 'correct';
+    const feedbackLabel = feedback?.status === 'correct' ? '回答正确' : feedback?.status === 'partial' ? '部分正确' : '这次需要复习';
+    useLayoutEffect(() => {
+        if (!feedback || !feedbackFocus.current) return;
+        const {origin} = feedbackFocus.current;
+        feedbackFocus.current = null;
+        // An asynchronous save must not move focus away from a newer interaction.
+        if (document.activeElement && document.activeElement !== document.body && document.activeElement !== origin) return;
+        feedbackTitle.current?.focus();
+    }, [feedback]);
     return <div ref={rootRef} data-study-shortcuts data-study-activity="quiz" className="study-activity study-quiz nonword-study">
     <LearningText text={data.prompt} className="study-question" renderMath={renderMath}/>
     {data.code && <pre className="nonword-code"><code>{data.code}</code></pre>}
@@ -101,8 +116,9 @@ function QuizInteraction({ data, state, setState, onGrade, material, rootRef, su
       </button>)}
     </div>
     {!feedback && <button type="button" className="study-primary-action" disabled={busy || !state.selection.length} onClick={() => void submit()}>{busy ? '正在保存…' : retry ? '核对这次补练' : '提交答案'}</button>}
+    <p role="status" aria-atomic="true" className="sr-only">{feedback ? `已提交：${feedbackLabel}。` : ''}</p>
     {feedback && <section aria-label="作答反馈" className="nonword-feedback">
-      <h3>{feedback.status === 'correct' ? '回答正确' : feedback.status === 'partial' ? '部分正确' : '这次需要复习'}</h3>
+      <h3 ref={feedbackTitle} tabIndex={-1}>{feedbackLabel}</h3>
       {referenceConflict?<p role="status">当前参考与已保存结果不一致，原结果保留，请核对原题。</p>:feedback.status !== 'correct' && <p>错选：{labels(feedback.wrong)}<br />漏选：{labels(feedback.missing)}</p>}
       {!referenceConflict&&material.options.filter(option => feedback.wrong.includes(option.id) && option.explanation).map(option => <LearningFeedback key={option.id} text={option.explanation!} renderMath={renderMath} fullLabel="查看完整选项解释"/>)}
       {data.explanation && <LearningFeedback text={data.explanation} renderMath={renderMath}/>}

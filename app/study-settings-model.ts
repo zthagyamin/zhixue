@@ -22,7 +22,7 @@ export function settingsCompanionConnection(input:{paired:boolean;detected:strin
   return{label:'可达，资料待核对',detail:'已配对，但资料读取尚未完成',tone:'warning'};
 }
 
-export function settingsAiConnection(input:{mode:'account'|'local';signedIn:boolean;accountAi:AccountAiSettingsResponse|null;accountAiFailed?:boolean;companionOnline:boolean;localStatus?:string}):SettingsStatus{
+export function settingsAiConnection(input:{mode:'account'|'local';signedIn:boolean;accountAi:AccountAiSettingsResponse|null;accountAiFailed?:boolean;companionOnline:boolean;localStatus?:string;localSettings?:{configured:boolean;enabled:boolean}|null;localSettingsFailed?:boolean}):SettingsStatus{
   if(input.mode==='account'){
     if(!input.signedIn)return{label:'需登录',detail:'账号 AI 使用独立配置',tone:'muted'};
     if(!input.accountAi)return{label:input.accountAiFailed?'暂无法核对':'待核对',detail:'登录并不代表已启用 AI',tone:input.accountAiFailed?'warning':'muted'};
@@ -32,6 +32,12 @@ export function settingsAiConnection(input:{mode:'account'|'local';signedIn:bool
     return{label:'已启用',detail:'账号配置已核对，调用结果以当次反馈为准',tone:'good'};
   }
   if(!input.companionOnline)return{label:'本机离线',detail:'等待 Companion 恢复后核对本机 AI',tone:'muted'};
+  if(input.localSettingsFailed)return{label:'暂无法核对',detail:'本机配置读取失败，原配置保留。请重新核对。',tone:'warning'};
+  if(input.localSettings){
+    if(!input.localSettings.configured)return{label:'待配置',detail:'尚未配置本机 AI',tone:'warning'};
+    if(!input.localSettings.enabled)return{label:'未启用',detail:'已有配置，但本机 AI 已关闭',tone:'muted'};
+    return{label:'已启用',detail:'本机配置已核对，实际模型连接以测试结果为准',tone:'good'};
+  }
   if(input.localStatus==='connected')return{label:'已配置',detail:'本机配置已读取，调用结果以当次反馈为准',tone:'good'};
   if(input.localStatus==='provider_unavailable')return{label:'暂不可用',detail:'本机已返回 AI 服务不可用状态',tone:'warning'};
   if(input.localStatus==='key_missing')return{label:'待配置',detail:'需要在本机配置 AI',tone:'warning'};

@@ -1,0 +1,128 @@
+import React,{useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {PaperReadingQuestion} from '@repo/src/features/paper-reading/question';
+import {createPaperReadingSession} from '@repo/src/application/paper-reading/session';
+import {createPaperReadingStore} from '@repo/app/paper-reading/store';
+import {paperReadingTask} from '@repo/src/domain/paper-reading/evidence';
+import {NonWordQuiz} from '@repo/src/features/nonword-study/quiz';
+import {StructuredQuiz} from '@repo/app/plugins/structured-quiz';
+import {TutorFollowUp} from '@repo/app/plugins/tutor-follow-up';
+import {PaperSourcesPanel} from '@repo/app/paper-sources-panel';
+import {CompanionSettingsCard} from '@repo/app/companion-settings-card';
+import {SourcesView} from '@repo/app/study-dashboard/sources-view';
+import {useSourceChanges} from '@repo/src/features/sources/use-source-changes';
+import {StudyLayoutRuntime,StudyLayoutControl} from '@repo/app/study-layout-control';
+import '@repo/app/globals.css';
+import '@repo/app/c-study.css';
+import '@repo/app/study-overview.css';
+import '@repo/app/settings-progress-hierarchy.css';
+import '@repo/app/study-settings-readability.css';
+import '@repo/app/components/ai-sidebar/study-ai.css';
+import '@repo/app/plugins/paper.css';
+import '@repo/src/features/nonword-study/study.css';
+import '@repo/src/features/paper-reading/reading.css';
+
+// Everything below is synthetic service state. Product controls and their handlers
+// are imported above; no private data, real account, model, or Companion is used.
+const params=new URLSearchParams(location.search),mode=params.get('mode')||'nonword';
+const paperQuestionMode=['paper-save','paper-lost','paper-conflict'].includes(mode);
+document.documentElement.classList.toggle('dark',params.get('theme')==='dark');
+const io=window.__reliability={mode,ready:false,grades:[],assessed:[],remediated:[],paperWrites:[],paperReceipts:[],continued:0,tutorRequests:[],catalogRequests:[],scanRequests:[],aiReads:[],modelCalls:0,restoreExports:0};
+const gate=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+const support={schemaVersion:1,type:'quiz',selection:'multiple',options:[{optionId:'a',text:'Claim A'},{optionId:'b',text:'Claim B'},{optionId:'c',text:'Wrong claim'}],correctOptionIds:['a','b']};
+const quiz={prompt:'Select supported claims',explanation:'Both A and B are supported.',learningSupport:support};
+const noop=()=>{},empty=async()=>null;
+function PaperFixture(){
+ const [state,setState]=useState(null),sessionRef=useRef(null);
+ useEffect(()=>{
+  let current=true,serial=0;
+  const scope={ownerId:'account:reliability-synthetic',libraryId:'local:reliability-synthetic'};
+  const unit={schemaVersion:1,unitId:'synthetic-paper-unit',title:'Synthetic paper',goal:'Explain mechanism',source:{...scope,materialFingerprint:'a'.repeat(64),sourceVersion:'b'.repeat(64),sectionId:'s',paragraphs:[{id:'p',rawEn:'ReLU avoids saturation for positive inputs.'}]}};
+  const prepared=paperReadingTask({taskId:'synthetic-task',revision:1,source:unit.source,goal:unit.goal,origin:'prepared',ability:'mechanism',question:'Why does ReLU help on positive inputs?',reference:[{point:'Avoid saturation.',paragraphId:'p',quote:'avoids saturation'}]});
+  const base=createPaperReadingStore();let fail=true;
+  const store={...base,mutate:async(bound,mutation)=>{
+   io.paperWrites.push(structuredClone(mutation));
+   if(fail&&(mode==='paper-conflict'?mutation.kind==='draft'&&mutation.answer==='Local unsubmitted text':mutation.kind==='reference'&&mode!=='paper-lost')){fail=false;throw Error('quota');}
+   const receipt=await base.mutate(bound,mutation);
+   if(mutation.kind==='reference'){io.paperReceipts.push(receipt.status);if(fail&&mode==='paper-lost'){fail=false;throw Error('receipt-unknown');}}
+   return receipt;
+  }};
+  const session=createPaperReadingSession({unit,store,makeId:()=>`browser-op-${++serial}`,now:()=>new Date('2026-10-26T09:00:00Z'),isCurrent:()=>current});
+  sessionRef.current=session;
+  const unsubscribe=session.subscribe(()=>{if(current)setState(session.snapshot());});
+  io.paperSnapshot=()=>session.snapshot();
+  io.externalPaperChange=async()=>{const saved=await base.read(scope,unit.unitId);await base.mutate(scope,{schemaVersion:1,operationId:'external-synthetic-submit',unitId:unit.unitId,expectedRevision:saved.revision,kind:'submit',answer:'External submitted answer',referenceSeen:false,submittedAt:'2026-10-26T09:01:00Z'});};
+  (async()=>{
+   await session.load();await session.begin(prepared);await session.answer('Original answer');await session.submit();
+   if(session.snapshot().busy)await new Promise(done=>{const stop=session.subscribe(()=>{if(!session.snapshot().busy){stop();done();}});});
+   if(mode==='paper-conflict'){await session.retry();try{await session.answer('Local unsubmitted text');}catch{/* Intended failed local draft. */}}
+   if(current){setState(session.snapshot());io.ready=true;}
+  })().catch(error=>{io.setupError=String(error);});
+  return()=>{current=false;unsubscribe();session.dispose();};
+ },[]);
+ const invoke=action=>void action().catch(()=>{});
+ if(!state)return <p role="status">Preparing synthetic paper</p>;
+ const session=sessionRef.current;
+ return <PaperReadingQuestion state={state} onBegin={()=>{}} onAnswer={text=>invoke(()=>session.answer(text))} onSubmit={()=>invoke(()=>session.submit())} onReveal={()=>invoke(()=>session.reveal())} onRetry={()=>invoke(()=>session.retry())} onRetrySave={()=>invoke(()=>session.retrySave())} onReloadSaved={()=>invoke(()=>session.reloadSaved())} onAdoptSavedAnswer={()=>invoke(()=>session.adoptSavedAnswer())} onEvaluate={()=>invoke(()=>session.evaluate())} onSync={()=>invoke(()=>session.load())} onContinue={()=>{io.continued++;}} renderText={text=><p>{text}</p>}/>;
+}
+function QuizFixture(){
+ const [state,setState]=useState({selection:[],first:null,phase:'answer',retry:null});
+ const lifecycle=useMemo(()=>({ready:true,purpose:'first',intent:'review',submit:async()=>{},assess:async value=>{io.assessed.push(value);},recordRemediation:async(_,value)=>{io.remediated.push(value);},waitForReview:async()=>{},continuePending:async()=>{}}),[]);
+ io.quizSnapshot=()=>state;
+ return <NonWordQuiz data={quiz} state={state} setState={setState} lifecycle={lifecycle} onGrade={rating=>{io.grades.push(rating);}}/>;
+}
+function TutorFixture(){
+ const ask=async(question)=>{const request=gate();io.tutorRequests.push({question,...request});return request.promise;};
+ return <TutorFollowUp item={quiz} askTutor={ask}/>;
+}
+function PaperSourcesFixture(){
+ const client=useMemo(()=>({catalog:()=>{const request=gate();io.catalogRequests.push(request);return request.promise;}}),[]);
+ return <PaperSourcesPanel services={{libraryClient:client,localLibraryId:'synthetic-library'}} onImport={async()=>{throw Error('Import is outside this browser fixture');}}/>;
+}
+function PairFixture(){
+ const [pairing,setPairing]=useState(false),[paired,setPaired]=useState(false),[code,setCode]=useState('SYNTHETIC-CODE');
+ const [message,setMessage]=useState('');
+ io.setPairing=setPairing;io.setPaired=setPaired;
+ const pair=async()=>{io.pairCalls=(io.pairCalls||0)+1;const request=gate();io.pairRequest=request;setPairing(true);try{await request.promise;setPaired(true);setMessage('Synthetic pairing accepted');}catch{setMessage('Synthetic pairing failed');}finally{setPairing(false);}};
+ return <CompanionSettingsCard endpoint="http://127.0.0.1:18765" signedIn paired={paired} connected={false} detected="online" version="1.42.2" message={message} code={code} refreshing={false} pairing={pairing} onCode={setCode} onLaunch={()=>{io.launchCalls=(io.launchCalls||0)+1;}} onDetect={()=>{io.detectCalls=(io.detectCalls||0)+1;}} onPair={()=>void pair()} onSync={()=>{io.syncCalls=(io.syncCalls||0)+1;}}/>;
+}
+function ControlledSettingsDialog({close}){
+ const root=useRef(null);
+ useLayoutEffect(()=>{const opener=document.activeElement;root.current.showModal();return()=>{if(opener instanceof HTMLElement&&opener.isConnected)opener.focus();};},[]);
+ return <dialog ref={root} aria-labelledby="synthetic-ai-title" onCancel={event=>{event.preventDefault();close();}}><h2 id="synthetic-ai-title">受控 AI 设置面板</h2><p>此面板仅接收真实 SourcesView 打开回调；实际主控制器与保存由单测验证。</p><button onClick={close}>关闭设置</button></dialog>;
+}
+function SourcesFixture(){
+ const [sourceView,setSourceView]=useState(params.get('section')||'sources'),[paired,setPaired]=useState(false),[pairingCode,setPairingCode]=useState('SYNTHETIC-CODE'),[starterOpen,setStarterOpen]=useState(false),[aiOpen,setAiOpen]=useState(false);
+ const [account,setAccount]=useState('account-a'),[usesAccount,setUsesAccount]=useState(params.get('account')==='1');
+ const [changes,setChanges]=useState([]),[changesLoading,setChangesLoading]=useState(false),[changeDecisionId,setChangeDecisionId]=useState(null),[changeDecisionMessage,setChangeDecisionMessage]=useState(''),[lastChangeScan,setLastChangeScan]=useState(null);
+ const companionSession=useMemo(()=>paired?{token:'synthetic-not-a-credential'}:null,[paired]);
+ const connectionRef=useRef(companionSession);connectionRef.current=companionSession;
+ const source=useSourceChanges({scope:account,connection:companionSession,current:()=>true,connected:()=>Boolean(connectionRef.current),account:()=>false,
+  list:async()=>({changes:[],scannedAt:null}),scan:()=>{const request=gate();io.scanRequests.push(request);return request.promise;},decide:empty,source:empty,apply:()=>true,
+  publish:value=>{setChanges(value.changes);setLastChangeScan(value.scannedAt||null);},loading:setChangesLoading,deciding:setChangeDecisionId,message:setChangeDecisionMessage,scanError:message=>setChangeDecisionMessage(message),
+ });
+ const client=useMemo(()=>({localStatus:async()=>({links:[]}),load:empty,getAiSettings:async()=>{
+  io.aiReads.push({account,kind:io.aiKind||'enabled'});
+  if(io.aiKind==='failed')throw Error('synthetic settings read failure');
+  if(io.aiKind==='deferred'){const request=gate();io.aiRequest=request;return request.promise;}
+  return {serverAvailable:true,settings:{revision:1,configured:io.aiKind!=='unconfigured',enabled:io.aiKind!=='disabled'}};
+ }}),[account]);
+ io.setConnected=setPaired;io.setAccount=value=>{setUsesAccount(true);setAccount(value);};io.sourceSnapshot=()=>({sourceView,account,paired,changeDecisionMessage});
+ const status={label:'Synthetic fixture',detail:'Synthetic status',tone:'muted'};
+ const model={
+  appearance:{theme:params.get('theme')||'light',setTheme:noop,canApplyDemoPacing:false,currentDay:'2026-10-26',loadLongTermSource:empty,longTerm:null,longTermOpenRequest:null,longTermScopeKey:null,setLongTermEditing:noop,applyDemoPacing:noop,currentLongTermSourceStamp:()=>'',finishLongTermOpenRequest:noop},
+  connection:{acceptCurrentAccountLibrary:empty,accountClient:client,accountDailyPlan:{refresh:empty},accountLoaded:null,accountWorkspaceId:account,companionCapabilities:[],companionDetected:'online',companionSession,companionVersion:'1.42.2',connections:[],detectExistingCompanion:empty,pairCompanion:empty,pairingCode,pairingMessage:'',pairing:false,prepareCompanionLaunch:noop,readAccountAgain:empty,refreshSources:empty,refreshing:false,sessionResolved:true,sessionUser:{id:account},storageReady:true,switchToLocalMode:empty,syncState:paired?'connected':'offline',visibleAccountStatus:undefined,acceptCompanionCapabilities:noop},
+  catalog:{changeCandidates:changes,changeDecisionId,changeDecisionMessage,changesLoading,data:{localLibraryId:'synthetic-library',gateway:false,message:''},decideChange:source.decide,importFile:noop,importMessage:'',isDemoMode:false,lastChangeScan,mappingClient:null,scanChanges:source.scan,taskLearning:{session:null}},
+  sync:{cloudFlushing:false,cloudMessage:'',cloudStatus:null,cloudStatusDetail:'',cloudStatusLabel:'',diagnosticsLoading:false,keepProgressLocal:noop,manualSyncing:false,migrateLocalProgress:empty,refreshReviewDiagnostics:empty,requestCloudSync:empty,reviewDiagnostics:null,syncCloudNow:empty,retryCloudSync:empty},
+  recovery:{dismissSettingsModal:noop,handleClearCacheConfirmed:empty,handleExportRecovery:()=>{io.restoreExports++;throw Error('Recovery export must not be read for AI overview');},openSettingsAi:()=>{io.aiOpenCalls=(io.aiOpenCalls||0)+1;setAiOpen(true);},refreshSettingsOverview:empty,requestClearCache:noop,settingsAccountStatus:status,settingsActionMessage:'',settingsActionOwner:account,settingsAiStatus:{label:'本机离线',detail:'等待合成连接',tone:'muted'},settingsCompanionStatus:status,settingsDeliveryLabel:'',settingsModal:null,settingsReadView:null,settingsRecordCount:0,settingsRegisteredCount:0,settingsUsesAccount:usesAccount},
+  navigation:{homeHref:'/',setAiEntryOpen:setAiOpen,setPairingCode,setSourceView,setStarterOpen,setTab:noop,sourceView,starterOpen,studyAI:null,tab:'sources'},
+ };
+ return <><SourcesView model={model}/>{aiOpen&&<ControlledSettingsDialog close={()=>setAiOpen(false)}/>}</>;
+}
+function App(){
+ useEffect(()=>{if(!paperQuestionMode)io.ready=true;},[]);
+ return <><StudyLayoutRuntime/><div id="product-root" style={{zoom:params.get('zoom')==='2'?2:1}}><StudyLayoutControl/><main className="study-app app-shell" data-reliability-mode={mode}>
+  {paperQuestionMode?<PaperFixture/>:mode==='nonword'?<QuizFixture/>:mode==='structured'?<StructuredQuiz data={quiz} context={{askTutor:async()=>'Synthetic tutor response'}} onGrade={rating=>io.grades.push(rating)}/>:mode==='tutor'?<TutorFixture/>:mode==='paper-sources'?<PaperSourcesFixture/>:mode==='pair'?<PairFixture/>:<SourcesFixture/>}
+ </main></div></>;
+}
+createRoot(document.getElementById('root')).render(<App/>);

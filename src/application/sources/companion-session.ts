@@ -20,7 +20,7 @@ export type CompanionPorts<Connection,Source extends CompanionSourcePayload>={
   flushActivities:()=>Promise<unknown>;busy:(kind:CompanionOperation,value:boolean)=>void;abort:()=>{signal:AbortSignal;abort:()=>void};
 };
 
-/** Manual connection intent supersedes older work; a background poll never supersedes that intent. */
+/** Pairing consumes a one-time code, so incidental actions share its in-flight result. */
 export function createCompanionSession<Connection,Source extends CompanionSourcePayload>(ports:CompanionPorts<Connection,Source>){
   type Job={kind:CompanionOperation;frame:CompanionFrame<Connection>;control:ReturnType<typeof ports.abort>;promise:Promise<boolean>};
   let active:Job|null=null,disposed=false;
@@ -29,7 +29,7 @@ export function createCompanionSession<Connection,Source extends CompanionSource
   const publish=(job:Job,notice:CompanionNotice<Connection,Source>)=>{if(current(job))ports.publish(notice);};
   const run=(kind:CompanionOperation,work:(job:Job)=>Promise<boolean>):Promise<boolean>=>{
     if(disposed)return Promise.resolve(false);
-    if(kind==='poll'&&active&&current(active))return active.promise;
+    if(active&&current(active)&&(active.kind==='pair'||kind==='poll'))return active.promise;
     const frame=ports.capture();if(!frame.current())return Promise.resolve(false);
     cancel();const job:Job={kind,frame,control:ports.abort(),promise:Promise.resolve(false)};active=job;ports.busy(kind,true);
     job.promise=Promise.resolve().then(()=>current(job)?work(job):false).finally(()=>{if(active===job){active=null;if(job.frame.current())ports.busy(kind,false);}});

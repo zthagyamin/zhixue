@@ -15,13 +15,14 @@ new Function('require','exports',code)(name=>{
   if(name==='./study-session-shell')return {StudyPanel:()=>null};
   if(name.endsWith('.css'))return {};throw new Error('Unexpected dependency '+name);
 },exports);
-const props={endpoint:'http://127.0.0.1:43121',token:'test-session',capabilities:[],onChanged(){},onDetected(){}};
+const props={endpoint:'http://127.0.0.1:43121',token:'test-session',capabilities:[],onChanged(){},onDetected(){},onConnect(){}};
 test('paired older installations have actionable upgrade and recheck controls',()=>{
   const html=renderToStaticMarkup(React.createElement(exports.NoteSourcesPanel,props));
   assert.match(html,/href="\/downloads\/Zhixue-Companion-Setup.exe"/);assert.match(html,/更新后重新检测/);
 });
 test('fresh users are directed to pairing while supported installs can open source management',()=>{
-  assert.match(renderToStaticMarkup(React.createElement(exports.NoteSourcesPanel,{...props,token:null})),/href="#companion-pairing"/);
+  const unpaired=renderToStaticMarkup(React.createElement(exports.NoteSourcesPanel,{...props,token:null}));
+  assert.match(unpaired,/<button[^>]*>先安装并配对 →<\/button>/);assert.doesNotMatch(unpaired,/href="#companion-pairing"/);
   assert.match(renderToStaticMarkup(React.createElement(exports.NoteSourcesPanel,{...props,capabilities:['note-sources-v1']})),/管理笔记来源/);
 });
 test('dashboard persists disconnected second endpoint without erasing the first session',()=>{

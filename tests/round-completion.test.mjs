@@ -117,7 +117,7 @@ test("settings gives users connection controls before source management", async 
   const panel=await readFile(new URL('../app/note-sources-panel.tsx',import.meta.url),'utf8');
   assert.ok(source.indexOf('<CompanionSettingsCard')<source.indexOf('<div id="note-source-entry">'));
   for(const label of ['Obsidian 文件夹','单个学习文件','Notion 导出 ZIP','Notion 在线页面'])assert.ok(panel.includes(label));
-  assert.match(panel,/href="#companion-pairing"/);
+  assert.match(panel,/onClick=\{onConnect\}/);assert.doesNotMatch(panel,/href="#companion-pairing"/);
 });
 
 test("focused study retains the actual source title and scope in its source panel", async () => {

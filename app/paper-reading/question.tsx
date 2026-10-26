@@ -29,8 +29,9 @@ export function PaperQuestionEntry({paper,unit,services,restoredUnit,onSaving,on
     const paragraphsKey=JSON.stringify(unit.paragraphs.map(p=>({id:p.id,rawEn:p.rawEn,...(p.pageNumber?{pageNumber:p.pageNumber}:{})}))),sectionId=unit.sectionId;
     useEffect(()=>{
         let active=true,session:PaperReadingSession|undefined;onSaving(true);
+        const isCurrent=()=>active&&current.current.services.owner===services.owner&&current.current.services.library===services.library&&current.current.services.isCurrent?.()!==false;
         const localAi=createLocalPaperReadingAi(()=>current.current.ai?{service:current.current.ai.service,settings:current.current.ai.settings}:null,
-            ()=>active&&current.current.services.isCurrent?.()!==false);
+            isCurrent);
         async function open(){
             const fingerprint=await paperFingerprint(paper),paragraphs=JSON.parse(paragraphsKey);
             const source={ownerId:services.owner,libraryId:services.library,materialFingerprint:fingerprint,sourceVersion:paper.origin?.version??fingerprint,sectionId,paragraphs};
@@ -41,8 +42,9 @@ export function PaperQuestionEntry({paper,unit,services,restoredUnit,onSaving,on
             const matchingRestore=preparedVersion===0&&restoredUnit&&canonicalAttemptJson(restoredUnit.source)===canonicalAttemptJson(base.source);
             const readingUnit=matchingRestore?paperReadingUnit(restoredUnit!):preset?paperReadingUnit({...base,unitId:'paper-unit:'+await studyHash({baseUnitId:base.unitId,preparedRecipe:preset.recipeHash})}):base;
             if(!active)return;
-            const remote=services.library.startsWith('account:')?createPaperReadingRemote({scope:source,isCurrent:()=>active&&current.current.services.isCurrent?.()!==false}):undefined;
-            session=createPaperReadingSession({unit:readingUnit,store:createPaperReadingStore(),remote,localAi:remote?undefined:localAi,makeId:()=>crypto.randomUUID(),now:()=>new Date()});
+            const remote=services.library.startsWith('account:')?createPaperReadingRemote({scope:source,isCurrent}):undefined;
+            session=createPaperReadingSession({unit:readingUnit,store:createPaperReadingStore(),remote,localAi:remote?undefined:localAi,makeId:()=>crypto.randomUUID(),now:()=>new Date(),
+                isCurrent});
             setBaseUnit(base);setPrepared(preset);setLoaded({bound,session});setError('');onSession(session);await session.load();
         }
         void open().catch(reason=>{if(active){setError(reason instanceof Error?reason.message:'paper-reading-load-unavailable');onSaving(false);}});
@@ -67,7 +69,9 @@ function QuestionSession({session,paper,services,prepared,onSaving,onError,onCon
     },[session,onSaving,onError]);
     const act=(promise:Promise<unknown>)=>{void promise.catch(()=>{});};
     return <PaperReadingQuestion state={state} onBegin={()=>act(session.begin(prepared?.task))} onAnswer={text=>act(session.answer(text))} onSubmit={()=>act(session.submit())}
-        onReveal={()=>act(session.reveal())} onRetry={()=>act(session.retry())} onEvaluate={()=>act(session.evaluate())} onSync={()=>act(state.workspace?session.synchronize():session.load())} onContinue={onContinue}
+        onReveal={()=>act(session.reveal())} onRetry={()=>act(session.retry())} onRetrySave={()=>act(session.retrySave())} onReloadSaved={()=>act(session.reloadSaved())}
+        onAdoptSavedAnswer={()=>act(session.adoptSavedAnswer())}
+        onEvaluate={()=>act(session.evaluate())} onSync={()=>act(state.workspace?session.synchronize():session.load())} onContinue={onContinue}
         formalReview={state.workspace?<PaperReviewCandidate paper={paper} workspace={state.workspace} services={services}/>:undefined}
         renderText={text=><PaperSourceText text={text} renderMath={value=><MathText text={value}/>}/>}/>;
 }

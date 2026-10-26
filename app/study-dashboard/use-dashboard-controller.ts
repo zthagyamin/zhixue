@@ -314,7 +314,7 @@ export function useDashboardController(){
     source:(frame,kind,signal)=>companionHttp.source(frame.connection!,kind,signal),publish:publishCompanionNotice,
     apply:(payload)=>applyLocalStudySource(payload,workspaceId),flushActivities:()=>flushPendingActivities(),
   });
-  const detectExistingCompanion=companionSource.detect,pairCompanion=companionSource.pair,refreshSources=companionSource.refresh,refreshing=companionSource.busy.refresh;
+  const detectExistingCompanion=companionSource.detect,pairCompanion=companionSource.pair,refreshSources=companionSource.refresh,refreshing=companionSource.busy.refresh,pairing=companionSource.busy.pair;
   const accountSources=useAccountSource({scope:JSON.stringify([accountWorkspaceId,currentDay,accountDeviceId]),client:accountClient,
     capture:()=>{const owner=accountWorkspaceId??'',epoch=accountModeEpoch.current;return{key:JSON.stringify([owner,epoch]),owner,modeEpoch:epoch,ready:storageReady&&sessionResolved,
       identity:sessionUser,local:accountOptedOut,paused:accountReadPaused,current:()=>Boolean(owner&&owner===taskWorkspaceRef.current&&epoch===accountModeEpoch.current&&!sourceTransitionBusy.current()),
@@ -962,7 +962,7 @@ export function useDashboardController(){
     source:async()=>{const result=await companionHttp.source(companionSession!,'poll',AbortSignal.timeout(3000));if(!result.ok)throw Error('学习池刷新失败。');return result.payload;},
     apply:payload=>{const applied=applyLocalStudySource(payload,workspaceId);setSyncState(payload.status);return applied;},
     publish:value=>{setChangeCandidates(value.changes);setLastChangeScan(value.scannedAt??null);},
-    loading:setChangesLoading,deciding:setChangeDecisionId,message:setChangeDecisionMessage,scanError:setPlanMessage,
+    loading:setChangesLoading,deciding:setChangeDecisionId,message:setChangeDecisionMessage,scanError:setChangeDecisionMessage,
   });
   const scanChanges=sourceChanges.scan,decideChange=sourceChanges.decide;
   useEffect(() => {
@@ -1172,9 +1172,7 @@ export function useDashboardController(){
   const requestClearCache=sourceMaintenance.requestClear,dismissSettingsModal=sourceMaintenance.dismiss,signOut=sourceMaintenance.signOut;
 
   function openSettingsAi(){
-    if(settingsUsesAccount&&accountLoaded&&accountWorkspaceId){
-      setAccountAiEntryOwner(accountWorkspaceId);setTab('today');
-    }else setSourceView('connections');
+    setAiEntryOpen(true);
   }
   const settingsUsesAccount=Boolean(accountLoaded)||accountWanted;
   const settingsReadScope=JSON.stringify([accountWorkspaceId,settingsUsesAccount,accountLoaded?.bundle.snapshot.libraryId??null]);
@@ -1184,21 +1182,20 @@ export function useDashboardController(){
     const scope=settingsReadScope,epoch=++settingsReadEpoch.current;
     setSettingsOverview({scope,phase:'loading',pending:null,message:'正在核对本机同步队列…',checkedAt:null,accountAi:null,accountAiFailed:false});
     try{
-      const [recovery,ai]=await Promise.allSettled([
+      const [recovery]=await Promise.allSettled([
         exportStudyRecovery(owner),
-        settingsUsesAccount?accountClient.getAiSettings():Promise.resolve(null),
       ] as const);
       if(epoch!==settingsReadEpoch.current||deliveryOwnerRef.current!==owner)return;
       const pending=recovery.status==='fulfilled'?settingsPendingSummary(recovery.value):null;
       setSettingsOverview({scope,phase:pending?'ready':'failed',pending,
         message:pending?'':recovery.status==='rejected'?'本机队列读取失败，请重试；已有记录保留。':'本机队列尚未完整核对，不将未知情况显示为零。',
         checkedAt:recovery.status==='fulfilled'?recovery.value.finishedAt:null,
-        accountAi:ai.status==='fulfilled'?ai.value:null,accountAiFailed:ai.status==='rejected'});
+        accountAi:null,accountAiFailed:false});
     }catch{
       if(epoch===settingsReadEpoch.current&&deliveryOwnerRef.current===owner)
-        setSettingsOverview({scope,phase:'failed',pending:null,message:'状态读取未完成，请重试。',checkedAt:null,accountAi:null,accountAiFailed:settingsUsesAccount});
+        setSettingsOverview({scope,phase:'failed',pending:null,message:'状态读取未完成，请重试。',checkedAt:null,accountAi:null,accountAiFailed:false});
     }
-  },[accountWorkspaceId,storageReady,sessionResolved,settingsReadScope,settingsUsesAccount,accountClient]);
+  },[accountWorkspaceId,storageReady,sessionResolved,settingsReadScope]);
   useEffect(()=>{
     // This ref is a read-generation counter, not a rendered DOM node.
     const readGeneration=settingsReadEpoch;
@@ -1480,7 +1477,7 @@ export function useDashboardController(){
   const finishLongTermOpenRequest=(version:number)=>setLongTermOpenRequest(current=>current?.version===version?null:current);
   const sourcesModel={
     appearance: {theme, setTheme, canApplyDemoPacing, currentDay, loadLongTermSource, longTerm, longTermOpenRequest, longTermScopeKey, setLongTermEditing, applyDemoPacing, currentLongTermSourceStamp, finishLongTermOpenRequest},
-    connection: {acceptCurrentAccountLibrary, accountClient, accountDailyPlan, accountLoaded, accountWorkspaceId, companionCapabilities, companionDetected, companionSession, companionVersion, connections, detectExistingCompanion, pairCompanion, pairingCode, pairingMessage, prepareCompanionLaunch, readAccountAgain, refreshSources, refreshing, sessionResolved, sessionUser, storageReady, switchToLocalMode, syncState, visibleAccountStatus, acceptCompanionCapabilities},
+    connection: {acceptCurrentAccountLibrary, accountClient, accountDailyPlan, accountLoaded, accountWorkspaceId, companionCapabilities, companionDetected, companionSession, companionVersion, connections, detectExistingCompanion, pairCompanion, pairingCode, pairingMessage, pairing, prepareCompanionLaunch, readAccountAgain, refreshSources, refreshing, sessionResolved, sessionUser, storageReady, switchToLocalMode, syncState, visibleAccountStatus, acceptCompanionCapabilities},
     catalog: {changeCandidates, changeDecisionId, changeDecisionMessage, changesLoading, data, decideChange, importFile, importMessage, isDemoMode, lastChangeScan, mappingClient, scanChanges, taskLearning},
     sync: {cloudFlushing, cloudMessage, cloudStatus, cloudStatusDetail, cloudStatusLabel, diagnosticsLoading, keepProgressLocal, manualSyncing, migrateLocalProgress, refreshReviewDiagnostics, requestCloudSync, reviewDiagnostics, syncCloudNow, retryCloudSync},
     recovery: {dismissSettingsModal, handleClearCacheConfirmed, handleExportRecovery, openSettingsAi, refreshSettingsOverview, requestClearCache, settingsAccountStatus, settingsActionMessage, settingsActionOwner, settingsAiStatus, settingsCompanionStatus, settingsDeliveryLabel, settingsModal, settingsReadView, settingsRecordCount, settingsRegisteredCount, settingsUsesAccount},

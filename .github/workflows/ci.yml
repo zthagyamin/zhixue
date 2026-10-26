@@ -98,6 +98,8 @@ jobs:
             expected: 12
           - suite: audit
             expected: 24
+          - suite: reliability
+            expected: 96
           - suite: remedies
             expected: 16
           - suite: word-context

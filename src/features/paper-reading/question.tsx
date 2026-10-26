@@ -2,6 +2,10 @@
 import type {ReactNode} from 'react';
 import type {PaperReadingSessionState} from '../../application/paper-reading';
 export function paperReadingMessage(code:string,savedAnswer=false){
+    if(code==='paper-reading-unsaved-input-conflict')return '已读取保存版本；本页未保存输入仍保留，请核对两份内容后选择使用已保存回答，或继续编辑未提交的回答。';
+    if(code==='paper-reading-saved-adopted')return '已使用保存版本的回答。本页未保存输入保留在下方，可选中复制。';
+    if(code==='paper-reading-saved-reloaded')return '已重新读取保存内容。冲突操作未覆盖保存版本，本页输入仍保留。';
+    if(/save-conflict/.test(code))return '保存版本发生冲突，未覆盖已保存内容。请重新读取并核对；本页输入仍保留。';
     if(/quota|save-unavailable|保存|conflict/.test(code))return /cloud|同步/.test(code)?'本机答案已保留，账号有不同版本，暂未覆盖。':'保存失败，输入仍保留在本页。请重试保存。';
     if(/receipt-unknown|request-pending/.test(code))return '核对结果尚待确认。答案已保留，可稍后恢复核对。';
     if(/unsupported/.test(code))return '当前服务尚未提供论文问答。已保存内容保留。';
@@ -11,15 +15,19 @@ export function paperReadingMessage(code:string,savedAnswer=false){
     return '本次操作未完成，输入与已保存内容保留。';
 }
 type Props={state:PaperReadingSessionState;formalReview?:ReactNode;onBegin:()=>void;onAnswer:(text:string)=>void;onSubmit:()=>void;onReveal:()=>void;onRetry:()=>void;
-    onEvaluate:()=>void;onSync:()=>void;onContinue?:()=>void;renderText:(text:string)=>ReactNode};
+    onRetrySave:()=>void;onReloadSaved:()=>void;onAdoptSavedAnswer:()=>void;onEvaluate:()=>void;onSync:()=>void;onContinue?:()=>void;renderText:(text:string)=>ReactNode};
 export function PaperReadingQuestion(props:Props){
     const {state}=props,workspace=state.workspace,task=workspace?.task;
     const attempt=workspace?.attempts.find(a=>a.attemptId===workspace.activeAttemptId),submitted=Boolean(attempt?.submission);
     const result=attempt?.evaluation.status==='resolved'?attempt.evaluation:null;
+    const conflictInput=submitted&&state.input!==workspace!.answer?state.input:null;
     const locked=state.saving||state.busy||Boolean(state.error);
     return <section className="paper-reading-question" aria-label="论文理解练习">
         <h2 className="paper-reading-question-title">理解与作答</h2>
         {state.error&&<p role="alert">{paperReadingMessage(state.error)}</p>}
+        {state.error&&state.saveRecovery&&<button type="button" disabled={state.saving||state.busy}
+            onClick={state.saveRecovery==='conflict'?props.onReloadSaved:state.saveRecovery==='adopt'?props.onAdoptSavedAnswer:props.onRetrySave}>
+            {state.saveRecovery==='conflict'?'重新读取已保存内容':state.saveRecovery==='adopt'?'保留本页输入，使用已保存回答':'重试保存'}</button>}
         {state.notice&&<p role="status">{paperReadingMessage(state.notice,submitted)}</p>}
         {!state.ready?<p role="status">正在恢复问答…</p>:!task||task.status!=='ready'?<>
             {task?.status==='needs-improvement'&&<p role="status">问题待完善，请先核对当前原文或缩小范围。</p>}
@@ -28,11 +36,16 @@ export function PaperReadingQuestion(props:Props){
         </>:<>
             <header><span>{attempt?.purpose==='remediation'?'补练':'阅读理解'}</span>{props.renderText(task.question)}</header>
             <form onSubmit={event=>{event.preventDefault();props.onSubmit();}}>
-                <label htmlFor={workspace!.unit.unitId+'-answer'}>你的回答</label>
-                <textarea id={workspace!.unit.unitId+'-answer'} maxLength={20000} required value={state.input} readOnly={submitted||state.busy}
+                <label htmlFor={workspace!.unit.unitId+'-answer'}>{submitted?'已保存的提交回答':'你的回答'}</label>
+                <textarea id={workspace!.unit.unitId+'-answer'} maxLength={20000} required value={submitted?attempt!.submission!.answer:state.input} readOnly={submitted||state.busy}
                     onChange={event=>props.onAnswer(event.target.value)}/>
                 {!submitted&&<button className="paper-reading-primary" type="submit" disabled={locked||!state.input.trim()}>提交核对</button>}
             </form>
+            {(conflictInput!==null||state.unsavedInput!==undefined)&&<section aria-label="本页未保存输入">
+                <h3>本页未保存输入</h3><p>此文本未提交，保留在当前页供核对和复制。</p>
+                <textarea aria-label="本页未保存输入" readOnly value={conflictInput??state.unsavedInput}/>
+                {conflictInput!==null&&state.unsavedInput!==undefined&&state.unsavedInput!==conflictInput&&<textarea aria-label="此前保留的未保存输入" readOnly value={state.unsavedInput}/>}
+            </section>}
             <p className="paper-answer-save-state" role="status">{state.error?'保存未完成':state.saving?'正在保存…':state.cloud==='acked'?'已同步账号':state.cloud==='device-only'?'已保存本机':'已保存本机，账号同步未确认'}</p>
             {submitted&&<section className="paper-reading-feedback" aria-label="回答反馈">
                 <h3>核对反馈</h3>

@@ -1,7 +1,7 @@
 'use client';
 import {registerStudyNavigationGuard} from '../study-navigation-guard';
 import {StudyGuidance} from '../study-guidance';
-import {useCallback,useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {parseQuizSupport,gradeQuizSelection,mergeStemHighlight,QUIZ_TRAPS,type QuizSupport,type StemHighlight} from '../quiz-support';
 import {useLearningDraftState} from '../learning-draft';
 import {useAssistance,useAssistanceDisplay} from '../assistance-display';
@@ -31,9 +31,18 @@ function StructuredQuizUI({data,support,onGrade,context}:PluginRenderProps<Data>
  const [hintId,setHintId]=useLearningDraftState<string|null>(context?.draft,'quizHintId',null);
  const [loading,setLoading]=useState(false),[error,setError]=useState(''),[graded,setGraded]=useState(false);
  const submittedRef=useRef(submitted),gradedRef=useRef(false),mounted=useRef(true),selectionRevision=useRef(0);
+ const feedbackTitle=useRef<HTMLHeadingElement>(null),feedbackFocus=useRef<{origin:Element|null}|null>(null);
+ useLayoutEffect(()=>{
+   if(!submitted||!feedbackFocus.current)return;
+   const {origin}=feedbackFocus.current;feedbackFocus.current=null;
+   if(document.activeElement&&document.activeElement!==document.body&&document.activeElement!==origin)return;
+   feedbackTitle.current?.focus();
+ },[submitted]);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const correct=gradeQuizSelection(support,selectedIds);
  const mistakes=quizMistakes(support,selectedIds);
+ const partial=!correct&&selectedIds.length>0&&mistakes.wrong.length===0&&mistakes.missing.length>0;
+ const feedbackLabel=correct?'回答正确':partial?'部分正确':'这次需要复习';
  const reference={...data,options:support.options.map(o=>o.text),answer:support.options.filter(o=>support.correctOptionIds.includes(o.optionId)).map(o=>o.text).join('\n')};
  useReportStudyAIItem(context,{question:[data.prompt,...support.options.map(o=>`${o.optionId}: ${o.text}`)].join('\n'),code:data.code,learnerAnswer:selectedIds.map(id=>`${id}: ${support.options.find(o=>o.optionId===id)?.text??''}`).join('\n'),errors:submitted&&!correct?['本次选项集合不完整或含错项']:[]});
  useAssistanceDisplay(assistance,'ai-hint',hintId,!submitted&&Boolean(hint.trim()));
@@ -41,8 +50,8 @@ function StructuredQuizUI({data,support,onGrade,context}:PluginRenderProps<Data>
  const invalidateHint=()=>{selectionRevision.current++;setHint('');setHintId(null);setError('');};
  const toggle=(id:string)=>{if(submittedRef.current)return;invalidateHint();setExcluded(values=>values.filter(v=>v!==id));setSelected(values=>values.includes(id)?values.filter(v=>v!==id):support.selection==='single'?[id]:[...values,id]);};
  const exclude=(id:string)=>{if(submittedRef.current)return;invalidateHint();setSelected(values=>values.filter(v=>v!==id));setExcluded(values=>values.includes(id)?values.filter(v=>v!==id):[...values,id]);};
- const submit=()=>{if(submittedRef.current||!selectedIds.length)return;submittedRef.current=true;assistance?.submit();setFeedbackId(crypto.randomUUID());setSubmitted(true);};
- const finish=()=>{if(!submitted||gradedRef.current)return;gradedRef.current=true;setGraded(true);onGrade(correct?'good':'again');};
+ const submit=()=>{if(submittedRef.current||!selectedIds.length)return;submittedRef.current=true;feedbackFocus.current={origin:document.activeElement};assistance?.submit();setFeedbackId(crypto.randomUUID());setSubmitted(true);};
+ const finish=()=>{if(!submitted||gradedRef.current)return;gradedRef.current=true;setGraded(true);onGrade(correct?'good':partial?'hard':'again');};
  const highlightSelection=useCallback(()=>{
    const element=stem.current,selection=window.getSelection();if(!element||!selection||selection.isCollapsed||selection.rangeCount!==1)return;
    const range=selection.getRangeAt(0);if(!element.contains(range.startContainer)||!element.contains(range.endContainer))return;
@@ -63,6 +72,7 @@ function StructuredQuizUI({data,support,onGrade,context}:PluginRenderProps<Data>
      <button type="button" className="study-choice quiz-option-select" aria-pressed={chosen} disabled={submitted} data-study-key={index<9?String(index+1):undefined} onClick={()=>toggle(option.optionId)}><span className="quiz-choice-symbol" aria-hidden="true">{submitted?(right?'✓':chosen?'×':''):chosen?'●':'○'}</span><span><small>{option.optionId}</small> {option.text}</span></button>
      {!submitted&&<button type="button" className="quiz-exclude" aria-pressed={crossed} aria-label={`${crossed?'取消排除':'排除'} ${option.optionId}`} onClick={()=>exclude(option.optionId)}>{crossed?'恢复':'排除'}</button>}
    </div>;})}</div>
-   {!submitted?<>{support.selection==='multiple'&&<p className="quiz-selection-note">多选题 · 需选齐全部正确项</p>}<button type="button" className="study-primary-action" disabled={!selectedIds.length} onClick={submit}>提交答案</button>{context?.requestAiHint&&<button type="button" className="study-secondary-action" disabled={loading} onClick={()=>void requestHint()}>{loading?'正在获取提示…':'请求 AI 提示'}</button>}{hint&&<p className="study-feedback">{hint}</p>}{error&&<p role="status">{error}</p>}</>:<section className="quiz-result" aria-label="作答反馈"><h3>{correct?'回答正确':'这次需要复习'}</h3><p>正确选项：{support.correctOptionIds.join('、')}</p>{!correct&&<p role="status">错选：{mistakes.wrong.join('、')||'无'}；漏选：{mistakes.missing.join('、')||'无'}。</p>}{support.options.filter(o=>selectedIds.includes(o.optionId)&&!support.correctOptionIds.includes(o.optionId)&&(o.trapType||o.trapExplanation)).map(o=><div className="quiz-trap" key={o.optionId}><strong>{o.optionId} · {o.trapType?QUIZ_TRAPS[o.trapType]:'选项解析'}</strong>{o.trapExplanation&&<p>{o.trapExplanation}</p>}<small>材料提供的选项解析</small></div>)}{data.explanation&&<MathText text={data.explanation}/>}<TutorFollowUp askTutor={context?.askTutor} item={reference} compact draft={context?.draft}/>{!correct&&<SourceReviewLauncher registerGuard={registerStudyNavigationGuard} worksheet={sourceWorksheet({kind:'distinction',binding:JSON.stringify([data.prompt,support]),target:`错选 ${mistakes.wrong.join('、')||'无'}；漏选 ${mistakes.missing.join('、')||'无'}`,reference:[...support.options.filter(o=>mistakes.wrong.includes(o.optionId)&&o.trapExplanation).map(o=>o.trapExplanation),data.explanation,reference.answer].filter(Boolean).join('\n\n')})} createDraft={context?.draft?.createTemporary} label="对照材料解释错选与漏选（可跳过）"/>}<button type="button" className="study-primary-action" disabled={graded} onClick={finish}>{graded?'已提交':correct?'继续':'记为需复习并继续'}</button></section>}
+   <p role="status" aria-atomic="true" className="sr-only">{submitted?`已提交：${feedbackLabel}。`:''}</p>
+   {!submitted?<>{support.selection==='multiple'&&<p className="quiz-selection-note">多选题 · 需选齐全部正确项</p>}<button type="button" className="study-primary-action" disabled={!selectedIds.length} onClick={submit}>提交答案</button>{context?.requestAiHint&&<button type="button" className="study-secondary-action" disabled={loading} onClick={()=>void requestHint()}>{loading?'正在获取提示…':'请求 AI 提示'}</button>}{hint&&<p className="study-feedback">{hint}</p>}{error&&<p role="status">{error}</p>}</>:<section className="quiz-result" aria-label="作答反馈"><h3 ref={feedbackTitle} tabIndex={-1}>{feedbackLabel}</h3><p>正确选项：{support.correctOptionIds.join('、')}</p>{!correct&&<p role="status">错选：{mistakes.wrong.join('、')||'无'}；漏选：{mistakes.missing.join('、')||'无'}。</p>}{support.options.filter(o=>selectedIds.includes(o.optionId)&&!support.correctOptionIds.includes(o.optionId)&&(o.trapType||o.trapExplanation)).map(o=><div className="quiz-trap" key={o.optionId}><strong>{o.optionId} · {o.trapType?QUIZ_TRAPS[o.trapType]:'选项解析'}</strong>{o.trapExplanation&&<p>{o.trapExplanation}</p>}<small>材料提供的选项解析</small></div>)}{data.explanation&&<MathText text={data.explanation}/>}<TutorFollowUp askTutor={context?.askTutor} item={reference} compact draft={context?.draft}/>{!correct&&<SourceReviewLauncher registerGuard={registerStudyNavigationGuard} worksheet={sourceWorksheet({kind:'distinction',binding:JSON.stringify([data.prompt,support]),target:`错选 ${mistakes.wrong.join('、')||'无'}；漏选 ${mistakes.missing.join('、')||'无'}`,reference:[...support.options.filter(o=>mistakes.wrong.includes(o.optionId)&&o.trapExplanation).map(o=>o.trapExplanation),data.explanation,reference.answer].filter(Boolean).join('\n\n')})} createDraft={context?.draft?.createTemporary} label="对照材料解释错选与漏选（可跳过）"/>}<button type="button" className="study-primary-action" disabled={graded} onClick={finish}>{graded?'已提交':correct?'继续':'记为需复习并继续'}</button></section>}
  </div></div>;
 }

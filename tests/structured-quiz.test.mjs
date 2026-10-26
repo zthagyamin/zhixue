@@ -14,8 +14,9 @@ test('new quiz keeps answers and diagnostic labels hidden until submission',()=>
 });
 test('submit and grade callbacks are bounded to one explicit submission',()=>{
  let submissions=0,visible=false;const submittedRef={current:false};const env={submittedRef,selectedIds:['a'],assistance:{submit:()=>submissions++},setFeedbackId(){},setSubmitted:v=>visible=v,crypto:{randomUUID:()=> 'feedback'}};
+ env.feedbackFocus={current:null};env.document={activeElement:null};
  const submit=tsxFunction(file,'submit',env);submit();submit();assert.equal(submissions,1);assert.equal(visible,true);
- const grades=[],gradedRef={current:false};const finish=tsxFunction(file,'finish',{submitted:true,gradedRef,setGraded(){},onGrade:r=>grades.push(r),correct:false});finish();finish();assert.deepEqual(grades,['again']);
+ const grades=[],gradedRef={current:false};const finish=tsxFunction(file,'finish',{submitted:true,gradedRef,setGraded(){},onGrade:r=>grades.push(r),correct:false,partial:false});finish();finish();assert.deepEqual(grades,['again']);
 });
 test('exclude removes selection, reselect removes exclusion, and submitted answers freeze',()=>{
  let selected=['a'],excluded=[];const submittedRef={current:false},env={submittedRef,support,invalidateHint(){},setSelected:f=>selected=f(selected),setExcluded:f=>excluded=f(excluded)};

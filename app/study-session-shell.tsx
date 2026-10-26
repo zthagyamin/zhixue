@@ -5,6 +5,7 @@ import {useSyncExternalStore,useId,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {useManagedDialog} from './use-managed-dialog';
 import type {StudyTaskLead} from './study-view-model';
+import {useStudyLayoutMedia} from './study-layout-control';
 
 export function StudyIcon({name}:{name:'back'|'close'|'options'|'source'|'list'|'down'}) {
   const paths={back:'m14 5-7 7 7 7',close:'m6 6 12 12M18 6 6 18',options:'M4 7h10m4 0h2M4 17h2m4 0h10M14 4v6M10 14v6',source:'M5 4h9l5 5v11H5zM14 4v6h5M8 14h8M8 17h6',list:'M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1',down:'m6 9 6 6 6-6'};
@@ -150,21 +151,24 @@ export function StudySessionShell({title,scope,progress,mode,onExit,options,sour
 }) {
   const [panel,setPanel]=useState<Panel|null>(null);
   const [queueOpen,setQueueOpen]=useState(false);
+  const narrow=useStudyLayoutMedia('(max-width: 760px)');
+  const activePanel=panel??(narrow&&queueOpen?'queue':null);
+  const inlineQueue=queueOpen&&!narrow;
   const queueId=useId();
   const queueTrigger=useRef<HTMLButtonElement>(null);
   const queueClose=useRef<HTMLButtonElement>(null);
   const closeQueue=()=>{setQueueOpen(false);queueTrigger.current?.focus({preventScroll:true});};
   const toggleQueue=()=>{
-    if(window.matchMedia('(max-width: 760px)').matches){setPanel('queue');return;}
+    if(narrow){setPanel('queue');return;}
     if(queueOpen){closeQueue();return;}
     setQueueOpen(true);
     requestAnimationFrame(()=>queueClose.current?.focus({preventScroll:true}));
   };
-  return <StudyPluginOptionsProvider><section className="study-session-shell study-primary-session" aria-label={`${title}专注学习`}>
+  return <StudyPluginOptionsProvider><section tabIndex={-1} className="study-session-shell study-primary-session" aria-label={`${title}专注学习`}>
     <header className="study-session-topbar">
       <button type="button" className="study-back" onClick={onExit} aria-label="返回今日"><StudyIcon name="back"/><span>今日</span></button>
       <div className="study-session-context"><button type="button" onClick={()=>setPanel('subjects')} aria-haspopup="dialog">{title}<StudyIcon name="down"/></button><p>{scope}</p></div>
-      <button type="button" className="study-options-trigger" aria-label="学习选项" aria-haspopup="dialog" aria-expanded={panel==='options'} onClick={()=>setPanel('options')}><StudyIcon name="options"/><span>学习选项</span></button>
+      <button type="button" className="study-options-trigger" aria-label="学习选项" aria-haspopup="dialog" aria-expanded={activePanel==='options'} onClick={()=>setPanel('options')}><StudyIcon name="options"/><span>学习选项</span></button>
     </header>
     <div className="study-session-meta">
       <div className="study-session-status"><span>{mode}</span><span>{progress}</span>{assistant}</div>
@@ -173,19 +177,19 @@ export function StudySessionShell({title,scope,progress,mode,onExit,options,sour
         <button ref={queueTrigger} type="button" onClick={toggleQueue} aria-controls={queueId} aria-expanded={queueOpen||panel==='queue'} aria-label={queueOpen?'收起本组清单':'展开本组清单'}><StudyIcon name="list"/><span>本组清单</span></button>
       </div>
     </div>
-    <div className="study-session-main" data-queue-open={queueOpen||undefined}>
+    <div className="study-session-main" data-queue-open={inlineQueue||undefined}>
       <div className="study-session-content">{children}</div>
-      <aside id={queueId} className="study-session-queue" aria-label="本组清单" hidden={!queueOpen}>
+      <aside id={queueId} className="study-session-queue" aria-label="本组清单" hidden={!inlineQueue}>
         <div className="study-session-queue-heading"><h2>本组清单</h2><button ref={queueClose} type="button" className="study-icon-button" aria-label="收起本组清单" onClick={closeQueue}><StudyIcon name="close"/></button></div>
         <div role="presentation" onClick={event=>{if((event.target as HTMLElement).closest('.word-stage-list button'))closeQueue();}}>{queue}</div>
       </aside>
     </div>
     {notice&&<p className="study-source-update-note" role="status">{notice}</p>}
-    <StudyPanel open={panel!==null} onClose={()=>setPanel(null)} title={titles[panel??'options']}>
-      <div hidden={panel!=='options'}><StudyPluginOptionsSlot/>{options}</div>
-      <div hidden={panel!=='source'}>{source}</div>
-      <div hidden={panel!=='queue'} onClick={event=>{if((event.target as HTMLElement).closest('button'))setPanel(null);}} role="presentation">{queue}</div>
-      <div hidden={panel!=='subjects'} onClick={event=>{if((event.target as HTMLElement).closest('button'))setPanel(null);}} role="presentation">{subjects}</div>
+    <StudyPanel open={activePanel!==null} onClose={()=>{setPanel(null);if(narrow)setQueueOpen(false);}} title={titles[activePanel??'options']}>
+      <div hidden={activePanel!=='options'}><StudyPluginOptionsSlot/>{options}</div>
+      <div hidden={activePanel!=='source'}>{source}</div>
+      <div hidden={activePanel!=='queue'} onClick={event=>{if((event.target as HTMLElement).closest('button')){setPanel(null);setQueueOpen(false);}}} role="presentation">{queue}</div>
+      <div hidden={activePanel!=='subjects'} onClick={event=>{if((event.target as HTMLElement).closest('button'))setPanel(null);}} role="presentation">{subjects}</div>
     </StudyPanel>
   </section></StudyPluginOptionsProvider>;
 }

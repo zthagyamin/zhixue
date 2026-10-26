@@ -8,7 +8,7 @@ const RECORD_STORE = "workspace-records";
 const STUDY_EVENTS_V3_STORE = "study-events-v3";
 const TASK_EVENTS_V1_STORE = 'task-events-v1';
 
-export type WorkspaceRecordKind = `ai-chat-recovery:v1:${string}` | `paper-original:v1:${string}` | `note-trial-materials:${string}` | `recall-attempt:${string}` | `subject-organization:${string}` | `paper-draft:${string}` | `paper-document:${string}` | "progress" | "pending-activities" | "companion-session" | `companion-session:${string}` | "cloud-outbox" | "cloud-sync-metadata" | "plugin-overrides" | "plan-constraints" | "practice-cache" | "module-catalog" | "vocab-pacing" | "vocab-pacing-by-subject" | "task-plan-drafts" | "task-planning-cache" | "task-plan-backups" | "account-study-preference" | "account-study-device" | "account-plan-ai-requests" | "account-question-ai-requests" | "long-term-plan";
+export type WorkspaceRecordKind = `paper-reading-bookmark:v1:${string}` | `ai-chat-recovery:v1:${string}` | `paper-original:v1:${string}` | `note-trial-materials:${string}` | `recall-attempt:${string}` | `subject-organization:${string}` | `paper-draft:${string}` | `paper-document:${string}` | "progress" | "pending-activities" | "companion-session" | `companion-session:${string}` | "cloud-outbox" | "cloud-sync-metadata" | "plugin-overrides" | "plan-constraints" | "practice-cache" | "module-catalog" | "vocab-pacing" | "vocab-pacing-by-subject" | "task-plan-drafts" | "task-planning-cache" | "task-plan-backups" | "account-study-preference" | "account-study-device" | "account-plan-ai-requests" | "account-question-ai-requests" | "long-term-plan";
 
 type WorkspaceRecord<T> = {
   id: string;

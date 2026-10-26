@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dashboardDeclaredFunction,dashboardFunction,dashboardJsxProp} from './fixtures/dashboard-functions.mjs';
 test('the extracted view keeps private workspace content behind identity and storage readiness',()=>{
- const Gate=()=>null,render=dashboardDeclaredFunction('DashboardView',{StudyWorkspaceGate:Gate});
- for(const phase of ['checking-identity','loading-local','identity-error','storage-error']){const retry=()=>{},node=render({model:{workspacePhase:phase,retryWorkspace:retry}});assert.equal(node.type,Gate);assert.equal(node.props.phase,phase);assert.equal(node.props.onRetry,retry);}
+ const focus=[],Gate=()=>null,render=dashboardDeclaredFunction('DashboardView',{StudyWorkspaceGate:Gate,useStudyNavigationFocus:(...args)=>focus.push(args)});
+ for(const phase of ['checking-identity','loading-local','identity-error','storage-error']){const retry=()=>{},node=render({model:{workspacePhase:phase,retryWorkspace:retry}});assert.equal(node.type,Gate);assert.equal(node.props.phase,phase);assert.equal(node.props.onRetry,retry);assert.equal(focus.at(-1)[3],false,'unready private views must not move focus into workspace content');}
 });
 test('workspace retry remains controller-owned and invalidates old readers before restarting',()=>{
  const calls=[],accountModeEpoch={current:4},fallbackData={publicFixture:true};let identity=2;

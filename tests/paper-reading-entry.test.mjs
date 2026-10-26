@@ -10,7 +10,7 @@ function fixture(options={}){
  const hooks=createHooks(),gate=deferred();
  const paper={paperId:'reading',title:'Reading',origin:options.origin,sections:[{id:'s',title:'Methods',paragraphs:[1,2,3].map(n=>({id:'p'+n,rawEn:'Paragraph '+n,pageNumber:n}))}]};
  let state={ready:true,saving:false,error:'',draft:{position:0}};
- const session={subscribe:()=>()=>{},snapshot:()=>state,update:async change=>{state={...state,saving:true,draft:change(state.draft)};await gate.promise;state={...state,saving:false};},flush:async()=>{await gate.promise;if(state.error)throw Error(state.error);}};
+ const session={subscribe:()=>()=>{},snapshot:()=>state,update:async change=>{state={...state,saving:true,draft:change(state.draft)};await gate.promise;state={...state,saving:false};},flush:async()=>{if(state.saving)await gate.promise;if(state.error)throw Error(state.error);}};
  const jsx=(type,props)=>({type,props});
  const component=extract('app/paper-reading/entry.tsx','ReadingDocument')({
   ...hooks.api,usePaperClock:()=>({controls:null,details:null,flush:async()=>{}}),createPaperReadingUnit,PaperReadingPage:'Page',PaperOriginalPage:'Original',PaperQuestionEntry:'Question',ReadingBackupControls:'Backup',PaperSourceText:'Text',MathText:'Math',
@@ -32,7 +32,7 @@ test('ordinary draft saves retain a selected multi-paragraph reading unit',async
 });
 
 test('position advances only after reliable acknowledgement and resets the range',async()=>{
- const f=fixture();f.render().onCount(2);f.render().onPosition(2);await tick();
+ const f=fixture();f.render().onCount(2);await tick();f.render().onPosition(2);await tick();
  assert.equal(f.render().unit.position,0);
  f.gate.resolve();await tick();assert.equal(f.render().unit.position,2);assert.equal(f.render().unit.paragraphs.length,1);
 });

@@ -112,7 +112,7 @@ export function TodayLearning(props:TodayLearningProps) {
     {props.dirty&&<p role="status" className="mt-2 mb-3 text-sm text-[var(--warning)]">尚未保存到学习知识库 · 可在“调整安排”中保存。</p>}
     {feedback}
     {props.studyFirst&&plan&&<DashboardFocusHero summary={focusSummary} lead={focusLead} disabled={busy||!focusReady} keyboardEnabled={!props.activePractice&&!editing} onStart={()=>{if(focusLead)props.onStart(focusLead.taskId,focusTasks.map(task=>task.taskId));}} onAdvanced={()=>setEditing(true)}/>}
-    <details className="study-plan-details" open={!props.studyFirst||!plan||undefined}><summary hidden={!props.studyFirst||!plan}>查看今日任务与进度</summary>
+    <details className="study-plan-details" open><summary hidden={!props.studyFirst||!plan}>查看今日任务与进度</summary>
     <PlanRelationshipNotice allocation={plan?.longTermAllocation} hasPlan={Boolean(plan)} onLongTerm={props.onLongTerm}/>
     {props.studyFirst ? (
       <div className={plan ? "c-plan-columns" : "c-plan-unplanned"}>

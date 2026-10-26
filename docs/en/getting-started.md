@@ -36,11 +36,23 @@ Supported source paths include local notes and selected readable files; formats 
 
 ## 3. Confirm the learning content
 
-Inspect source titles, questions, and reference answers. A imported document is not necessarily a ready exercise. Vague tasks, missing answers, extraction errors, and invalid source bindings should be corrected before relying on grades.
+Inspect source titles, questions, and reference answers. An imported document is not necessarily a ready exercise. Vague tasks, missing answers, extraction errors, and invalid source bindings should be corrected before relying on grades.
 
-Use **“今日”** for daily arrangements and **“按学科学习”** to choose content yourself. Long-term plan settings and the available registered learning pool influence today's tasks. The study-day boundary is 04:00 in the configured study timezone; check your setup before interpreting overnight records.
+From the homepage, enter the workspace and use **“今日”** for daily arrangements. Open **“学科”** to choose a subject or **“浏览学科库”** to browse available content. **“进度”** shows learning records, while **“设置”** contains source and account settings.
+
+Long-term plan settings and the registered learning pool influence today's tasks. Review generated arrangements and confirm the choices requested on the page before adopting them. Generating or previewing a plan does not confirm a long-term arrangement, write back notes, or create completed study records. The study-day boundary is 04:00 in the configured study timezone; check your setup before interpreting overnight records.
+
+In **“进度”**, check the named task or content range before reading its completed/total count. If several tasks are available, use **“选择进度任务范围”** to select the one you mean. A dash or pending-verification status does not mean zero progress.
+
+In settings, **“页面布局”** lets you choose **“自动适应”**, **“电脑版”**, **“平板版”**, or **“手机版”**. This preference stays in the current browser. Keyboard focus follows supported task entry and return paths; use Tab to continue from the focused content or entry button.
 
 Answer first, inspect feedback, and retry what needs correction. First attempts, supported attempts, remediation, and pending evaluation are distinct; completing a round is not proof of long-term mastery.
+
+### Continue a paper and review candidates
+
+When the saved material and source version still match, paper reading can reopen the recent material, position, and selected paragraph range in the current browser and library. This bookmark is separate from answers and reading workspaces; it does not promise recovery on another browser or device. Check the displayed material and range before continuing. If the page reports that a position or answer is not saved, keep the page open and retry the relevant save.
+
+Use **“准备复习候选”** when you want to turn marked reading gaps into possible later practice. Review the questions, references, source locations, and content categories; then confirm the potential workload before approving the export. Editing, approving, or exporting candidates does not add formal reviews, grades, or scheduling. With a compatible Companion, preview and confirm the exported file's import, then confirm the plan separately.
 
 ## 4. Enable AI only when you need it
 

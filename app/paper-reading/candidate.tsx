@@ -11,6 +11,6 @@ export function PaperReviewCandidate({paper,workspace,services}:{paper:PaperStud
     const section=paper.sections.find(s=>s.id===workspace.unit.source.sectionId);
     const prepared=preparePaperReviewCandidate(workspace.unit,task,{paperId:paper.paperId,sourceNote:paper.sourceNote,sectionLabel:section?.title});
     return <CandidateLauncher source={prepared.source} seeds={prepared.seeds} scope={JSON.stringify([services.owner,services.library,workspace.unit.unitId,task.taskId,task.revision])}
-        label="加入正式复习" isCurrent={services.isCurrent} registerGuard={registerStudyNavigationGuard} download={downloadStudyMaterial}
+        label="准备复习候选" isCurrent={services.isCurrent} registerGuard={registerStudyNavigationGuard} download={downloadStudyMaterial}
         serialize={async approved=>JSON.stringify(await readingCandidateArtifact(approved,prepared),null,2)+'\n'}/>;
 }

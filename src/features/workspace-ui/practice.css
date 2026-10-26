@@ -1,0 +1,292 @@
+/* The study content stays central; navigation and references keep a quiet edge. */
+html .study-app.app-shell .study-session-shell {
+  width: 100%;
+  max-width: 1160px;
+  min-width: 0;
+  min-height: min(760px, calc(100svh - 56px));
+  border: 1px solid var(--study-rule);
+  border-radius: 12px;
+  background: var(--study-surface);
+  color: var(--study-ink);
+  box-shadow: none;
+}
+
+html .study-app.app-shell .study-session-shell .study-session-topbar {
+  min-height: 80px;
+  padding: 16px 24px;
+  gap: 20px;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: var(--study-surface);
+}
+
+html .study-app.app-shell .study-session-shell :is(.study-back, .study-options-trigger) {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--study-rule);
+  border-radius: 6px;
+  color: var(--study-muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+html .study-app.app-shell .study-session-shell :is(.study-back, .study-options-trigger):hover {
+  color: var(--study-accent-text);
+  border-color: var(--study-accent-text);
+  background: var(--study-accent-soft);
+}
+
+html .study-app.app-shell .study-session-context > button {
+  min-height: 44px;
+  max-width: 100%;
+  margin-inline: auto;
+  color: var(--study-ink);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+html .study-app.app-shell .study-session-context > p {
+  color: var(--study-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+html .study-app.app-shell .study-primary-session .study-session-meta {
+  padding: 8px 24px;
+  border-color: var(--study-rule);
+  background: var(--study-surface);
+}
+
+html .study-app.app-shell .study-primary-session .study-session-status {
+  color: var(--study-muted);
+  font-size: 12px;
+}
+
+html .study-app.app-shell .study-primary-session .study-session-status > span:first-child {
+  color: var(--study-ink);
+  font-weight: 550;
+}
+
+html .study-app.app-shell .study-primary-session .study-session-footer button {
+  min-height: 44px;
+  padding: 10px;
+  color: var(--study-accent-text);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html .study-app.app-shell .study-primary-session .study-session-content {
+  padding: 36px clamp(24px, 4vw, 56px) 44px;
+  background: transparent;
+}
+
+html .study-app.app-shell .study-primary-session .study-session-main:has(.study-flashcard) {
+  align-items: start;
+}
+
+html .study-app.app-shell .study-session-queue {
+  color: var(--study-ink);
+  border-color: var(--study-rule);
+  background: var(--study-surface-2);
+}
+
+html .study-app.app-shell .study-session-queue .study-session-queue-heading h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+html .study-app.app-shell .study-session-shell :is(button, a, summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--study-accent-text);
+  outline-offset: 4px;
+}
+
+html .study-app.app-shell .study-session-shell :is(summary, button, a, select) {
+  min-height: 44px;
+}
+
+/* Inline practice uses its existing semantic label as a presentation boundary. */
+html .study-app.app-shell section[aria-label="复习练习"] {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--study-rule);
+  border-radius: 10px;
+  color: var(--study-ink);
+  background: var(--study-surface);
+  box-shadow: none;
+}
+
+html .study-app.app-shell section[aria-label="复习练习"] > div:first-child {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--study-rule);
+}
+
+html .study-app.app-shell section[aria-label="复习练习"] > div:first-child h3 {
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+html .study-app.app-shell section[aria-label="复习练习"] > div:first-child p {
+  color: var(--study-muted);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: .04em;
+  line-height: 1.8;
+  opacity: 1;
+}
+
+html .study-app.app-shell section[aria-label="复习练习"] > div:first-child button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  color: var(--study-muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+html .study-app.app-shell :is(.study-inline-options, .study-practice-order) > summary {
+  min-height: 44px;
+  padding-block: 12px;
+  color: var(--study-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+html .study-app.app-shell .study-practice-order label {
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+html .study-app.app-shell .study-practice-order select {
+  min-height: 44px;
+  max-width: 100%;
+  border-color: var(--study-rule);
+  color: var(--study-ink);
+  background: var(--study-surface);
+  font-size: 14px;
+}
+
+html .study-app.app-shell .study-flashcard .study-guidance-help > summary {
+  min-height: 44px;
+  padding-block: 10px;
+  color: var(--study-muted);
+  line-height: 1.7;
+}
+
+/* Reference panels are portalled outside app-shell; carry its reading tokens. */
+html .study-modal-host .study-panel {
+  border-color: var(--study-rule);
+  color: var(--study-ink);
+  background: var(--study-surface);
+}
+
+html .study-modal-host .study-panel-heading {
+  padding: 22px 24px;
+  border-color: var(--study-rule);
+}
+
+html .study-modal-host .study-panel-heading h2 {
+  color: var(--study-ink);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+html .study-modal-host .study-panel-body {
+  color: var(--study-ink);
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+html .study-modal-host .study-panel :is(button, a, summary, input, select) {
+  min-height: 44px;
+}
+
+html .study-modal-host .study-panel :is(button, a, summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--study-accent-text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  html .study-app.app-shell .study-session-shell {
+    min-height: calc(100svh - 36px);
+    border-radius: 8px;
+  }
+
+  html .study-app.app-shell .study-session-shell .study-session-topbar {
+    min-height: 76px;
+    padding: 12px 16px;
+    gap: 10px;
+    border-radius: 8px 8px 0 0;
+  }
+
+  html .study-app.app-shell .study-session-context > button {
+    font-size: 15px;
+  }
+
+  html .study-app.app-shell .study-primary-session .study-session-meta {
+    flex-wrap: wrap;
+    padding: 6px 16px;
+    gap: 0 12px;
+  }
+
+  html .study-app.app-shell .study-primary-session .study-session-status {
+    min-height: 32px;
+    align-items: center;
+    flex-basis: 100%;
+  }
+
+  html .study-app.app-shell .study-primary-session .study-session-footer {
+    margin-left: auto;
+  }
+
+  html .study-app.app-shell .study-primary-session .study-session-content {
+    padding: 24px 16px 32px;
+  }
+
+  html .study-app.app-shell section[aria-label="复习练习"] > div:first-child > div:last-child {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 440px) {
+  html .study-app.app-shell .study-session-shell .study-session-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  html .study-app.app-shell .study-session-shell :is(.study-back, .study-options-trigger) {
+    gap: 5px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+
+  html .study-app.app-shell .study-session-context > button {
+    font-size: 14px;
+  }
+
+  html .study-app.app-shell .study-session-context > p {
+    font-size: 11px;
+  }
+
+  html .study-app.app-shell .study-primary-session .study-session-content {
+    padding-inline: 12px;
+  }
+}
+@media (min-width: 900px) and (max-height: 800px) {
+ html .study-app.app-shell .study-session-shell .study-session-topbar {min-height:64px;padding:12px 20px;}
+ html .study-app.app-shell .study-primary-session .study-session-content {padding:22px 28px 26px;}
+ html .study-app.app-shell .study-flashcard > .study-meta[aria-label="本卡来源"] {margin-bottom:12px;padding-bottom:10px;}
+ html .study-app.app-shell .study-flashcard .study-flashcard-body {min-height:240px;padding:24px 30px;}
+ html .study-app.app-shell .study-flashcard .study-flashcard-front {margin-block:8px 16px;}
+}

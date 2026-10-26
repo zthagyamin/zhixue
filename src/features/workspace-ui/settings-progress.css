@@ -1,0 +1,117 @@
+/* Unified settings and progress retain the existing data and action boundaries. */
+html .study-app.app-shell .workspace-section-eyebrow {margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5;letter-spacing:.1em;font-weight:600;}
+html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) {display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line);}
+html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) h1 {margin:0;color:var(--ink);font-family:inherit;font-size:clamp(30px,3.2vw,44px);line-height:1.3;letter-spacing:-.055em;font-weight:650;}
+html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) h1 span {color:var(--blue);}
+html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) p:not(.workspace-section-eyebrow) {margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.8;}
+html .study-app.app-shell .study-settings {gap:0;min-width:0;}
+html .study-app.app-shell .settings-layout-container {display:grid;grid-template-columns:192px minmax(0,1fr);gap:32px;align-items:start;}
+html .study-app.app-shell .settings-sidebar {position:sticky;top:28px;min-width:0;}
+html .study-app.app-shell .settings-nav {display:flex;flex-direction:column;gap:4px;padding:0;background:transparent;border:0;box-shadow:none;}
+html .study-app.app-shell .settings-nav .settings-nav-item {display:flex;align-items:center;gap:12px;min-height:48px;padding:12px 14px;border:0;border-radius:6px;background:transparent;color:var(--muted);box-shadow:none;text-align:left;}
+html .study-app.app-shell .settings-nav .settings-nav-item:hover {background:var(--surface-2);color:var(--ink);}
+html .study-app.app-shell .settings-nav .settings-nav-item.active {background:var(--accent-soft);color:var(--blue);border:0;}
+html .study-app.app-shell .settings-nav .settings-nav-item.active::before {display:none;}
+html .study-app.app-shell .settings-nav-label {font-size:13px;color:inherit;font-weight:550;}
+html .study-app.app-shell .settings-nav-icon {display:inline-flex;color:inherit;width:18px;height:18px;opacity:1;}
+html .study-app.app-shell .settings-main-pane {min-width:0;padding:28px 32px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:none;}
+html .study-app.app-shell .settings-content-pane {min-width:0;}
+html .study-app.app-shell .settings-section-header {margin-bottom:12px;padding-bottom:20px;border-bottom:1px solid var(--line);}
+html .study-app.app-shell .settings-section-header h3 {margin:0 0 8px;font-size:20px;line-height:1.5;font-weight:600;color:var(--ink);letter-spacing:-.025em;}
+html .study-app.app-shell .settings-section-header p {font-size:13px;line-height:1.8;color:var(--muted);}
+html .study-app.app-shell .settings-card:not(.settings-card-danger) {padding:24px 0;margin:0;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;}
+html .study-app.app-shell .settings-card h4 {font-size:15px;line-height:1.5;font-weight:600;color:var(--ink);}
+html .study-app.app-shell .settings-card p {font-size:13px;line-height:1.85;}
+html .study-app.app-shell .settings-card :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {min-height:44px;border:1px solid var(--study-control-border);border-radius:6px;background:var(--surface);color:var(--ink);font-size:16px;}
+html .study-app.app-shell .settings-card :is(button,a,summary) {min-height:44px;}
+html .study-app.app-shell .theme-switcher-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+html .study-app.app-shell .theme-option-card {padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);box-shadow:none;}
+html .study-app.app-shell .theme-option-card.active {border-color:var(--blue);box-shadow:0 0 0 1px var(--blue);background:var(--accent-soft);}
+html .study-app.app-shell .theme-preview-box {height:116px;border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+html .study-app.app-shell .theme-option-meta {padding:12px 2px 0;}
+html .study-app.app-shell .settings-card-danger {padding:22px;border:1px solid var(--study-danger);border-radius:8px;box-shadow:none;background:color-mix(in srgb,var(--study-danger) 5%,var(--surface));}
+html .study-app.app-shell .settings-card-danger :is(h4,p) {color:var(--ink);}
+html .study-app.app-shell .c-progress-overview {min-width:0;max-width:1160px;}
+html .study-app.app-shell .c-progress-tools {display:flex;flex-wrap:wrap;gap:8px;}
+html .study-app.app-shell .c-progress-tools button {display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;font-size:12px;font-weight:500;}
+html .study-app.app-shell .c-progress-tools button:hover {color:var(--blue);background:var(--accent-soft);}
+html .study-app.app-shell .c-progress-toolbar {display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 22px;}
+html .study-app.app-shell .c-progress-tabs {display:flex;min-width:0;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:3px 3px 10px;}
+html .study-app.app-shell .c-progress-tabs button {flex:none;min-height:44px;padding:9px 16px;border:1px solid transparent;border-radius:6px;color:var(--muted);background:transparent;font-size:13px;white-space:nowrap;}
+html .study-app.app-shell .c-progress-tabs button[aria-selected=true] {color:var(--blue);background:var(--accent-soft);border-color:transparent;font-weight:600;}
+html .study-app.app-shell .c-record-export {flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:6px;color:var(--blue);background:var(--surface);font-size:12px;}
+html .study-app.app-shell .c-record-export:disabled {color:var(--muted);opacity:.6;cursor:not-allowed;}
+html .study-app.app-shell .c-progress-card-grid {display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;}
+html .study-app.app-shell .c-progress-card {padding:24px 26px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:none;min-width:0;}
+html .study-app.app-shell .c-progress-card h2 {font-size:15px;line-height:1.6;font-weight:600;color:var(--ink);}
+html .study-app.app-shell .c-progress-card h2 small {font-size:11px;font-weight:400;color:var(--muted);}
+html .study-app.app-shell .c-progress-task-range {display:flex;flex-direction:column;gap:8px;margin-top:16px;color:var(--muted);font-size:12px;line-height:1.6;}
+html .study-app.app-shell .c-progress-task-range select {width:100%;max-width:100%;min-height:44px;padding:9px 12px;border:1px solid var(--study-control-border);border-radius:6px;background:var(--surface);color:var(--ink);font-size:16px;}
+html .study-app.app-shell .c-progress-task-range select:focus-visible {outline:2px solid var(--blue);outline-offset:2px;}
+html .study-app.app-shell .c-progress-task-name {margin:14px 0 0;color:var(--ink);font-size:12px;line-height:1.8;overflow-wrap:anywhere;}
+html .study-app.app-shell .c-current-body {gap:22px;padding-top:22px;}
+html .study-app.app-shell .c-progress-ring {width:112px;height:112px;flex:none;}
+html .study-app.app-shell .c-progress-ring strong {font-family:inherit;font-size:32px;font-weight:600;letter-spacing:-.04em;color:var(--ink);}
+html .study-app.app-shell .c-progress-ring small {font-size:10px;color:var(--muted);}
+html .study-app.app-shell .c-progress-ring-value {stroke:var(--study-accent);}
+html .study-app.app-shell .c-current-description h3 {font-size:14px;line-height:1.65;font-weight:600;color:var(--ink);}
+html .study-app.app-shell .c-current-description :is(p,.c-progress-counts) {font-size:12px;line-height:1.8;color:var(--muted);}
+html .study-app.app-shell .c-forecast-columns {gap:10px;margin-top:24px;}
+html .study-app.app-shell .c-forecast-day :is(span,small) {font-size:11px;color:var(--muted);}
+html .study-app.app-shell .c-forecast-pillar i {background:var(--study-accent);border-radius:3px 3px 0 0;}
+html .study-app.app-shell .c-forecast-caption {color:var(--muted);font-size:11px;line-height:1.8;}
+html .study-app.app-shell .c-recent-records {margin-top:28px;padding:24px 26px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:none;min-width:0;}
+html .study-app.app-shell .c-recent-records h2 {font-size:17px;font-weight:600;letter-spacing:-.025em;}
+html .study-app.app-shell .c-recent-records h2 small {font-size:11px;color:var(--muted);font-weight:400;}
+html .study-app.app-shell .c-record-table {width:100%;font-size:12px;border-collapse:collapse;}
+html .study-app.app-shell .c-record-table th {font-size:11px;font-weight:500;color:var(--muted);padding-block:16px;border-bottom:1px solid var(--line);}
+html .study-app.app-shell .c-record-table td {padding-block:16px;border-color:var(--line);color:var(--ink);line-height:1.7;}
+html .study-app.app-shell .c-record-row:hover {background:var(--accent-soft);}
+html .study-app.app-shell .c-record-result span {border-radius:4px;font-size:11px;}
+html .study-app.app-shell .c-record-toggle {min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;}
+html .study-app.app-shell .c-record-details {padding:20px 24px;background:var(--surface-2);border-radius:6px;color:var(--ink);font-size:12px;}
+html .study-app.app-shell .c-record-details p {font-size:12px;line-height:1.8;color:var(--muted);}
+html .study-app.app-shell .c-recent-records footer {padding:14px 0;color:var(--muted);font-size:11px;}
+html .study-app.app-shell .c-recent-records footer button {min-height:44px;color:var(--blue);font-size:12px;}
+html .study-app.app-shell :is(.c-progress-empty,.c-record-empty) {padding:40px 24px;color:var(--muted);border-radius:10px;background:var(--surface);}
+html .study-app.app-shell .c-progress-more {margin-top:26px;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;padding:16px 0;}
+html .study-app.app-shell .c-progress-more summary {font-size:13px;color:var(--muted);min-height:44px;}
+@media(max-width:1200px) {
+ html .study-app.app-shell .settings-layout-container {grid-template-columns:170px minmax(0,1fr);gap:20px;}
+ html .study-app.app-shell .settings-main-pane {padding:24px 24px 8px;}
+ html .study-app.app-shell .c-progress-card-grid {grid-template-columns:minmax(0,1fr);}
+}
+@media(max-width:999px) {
+ html .study-app.app-shell .settings-layout-container {grid-template-columns:minmax(0,1fr);gap:20px;}
+ html .study-app.app-shell .settings-sidebar {position:static;}
+ html .study-app.app-shell .settings-nav {flex-direction:row;overflow-x:auto;gap:6px;padding:3px 3px 10px;scrollbar-width:thin;}
+ html .study-app.app-shell .settings-nav .settings-nav-item {flex:none;min-height:44px;white-space:nowrap;gap:8px;padding:10px 13px;}
+ html .study-app.app-shell .settings-nav .settings-nav-item.active {border:0;}
+}
+@media(max-width:640px) {
+ html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) {align-items:flex-start;flex-direction:column;gap:16px;margin-bottom:22px;padding-bottom:22px;}
+ html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) h1 {font-size:30px;}
+ html .study-app.app-shell :is(.settings-page-heading,.c-progress-heading) p:not(.workspace-section-eyebrow) {font-size:12px;}
+ html .study-app.app-shell .settings-main-pane {padding:20px 18px 0;border-radius:9px;}
+ html .study-app.app-shell .theme-switcher-grid {gap:10px;}
+ html .study-app.app-shell .theme-option-card {padding:9px;}
+ html .study-app.app-shell .theme-preview-box {height:90px;}
+ html .study-app.app-shell .c-progress-toolbar {align-items:stretch;flex-wrap:wrap;gap:6px;}
+ html .study-app.app-shell .c-progress-tabs {width:100%;}
+ html .study-app.app-shell .c-progress-card {padding:22px 18px;}
+ html .study-app.app-shell .c-current-body {gap:16px;}
+ html .study-app.app-shell .c-progress-ring {width:94px;height:94px;}
+ html .study-app.app-shell .c-progress-ring strong {font-size:28px;}
+ html .study-app.app-shell .c-recent-records {padding:20px 16px 8px;}
+ html .study-app.app-shell .c-record-table {font-size:11px;}
+ html .study-app.app-shell .c-record-table td {padding-block:14px;}
+ html .study-app.app-shell .c-record-details {padding:16px;}
+ html .study-app.app-shell .c-progress-tools {gap:7px;}
+ html .study-app.app-shell .c-progress-tools button {font-size:11px;}
+}
+@media(max-width:640px) {
+ html .study-app.app-shell .c-progress-toolbar .c-progress-tabs {flex:1 0 100%;width:100%;}
+ html .study-app.app-shell .c-progress-toolbar .c-record-export {width:auto;min-width:112px;min-height:44px;white-space:nowrap;margin-left:auto;}
+ html .study-app.app-shell .c-progress-tools button {width:auto;}
+ html .study-app.app-shell .c-progress-tools button > span {display:inline;}
+}

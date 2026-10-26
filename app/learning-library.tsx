@@ -46,9 +46,10 @@ function LearningLibrarySession({subjects,owner,library,onChoose,paper,onSources
  }
  const groups=visibleLibraryGroups(subjects,saved??{},query),searching=Boolean(query.trim());
  return <div className="learning-library">
-  <section className="learning-research-entry"><div><h3>论文与研究</h3><p>为任何学科读取论文，整理机制、证据与生词。论文保留自己的学科归属。</p></div>{paper}</section>
-  <div className="learning-library-toolbar"><label>查找学科、课程或本机材料<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="输入学科、材料名称或文件名"/></label><button type="button" onClick={onSources}>添加学习资料</button></div>
-  {showTrial&&<NoteTrial owner={owner} library={library} onConnect={onSources}/>}
+  <div className="learning-library-toolbar">
+    <label><span className="learning-library-search-label">查找学科、课程或本机材料</span><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索学科、课程或材料"/></label>
+    <div className="learning-library-tools"><div className="learning-library-paper">{paper}</div><button type="button" className="learning-library-add" onClick={onSources}>添加资料</button></div>
+  </div>
   {error&&<div role="alert"><p>{error}</p>{saved===null&&<button type="button" className="study-secondary-action" onClick={()=>{setError('');setRetry(value=>value+1);}}>重新读取分类</button>}</div>}
   {pending?<p role="status">正在保存分类…</p>:notice&&<p role="status">{notice}</p>}
   {disclosureNotice&&<p role="status" className="study-meta">{disclosureNotice}</p>}
@@ -56,10 +57,11 @@ function LearningLibrarySession({subjects,owner,library,onChoose,paper,onSources
   <div className="learning-discipline-list">{groups.map((group,index)=>{const closed=groupIsCollapsed(collapsed,group.id,index,subjects.length,searching);return <section className="learning-discipline" key={group.id}>
    <header><div><h3><button id={`${id}-${group.id}-toggle`} type="button" className="library-group-toggle" aria-expanded={!closed} aria-controls={`${id}-${group.id}-cards`} aria-disabled={searching} title={searching?'搜索期间自动展开匹配组；清空搜索后恢复原折叠状态':closed?'展开此学科组':'收起此学科组'} onClick={()=>{if(!searching)showGroup(group.id,!closed);}}>{group.label}<span aria-hidden="true"> {closed?'＋':'−'}</span></button></h3><p>{group.description}</p></div><span>{searching?`显示 ${group.subjects.length} / ${group.total}`:group.subjects.length} 个学科 / 课程</span></header>
    <div id={`${id}-${group.id}-cards`} hidden={closed}>{group.subjects.map(subject=>{const capability=PLUGIN_CAPABILITIES[subject.pluginType as PluginType];return <article key={subject.id}>
-    <button type="button" className="learning-subject-open" onClick={()=>onChoose(subject.id)}><strong>{subject.name}</strong><span>{statusFor?.(subject.id)??`${subject.items?.length??0} 项内容`} · {capability?.task??'开始学习'}</span><b aria-hidden="true">→</b></button>
-    <details><summary aria-label={`调整 ${subject.name} 分类`}>调整分类</summary><label>所属学科组<select aria-label={`${subject.name} 的所属学科组`} value={group.id} disabled={saved===null||pending} onChange={e=>{if(isDiscipline(e.target.value))void move(subject.id,e.target.value);}}>{Object.entries(DISCIPLINES).map(([key,value])=><option key={key} value={key}>{value.label}</option>)}</select></label></details>
+     <button type="button" data-study-return={`library:${subject.id}`} className="learning-subject-open" onClick={()=>onChoose(subject.id)}><strong>{subject.name}</strong><span>{statusFor?.(subject.id)??`${subject.items?.length??0} 项内容`} · {capability?.task??'开始学习'}</span><b aria-hidden="true">→</b></button>
+    <details><summary aria-label={`调整 ${subject.name} 分类`}><span aria-hidden="true">⋯</span></summary><label>所属学科组<select aria-label={`${subject.name} 的所属学科组`} value={group.id} disabled={saved===null||pending} onChange={e=>{if(isDiscipline(e.target.value))void move(subject.id,e.target.value);}}>{Object.entries(DISCIPLINES).map(([key,value])=><option key={key} value={key}>{value.label}</option>)}</select></label></details>
    </article>;})}</div>
   </section>;})}</div>
+  {showTrial&&<NoteTrial owner={owner} library={library} onConnect={onSources}/>}
   <SavedTrialMaterials owner={owner} library={library} questions={[]} query={query} onMatchCount={setLocalMatches} onOpen={next=>openTrialMaterial(owner,library,next)}/>
   {searching&&!groups.length&&localMatches===0&&<p role="status">没有匹配的学科或本机材料。可以调整关键词，或添加学习资料。</p>}
   {!searching&&!subjects.length&&localMatches===0&&<p role="status">还没有正式题库；可先试学并保存本机材料。</p>}

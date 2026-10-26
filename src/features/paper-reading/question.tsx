@@ -18,34 +18,37 @@ export function PaperReadingQuestion(props:Props){
     const result=attempt?.evaluation.status==='resolved'?attempt.evaluation:null;
     const locked=state.saving||state.busy||Boolean(state.error);
     return <section className="paper-reading-question" aria-label="论文理解练习">
+        <h2 className="paper-reading-question-title">理解与作答</h2>
         {state.error&&<p role="alert">{paperReadingMessage(state.error)}</p>}
         {state.notice&&<p role="status">{paperReadingMessage(state.notice,submitted)}</p>}
         {!state.ready?<p role="status">正在恢复问答…</p>:!task||task.status!=='ready'?<>
             {task?.status==='needs-improvement'&&<p role="status">问题待完善，请先核对当前原文或缩小范围。</p>}
             {!workspace&&<button type="button" disabled={state.saving} onClick={props.onSync}>重试读取问答</button>}
-            <button type="button" disabled={locked||!workspace} onClick={props.onBegin}>{state.busy?'正在准备问题…':task?'重新准备问题':'开始学习'}</button>
+            <button className="paper-reading-primary" type="button" disabled={locked||!workspace} onClick={props.onBegin}>{state.busy?'正在准备问题…':task?'重新准备问题':'开始学习'}</button>
         </>:<>
             <header><span>{attempt?.purpose==='remediation'?'补练':'阅读理解'}</span>{props.renderText(task.question)}</header>
             <form onSubmit={event=>{event.preventDefault();props.onSubmit();}}>
                 <label htmlFor={workspace!.unit.unitId+'-answer'}>你的回答</label>
                 <textarea id={workspace!.unit.unitId+'-answer'} maxLength={20000} required value={state.input} readOnly={submitted||state.busy}
                     onChange={event=>props.onAnswer(event.target.value)}/>
-                {!submitted&&<button type="submit" disabled={locked||!state.input.trim()}>提交核对</button>}
+                {!submitted&&<button className="paper-reading-primary" type="submit" disabled={locked||!state.input.trim()}>提交核对</button>}
             </form>
             <p className="paper-answer-save-state" role="status">{state.error?'保存未完成':state.saving?'正在保存…':state.cloud==='acked'?'已同步账号':state.cloud==='device-only'?'已保存本机':'已保存本机，账号同步未确认'}</p>
             {submitted&&<section className="paper-reading-feedback" aria-label="回答反馈">
+                <h3>核对反馈</h3>
                 <strong>{result?result.outcome==='correct'?'本次回答符合参考要点':result.outcome==='partial'?'部分正确':'本次回答有遗漏或错误':'待核对'}</strong>
                 {result&&<>{result.issues.length>0&&<ul>{result.issues.map((issue,i)=><li key={i}>{props.renderText(issue)}</li>)}</ul>}{props.renderText(result.explanation)}
                     {result.matched.length>0&&<details><summary>匹配的要点</summary>{result.matched.map((point,i)=><div key={i}>{props.renderText(point)}</div>)}</details>}</>}
                 {!result&&<button type="button" disabled={locked} onClick={props.onEvaluate}>{state.busy?'正在核对…':'恢复核对'}</button>}
             </section>}
             {workspace!.referenceSeen?<section className="paper-reading-reference" aria-label="参考要点">
+                <h3>参考要点</h3>
                 {task.reference.map((point,i)=><div key={i}>{props.renderText(point.point)}</div>)}
                 {submitted&&<button type="button" disabled={locked} onClick={props.onRetry}>收起答案再试</button>}
             </section>:<button type="button" disabled={locked} onClick={props.onReveal}>查看关键要点</button>}
             {submitted&&<div className="paper-reading-actions">
                 {!workspace!.referenceSeen&&<button type="button" disabled={locked} onClick={props.onRetry}>现在再练一下</button>}
-                {props.onContinue&&<button type="button" disabled={state.saving||Boolean(state.error)} onClick={props.onContinue}>继续</button>}
+                {props.onContinue&&<button className="paper-reading-primary" type="button" disabled={state.saving||Boolean(state.error)} onClick={props.onContinue}>继续</button>}
             </div>}
             {attempt?.purpose!=='first'&&workspace!.attempts[0]?.submission&&<details><summary>查看首轮回答</summary>{props.renderText(workspace!.attempts[0].submission!.answer)}</details>}
             {state.cloud==='pending'&&<button type="button" disabled={locked} onClick={props.onSync}>恢复账号同步</button>}

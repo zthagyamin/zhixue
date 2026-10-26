@@ -1,13 +1,11 @@
 'use client';
-import {useId,useLayoutEffect,useRef,useSyncExternalStore,type ReactNode} from 'react';
+import {useId,useLayoutEffect,useRef,type ReactNode} from 'react';
+import {useStudyLayoutMedia} from './study-layout-control';
 import './ux-remedies.css';
 const media='(max-width: 800px)';
-const subscribe=(listener:()=>void)=>{const m=window.matchMedia(media);m.addEventListener('change',listener);return()=>m.removeEventListener('change',listener);};
-const snapshot=()=>window.matchMedia(media).matches;
-const serverSnapshot=()=>false;
 /** Hide, never unmount, a panel when changing the mobile view. Both share the caller's draft. */
 export function PaperWorkspacePanels({reading,board,active,onActiveChange}:{reading:ReactNode;board:ReactNode;active:0|1;onActiveChange:(index:0|1)=>void}){
- const narrow=useSyncExternalStore(subscribe,snapshot,serverSnapshot),id=useId();
+ const narrow=useStudyLayoutMedia(media),id=useId();
  const workspace=useRef<HTMLDivElement>(null),lastActive=useRef(active);
  const tabs=useRef<(HTMLButtonElement|null)[]>([]),panels=useRef<(HTMLDivElement|null)[]>([]),scroll=useRef([0,0]),lastNarrow=useRef(narrow),tabHadFocus=useRef(false);
  useLayoutEffect(()=>{

@@ -1,0 +1,30 @@
+/* One workspace palette, shared by page surfaces and body portals. */
+html .study-app:is(.app-shell,.study-modal-host) {
+  --study-paper: #f5f4f0;
+  --study-surface: #fffefa;
+  --study-surface-2: #eeede8;
+  --study-ink: #1b2639;
+  --study-muted: #606776;
+  --study-rule: #dedfdc;
+  --study-accent: #2459cf;
+  --study-accent-text: #2454bb;
+  --study-accent-soft: #eaf0fe;
+  --ink: var(--study-ink);
+  --muted: var(--study-muted);
+  --paper: var(--study-paper);
+  --surface: var(--study-surface);
+  --surface-2: var(--study-surface-2);
+  --line: var(--study-rule);
+  --blue: var(--study-accent-text);
+  --accent-soft: var(--study-accent-soft);
+}
+html.dark .study-app:is(.app-shell,.study-modal-host) {
+  --study-paper: #131923;
+  --study-surface: #1c2431;
+  --study-surface-2: #252e3b;
+  --study-ink: #edf1f8;
+  --study-muted: #b2bece;
+  --study-rule: #3b4657;
+  --study-accent-text: #a9c4ff;
+  --study-accent-soft: #293c60;
+}

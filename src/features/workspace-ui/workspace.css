@@ -1,0 +1,188 @@
+@import "./tokens.css";
+/* Learning workspace: quiet framing, one immediate action, truthful progress. */
+html .study-app.app-shell {
+  min-height: 100dvh;
+  max-width: none;
+  padding: 0;
+  background: var(--study-paper);
+  color: var(--study-ink);
+  font-family: var(--font-geist-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+html .study-app.app-shell > .workspace {
+  margin: 0 0 0 228px;
+  width: calc(100% - 228px);
+  max-width: none;
+  padding: 32px clamp(24px, 4vw, 60px) 64px;
+  min-width: 0;
+}
+html .study-app.app-shell > .workspace > * {max-width: 1160px; margin-inline: auto;}
+html .study-app.app-shell.study-focus > .workspace {margin: 0 auto; width: 100%; padding-top: 24px;}
+.learning-workspace-heading {display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--line);}
+html .study-app.app-shell .learning-workspace-eyebrow {margin: 0 0 12px; font-size: 12px; font-weight: 650; letter-spacing: .14em; color: var(--muted);}
+.learning-workspace-heading h1 {margin: 0; font-size: clamp(30px, 3vw, 42px); font-weight: 650; line-height: 1.25; letter-spacing: -.055em; color: var(--ink);}
+.learning-workspace-heading h1 > span {color: var(--blue);}
+html .study-app.app-shell .learning-workspace-intro {margin: 12px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted);}
+.learning-workspace-date {display: flex; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 12px; text-align: right;}
+html .study-app.app-shell .dashboard-focus-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px;
+  padding: clamp(24px, 3vw, 36px); margin: 0 0 28px;
+  border: 1px solid #243f70; border-radius: 14px;
+  background: #182e52; color: #fff; box-shadow: none;
+}
+html .study-app.app-shell .dashboard-focus-hero h2 {font-family: inherit; font-size: 15px; font-weight: 500; color: #c3d1e8; line-height: 1.6; margin: 0 0 16px;}
+html .study-app.app-shell .dashboard-focus-hero h2 strong {font-size: 15px; font-weight: 700; color: #fff;}
+html .study-app.app-shell .dashboard-focus-hero :is(p, .study-meta) {color: #c3d1e8; font-size: 12px; line-height: 1.8; margin: 4px 0;}
+html .study-app.app-shell .dashboard-focus-hero .study-focus-kicker {font-size: 11px; letter-spacing: .12em; font-weight: 650; margin: 0 0 12px; color: #b9d1ff;}
+html .study-app.app-shell .dashboard-focus-hero .study-focus-description {font-size: clamp(21px, 2.1vw, 29px); font-weight: 600; line-height: 1.55; letter-spacing: -.025em; color: #fff; margin: 0 0 14px; white-space: normal; overflow: visible; text-overflow: clip; max-width: 720px;}
+html .study-app.app-shell .dashboard-focus-actions {align-self: center; display: flex; flex-direction: column; gap: 10px; min-width: 164px;}
+html .study-app.app-shell .dashboard-focus-actions .study-primary-action {min-height: 48px; padding: 13px 20px; color: #172c4e; background: #eef4ff; border: 1px solid #eef4ff; font-size: 14px; font-weight: 700; border-radius: 7px; box-shadow: none;}
+html .study-app.app-shell .dashboard-focus-actions .study-primary-action:hover:not(:disabled) {background: #dbe8ff; border-color: #dbe8ff;}
+html .study-app.app-shell .dashboard-focus-actions .study-secondary-action {background: transparent; color: #d3dff4; border-color: #62799e; min-height: 44px; padding: 9px 16px; border-radius: 7px;}
+html .study-app.app-shell .dashboard-focus-actions button:disabled {opacity: .55; cursor: not-allowed;}
+html .study-app.app-shell :is(button,a,summary,input,select,textarea):focus-visible {outline: 2px solid var(--blue); outline-offset: 4px;}
+html .study-app.app-shell .dashboard-focus-hero button:focus-visible {outline-color: #c5daff;}
+html .study-app.app-shell .study-today-grid {gap: 20px;}
+html .study-app.app-shell .study-today-plan {padding: 0; border: 0; background: transparent;}
+html .study-app.app-shell .study-plan-board {padding: 0; border: 0; background: transparent; box-shadow: none;}
+html .study-app.app-shell .study-plan-details {border: 0; margin-top: 0; padding: 0; background: transparent; box-shadow: none;}
+html .study-app.app-shell .study-plan-details > summary {padding: 0 0 18px; min-height: 44px; color: var(--muted); font-size: 13px;}
+html .study-app.app-shell .c-plan-columns {grid-template-columns: minmax(0, 1fr) 220px; gap: 24px; align-items: start;}
+html .study-app.app-shell .c-plan-summary-col {display: flex; flex-direction: column; grid-column: 2; grid-row: 1; min-height: 0; align-self: start; border: 0; padding: 0; background: none;}
+html .study-app.app-shell .c-plan-summary-col .c-btn-plan-adjust {margin-top: 16px;}
+html .study-app.app-shell .study-plan-execution {grid-column: 1; grid-row: 1; min-width: 0; padding: 0; background: none;}
+html .study-app.app-shell .c-plan-summary-col > h3 {font-size: 13px; color: var(--muted); font-weight: 600; margin: 0 0 18px;}
+html .study-app.app-shell .c-plan-metrics {display: flex; flex-direction: column; gap: 0;}
+html .study-app.app-shell .c-metric-card {border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 18px 0; background: none; box-shadow: none;}
+html .study-app.app-shell .c-metric-line {display: flex; flex-direction: column; align-items: flex-start; gap: 12px;}
+html .study-app.app-shell .c-metric-line h4 {font-size: 13px; color: var(--muted); font-weight: 500;}
+html .study-app.app-shell .c-metric-value b {font-family: inherit; font-size: 30px; font-weight: 600; color: var(--ink); letter-spacing: -.04em;}
+html .study-app.app-shell .c-metric-value small {font-size: 12px; color: var(--muted);}
+html .study-app.app-shell .c-metric-card progress {width: 100%; height: 4px; accent-color: var(--blue); margin-top: 14px;}
+html .study-app.app-shell .c-metric-caption {font-size: 11px; line-height: 1.7; color: var(--muted);}
+html .study-app.app-shell .study-subject-task-groups {display: flex; flex-direction: column; gap: 12px;}
+html .study-app.app-shell .study-subject-task-group {border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: none;}
+html .study-app.app-shell .study-subject-task-heading {padding: 20px 22px 14px;}
+html .study-app.app-shell .study-subject-task-title h4 {font-size: 16px; font-weight: 650; color: var(--ink);}
+html .study-app.app-shell .study-subject-task-icon {border-radius: 9px; background: var(--accent-soft); color: var(--blue); width: 44px; height: 44px;}
+html .study-app.app-shell .study-subject-task-count strong {font-size: 19px; color: var(--ink);}
+html .study-app.app-shell .study-subject-task-footer {border-top: 1px solid var(--line); padding: 8px 18px;}
+html .study-app.app-shell .study-subject-task-footer button {min-height: 44px;}
+html .study-app.app-shell .study-subject-task-start {font-size: 13px; color: var(--blue); font-weight: 650;}
+html .study-app.app-shell .study-library {padding: 20px 0 0; margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent;}
+html .study-app.app-shell .study-library > header {display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px;}
+html .study-app.app-shell .study-library > header h2 {margin: 0; font-size: 20px; font-weight: 650; line-height: 1.4; letter-spacing: -.025em;}
+html .study-app.app-shell .study-library > header span {font-size: 12px; color: var(--muted); line-height: 1.7;}
+html .study-app.app-shell .learning-research-entry {background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px;}
+html .study-app.app-shell .learning-discipline > header {background: transparent; padding-inline: 0; border-inline-start: 0;}
+html .study-app.app-shell .learning-discipline article {box-shadow: none; border-radius: 8px; background: var(--surface);}
+html .study-app.app-shell .workspace-utilities {margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--line);}
+html .study-app.app-shell .workspace-utilities > summary {min-height: 44px; cursor: pointer; color: var(--muted); font-size: 13px;}
+html .study-app.app-shell .workspace-utilities > div {padding-top: 16px;}
+html .study-app.app-shell .study-context {padding: 16px 0; border-radius: 0; border-inline: 0; background: none;}
+html .study-app.app-shell .study-demo-notice-calm {margin-bottom: 20px; background: transparent; border: 0; padding: 0; font-size: 12px; color: var(--muted);}
+.workspace-preview-label {display: inline-block; border: 1px solid var(--line); padding: 5px 9px; font-size: 11px; border-radius: 5px; color: var(--muted);}
+
+/* The real account page shares the same action-first reading order. */
+html .study-app.app-shell .c-unplanned-arrangement {grid-column: 1; grid-row: 1; width: 100%; min-width: 0;}
+html .study-app.app-shell .c-unplanned-arrangement > header {margin-bottom: 10px;}
+html .study-app.app-shell .c-unplanned-arrangement > header :is(span,time) {margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6;}
+html .study-app.app-shell .c-unplanned-start-card {padding: 24px; border-radius: 10px; box-shadow: none;}
+html .study-app.app-shell .c-unplanned-intro {align-items: flex-start; gap: 14px;}
+html .study-app.app-shell .c-unplanned-icon {width: 32px; height: 40px; margin-top: 4px;}
+html .study-app.app-shell .c-unplanned-icon svg {width: 30px; height: 36px;}
+html .study-app.app-shell .c-unplanned-intro h2 {margin: 7px 0 8px; font-size: 24px; line-height: 1.4; letter-spacing: -.025em;}
+html .study-app.app-shell .c-unplanned-intro p {max-width: 540px; font-size: 13px; line-height: 1.75;}
+html .study-app.app-shell .c-unplanned-actions {margin-top: 20px; gap: 10px;}
+html .study-app.app-shell .c-unplanned-actions > .study-primary-action {background: var(--study-accent); color: #fff; border: 1px solid var(--study-accent); box-shadow: none;}
+html .study-app.app-shell .c-unplanned-actions > .study-primary-action:hover:not(:disabled) {background: #1949b5; border-color: #1949b5;}
+html .study-app.app-shell .c-unplanned-summary {grid-column: 2; grid-row: 1; width: 100%; min-width: 0; align-self: start;}
+html .study-app.app-shell .c-unplanned-summary > h3 {font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 8px;}
+html .study-app.app-shell .c-unplanned-summary .c-metric-card {display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; column-gap: 10px; min-height: 0; padding: 12px 0;}
+html .study-app.app-shell .c-unplanned-metric-title h4 {font-size: 13px; font-weight: 500;}
+html .study-app.app-shell .c-unplanned-metric-title > span {padding: 0; background: none; font-size: 10px;}
+html .study-app.app-shell .c-unplanned-metric-value {grid-column: 2; grid-row: 1; font-size: 18px; line-height: 1.4; margin: 0;}
+html .study-app.app-shell .c-unplanned-summary .c-metric-caption {grid-column: 1 / -1; margin-top: 6px;}
+html .study-app.app-shell .c-unplanned-summary-note {margin-top: 10px; font-size: 11px; line-height: 1.65;}
+html .study-app.app-shell .study-subject-task-items .account-plan-execution-row {min-height: 0; margin: 0; padding: 14px 0; border: 0; border-radius: 0; background: none; box-shadow: none;}
+html .study-app.app-shell .study-subject-task-items .account-plan-execution-row + .account-plan-execution-row {border-top: 1px solid var(--line);}
+html .study-app.app-shell .account-plan-execution-row[data-current] > button,
+html .study-app.app-shell .c-plan-empty > button {background: var(--study-accent); color: #fff; box-shadow: none;}
+
+/* Subjects come before optional tools; search and paper entry are one toolbar. */
+html .study-app.app-shell .learning-library-toolbar {display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 12px; padding: 0; margin: 0 0 20px; border: 0; border-radius: 0; background: none; box-shadow: none;}
+html .study-app.app-shell .learning-library-toolbar > label {position: relative; flex: 1; min-width: 0; max-width: none; margin: 0;}
+.learning-library-search-label {position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
+html .study-app.app-shell .learning-library-toolbar input {width: 100%; min-height: 44px; padding: 10px 13px; background: var(--surface); border-radius: 7px; font-size: 13px;}
+.learning-library-tools {display: flex; align-items: center; gap: 8px; flex: none;}
+.learning-library-paper {display: flex; align-items: center;}
+html .study-app.app-shell .learning-library-tools :is(a,button) {display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 12px; font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 7px; box-shadow: none;}
+html .study-app.app-shell .learning-library-tools :is(a,button):hover {background: var(--surface-2);}
+html .study-app.app-shell .learning-discipline-list {gap: 24px;}
+html .study-app.app-shell .learning-discipline > div {column-gap: 24px; row-gap: 0;}
+html .study-app.app-shell .learning-discipline article {position: relative; display: grid; grid-template-columns: minmax(0,1fr) 36px; align-items: start; overflow: visible; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent;}
+html .study-app.app-shell .learning-subject-open {min-height: 74px; padding: 14px 8px 14px 0; border-radius: 6px;}
+html .study-app.app-shell .learning-subject-open strong {font-size: 15px; line-height: 1.5;}
+html .study-app.app-shell .learning-discipline article > details {padding: 0; margin: 10px 0 0;}
+html .study-app.app-shell .learning-discipline article > details > summary {display: grid; place-items: center; width: 36px; height: 44px; color: var(--muted); list-style: none; font-size: 20px;}
+html .study-app.app-shell .learning-discipline article > details > summary::-webkit-details-marker {display: none;}
+html .study-app.app-shell .learning-discipline article > details[open] {position: absolute; z-index: 3; top: 0; right: 0; width: min(280px,100%); margin: 0; padding: 8px 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 6px 18px #12223b14;}
+html .study-app.app-shell .learning-discipline article > details[open] > summary {margin-left: auto;}
+html .study-app.app-shell .learning-discipline article > details label {display: grid; gap: 8px;}
+html .study-app.app-shell .learning-discipline article > details select {width: 100%; max-width: 100%;}
+html .study-app.app-shell .learning-library > .note-trial {margin-top: 8px;}
+html .study-app.app-shell .learning-library > .note-trial:not(.note-trial-featured) > summary {min-height: 44px; color: var(--muted); font-size: 13px; font-weight: 500;}
+html .study-app.app-shell .learning-library > .saved-trial-materials {margin: 0; padding: 16px 0; background: none;}
+html .study-app.app-shell .learning-library > .saved-trial-materials > h3 {margin: 0 0 8px; font-size: 13px; font-weight: 600;}
+html .study-app.app-shell .learning-library > .saved-trial-materials > p {margin: 6px 0; font-size: 12px; line-height: 1.7; color: var(--muted);}
+@media (max-width: 1200px) {
+  html .study-app.app-shell .c-plan-columns {grid-template-columns: minmax(0, 1fr) 180px; gap: 20px;}
+  html .study-app.app-shell .dashboard-focus-hero {grid-template-columns: minmax(0, 1fr);}
+  html .study-app.app-shell .dashboard-focus-actions {flex-direction: row; justify-self: start; flex-wrap: wrap;}
+}
+@media (max-width: 999px) {
+  html .study-app.app-shell > .workspace {margin: 0; width: 100%; padding: 28px 24px calc(100px + env(safe-area-inset-bottom));}
+  html .study-app.app-shell.study-focus > .workspace {padding: 18px 16px 28px;}
+}
+@media (max-width: 640px) {
+  html .study-app.app-shell > .workspace {padding: 24px 18px calc(100px + env(safe-area-inset-bottom));}
+  .learning-workspace-heading {align-items: flex-start; padding-bottom: 22px; margin-bottom: 22px; gap: 12px;}
+  .learning-workspace-heading h1 {font-size: 34px;}
+  html .study-app.app-shell .learning-workspace-intro {font-size: 12px; max-width: 220px;}
+  .learning-workspace-date {font-size: 10px; max-width: 96px; justify-content: flex-end; padding-top: 2px;}
+  html .study-app.app-shell .dashboard-focus-hero {padding: 24px 22px; gap: 18px; border-radius: 12px; margin-bottom: 24px;}
+  html .study-app.app-shell .dashboard-focus-actions {display: grid; width: 100%; grid-template-columns: 1fr; justify-self: stretch; gap: 9px;}
+  html .study-app.app-shell .study-ai-pill {bottom: calc(84px + env(safe-area-inset-bottom));}
+  html .study-app.app-shell .c-plan-columns {display: flex; flex-direction: column; align-items: stretch; gap: 18px;}
+  html .study-app.app-shell .c-plan-summary-col {order: 2; width: 100%;}
+  html .study-app.app-shell .c-plan-summary-col > h3 {margin-bottom: 0;}
+  html .study-app.app-shell .c-plan-metrics {flex-direction: row; gap: 24px;}
+  html .study-app.app-shell .c-metric-card {flex: 1; min-width: 0;}
+  html .study-app.app-shell .study-plan-execution {width: 100%;}
+  html .study-app.app-shell .study-library > header {display: block;}
+  html .study-app.app-shell .study-library > header span {display: block; margin-top: 8px;}
+  html .study-app.app-shell .study-subject-task-heading {padding: 17px 16px 14px; gap: 12px;}
+  html .study-app.app-shell .study-subject-task-title h4 {font-size: 14px;}
+  html .study-app.app-shell .c-unplanned-start-card {padding: 20px;}
+  html .study-app.app-shell .c-unplanned-intro h2 {font-size: 21px;}
+  html .study-app.app-shell .c-unplanned-summary .c-plan-metrics {display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px;}
+  html .study-app.app-shell .c-unplanned-summary > h3 {margin-bottom: 0;}
+  html .study-app.app-shell .c-unplanned-metric-value {font-size: 18px;}
+  html .study-app.app-shell .c-unplanned-summary-note {margin-top: 7px;}
+  html .study-app.app-shell .learning-discipline > div {grid-template-columns: minmax(0,1fr);}
+}
+@media (max-width: 480px) {
+  html .study-app.app-shell .learning-library-toolbar {flex-wrap: wrap; gap: 10px;}
+  html .study-app.app-shell .learning-library-toolbar > label {flex-basis: 100%;}
+  .learning-library-tools {justify-content: flex-end; width: 100%;}
+  html .study-app.app-shell .c-unplanned-actions :is(button,a) {flex: 1; padding-inline: 10px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  html .study-app.app-shell *, html .study-app.app-shell *::before {scroll-behavior: auto; transition-duration: 0s; animation-duration: 0s;}
+}
+
+@media(max-width:999px){
+ html .study-app .study-workspace-nav.workspace-navigation .c-workspace-settings{grid-column:auto;grid-row:auto;}
+ html .study-app .study-workspace-nav.workspace-navigation .c-workspace-settings > span{display:inline;}
+ .study-ai-workspace:has(.study-app.app-shell:not(.study-focus)) .study-ai-pill{bottom:calc(84px + env(safe-area-inset-bottom));}
+}

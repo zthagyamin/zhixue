@@ -2,6 +2,11 @@ import type {StudyEventV3} from './study-event-v3';
 import type {AssistanceHistoryEntry} from './assistance-history';
 import type {StudyRecordEnvelope} from './account-study-record';
 
+export function progressTaskRangeLabel(task:{category:string;title:string}):string{
+  const category=task.category==='new-word'?'新词学习':task.category==='review'?'复习':'学习';
+  return `${category} · ${task.title}`;
+}
+
 export function progressScopeSummary(keys:readonly string[],stages:Record<string,number>,ready:boolean,threeStage:boolean){
   const unique=[...new Set(keys)],stage=(key:string)=>Math.max(stages[key]??0,stages[key.startsWith('word:')?key:`word:${key}`]??0);
   const evidence=ready?unique.filter(key=>stage(key)>0).length:null;

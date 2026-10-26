@@ -135,7 +135,7 @@ try {
   await check(first.locator('span'),'subject metadata',theme);
   await check(page.locator('.learning-discipline header p').first(),'discipline description',theme);
   await surface(search,'search input',theme);await check(search,'search placeholder',theme,'::placeholder');
-  await surface(page.locator('.paper-launch'),'paper launcher',theme);await surface(page.getByRole('button',{name:'添加学习资料',exact:true}),'add sources',theme);
+  await surface(page.locator('.paper-launch'),'paper launcher',theme);await surface(page.getByRole('button',{name:'添加资料',exact:true}),'add sources',theme);
   await focus(search);await search.fill('Python');assert.equal(await page.locator('.learning-discipline article').count(),1);await search.fill('');
   await first.hover();await check(first.locator('strong'),'hover title',theme);await check(first.locator('span'),'hover metadata',theme);
   const summary=page.locator('.learning-discipline summary').first();await summary.click();

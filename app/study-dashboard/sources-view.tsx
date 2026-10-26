@@ -152,7 +152,8 @@ export function SourcesView({ model }: Props) {
           {/* 顶部标题行 */}
           <header className="settings-page-heading">
             <div>
-              <h2>系统设置</h2>
+              <p className="workspace-section-eyebrow">你的学习空间</p>
+              <h1>资料与设置<span aria-hidden="true">。</span></h1>
               <p>
                 个性化外观、资料连接与系统维护
                 {isDemoMode ? " · 体验模式" : ""}

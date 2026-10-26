@@ -1,4 +1,40 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- Match the native navigation used by the public homepage; Vinext Link fails in the deployed runtime. */
 import announcements from '../release-announcements.json';
 import '../release-support.css';
-export default function UpdatesPage(){return <main className="support-page"><nav><a href="/">首页</a><a href="/study">学习工作台</a><a href="/help">帮助</a></nav><h1>知学更新公告</h1><p>每次更新的变化都留在这里，方便随时回看。公告不会在公开页面自动弹出。首次进入学习页不自动弹出公告；已使用过的用户遇到新版本时，只会在空闲且没有其他弹窗时提示。你也可以在“设置 → 维护与公告 → 产品更新日志”主动查看本次公告。</p><section className="release-history-entry"><p><time dateTime="2026-09-14">2026-09-14</time> · 体验改进</p><h2>先试学，再找回材料继续练</h2><ul><li>自己的笔记可直接试学三题，无需安装；新手教学提供直接入口。</li><li>完成后按学科保存到本机待学材料，学科列表支持搜索和重新练习；仅保存在当前浏览器。</li><li>试学可标记困难题并只练标记题，再练标记不计入正式成绩。</li><li>手机论文阅读优先展示正文，更换和上传材料按需展开。</li><li>公告和帮助页恢复首页跳转，帮助补充本机材料找回说明。</li></ul></section>{announcements.map(entry=><article className="release-history-entry" id={`v${entry.version}`} key={entry.version}><p>v{entry.version} · <time dateTime={entry.date}>{entry.date}</time></p><h2>{entry.title}</h2><ul>{entry.changes.map(change=><li key={change}>{change}</li>)}</ul></article>)}<h2>更新前的小检查</h2><p>请先确认当前作答已保存，再手动刷新。有待同步记录时保留浏览器数据；重要学习数据可从设置导出恢复包。</p></main>;}
+
+const experienceUpdate = {
+  version: '', date: '2026-09-14', title: '先试学，再找回材料继续练',
+  changes: [
+    '自己的笔记可直接试学三题，无需安装；新手教学提供直接入口。',
+    '完成后按学科保存到本机待学材料，学科列表支持搜索和重新练习；仅保存在当前浏览器。',
+    '试学可标记困难题并只练标记题，再练标记不计入正式成绩。',
+    '手机论文阅读优先展示正文，更换和上传材料按需展开。',
+    '公告和帮助页恢复首页跳转，帮助补充本机材料找回说明。',
+  ],
+};
+const webUpdate = {
+  version: '', date: '2026-10-25', title: '续学、进度与布局修复',
+  changes: [
+    '待核对队列中，未提交的草稿保留题干和续学入口，提交后可查看完整参考。',
+    '进度卡显示具体任务；同一学科有多个任务时，可切换查看各自的完成情况。',
+    '论文保留最后选读的材料、段落位置和连续阅读范围；续读位置保存在当前浏览器。',
+    '学习清单遵循手动选择的页面布局；键盘进入和退出练习时，焦点接续到对应内容和入口。',
+    '复习入口改为“准备复习候选”，更新历史按日期从新到旧排列。已有学习记录保留。',
+  ],
+};
+const history = [...announcements, experienceUpdate, webUpdate].sort((a, b) => b.date.localeCompare(a.date));
+
+export default function UpdatesPage() {
+  return <main className="support-page">
+    <nav><a href="/">首页</a><a href="/study">学习工作台</a><a href="/help">帮助</a></nav>
+    <h1>知学更新公告</h1>
+    <p>每次更新的变化都留在这里，按时间从新到旧排列，方便随时回看。公告不会在公开页面自动弹出。首次进入学习页不自动弹出公告；已使用过的用户遇到新版本时，只会在空闲且没有其他弹窗时提示。你也可以在“设置 → 维护与公告 → 产品更新日志”主动查看本次公告。</p>
+    {history.map(entry => <article className="release-history-entry" id={entry.version ? `v${entry.version}` : undefined} key={entry.version || entry.title}>
+      <p>{entry.version ? `v${entry.version} · ` : '体验改进 · '}<time dateTime={entry.date}>{entry.date}</time></p>
+      <h2>{entry.title}</h2>
+      <ul>{entry.changes.map(change => <li key={change}>{change}</li>)}</ul>
+    </article>)}
+    <h2>更新前的小检查</h2>
+    <p>请先确认当前作答已保存，再手动刷新。有待同步记录时保留浏览器数据；重要学习数据可从设置导出恢复包。</p>
+  </main>;
+}

@@ -1,5 +1,6 @@
 "use client";
 import { type ReactNode } from "react";
+import {LearningWorkspaceHeader,useStudyNavigationFocus} from "../../src/features/workspace-ui";
 import {StudyWelcome} from "../onboarding";
 import {NoteTrial} from '../note-trial';
 import { AccountReadNoticeSlot,StudyWorkspaceGate } from "../account-study-status";
@@ -28,6 +29,7 @@ const SubjectView=createLazyComponent<Parameters<typeof import('./subject-view')
 const FocusedPaperEntry=createLazyComponent<Parameters<typeof import('../paper-reading/entry').PaperReadingEntry>[0]>(async()=>({default:(await import('../paper-reading/entry')).PaperReadingEntry}),'论文专注阅读');
 const PaperWorkshopTools=createLazyComponent<Parameters<typeof import('../plugins/plugin-paper').PaperWorkshop>[0]>(async()=>({default:(await import('../plugins/plugin-paper')).PaperWorkshop}),'论文整理工具');
 export function DashboardView({model,paperReading=false}:{model:DashboardController;paperReading?:boolean}){
+ useStudyNavigationFocus(JSON.stringify([model.workspaceId,model.accountLibraryId??model.nativeScope]),model.studyFocus?JSON.stringify([model.tab,model.activeTaskScope?.taskId??null,model.freeStudySubject]):null,model.tab,model.workspacePhase==='ready');
  const {
   retryWorkspace,
   accountAILibrary,
@@ -145,16 +147,14 @@ export function DashboardView({model,paperReading=false}:{model:DashboardControl
     />
 
     <section className="workspace">
+      {tab==='today'&&!studyFocus&&<LearningWorkspaceHeader date={todayLabel}/>}
       {tab !== 'today' && tab !== 'progress' && tab !== 'sources' && <header hidden={studyFocus} className="study-global-header flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 max-w-6xl mx-auto mb-8 md:mb-12 border-b border-zinc-200 dark:border-zinc-800 pb-4 md:pb-6">
         <div>
           <p className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase mb-2">{todayLabel}</p>
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-tight text-zinc-900 dark:text-zinc-50 m-0 leading-none">{heading}</h1>
         </div>
       </header>}
-        {tab==='today'&&!studyFocus&&isDemoMode&&<NoteTrial key={JSON.stringify([model.workspaceId,model.paperLibraryScope])} owner={model.workspaceId} library={model.paperLibraryScope} featured onConnect={()=>openSources('sources')}/>}
-        {tab==='today'&&!studyFocus&&!isDemoMode&&<StudyWelcome scope={model.workspaceId} isDemo={isDemoMode}/>}
         {!studyFocus&&<LearningDraftNotice store={learningDrafts}/>}
-        {!studyFocus&&['today','progress'].includes(tab)&&<div className="long-term-tools"><LongTermPlanPanel onOpenRequestHandled={version=>setLongTermOpenRequest(current=>current?.version===version?null:current)} openRequest={longTermOpenRequest?.scope===longTermScopeKey?longTermOpenRequest.version:0} key={longTermScopeKey??'unavailable'} scopeKey={longTermScopeKey} today={currentDay} model={longTerm} loadSource={loadLongTermSource} currentSourceStamp={()=>longTermSourceStampRef.current} onAISettings={()=>setAiEntryOpen(true)} canApplyDemo={canApplyDemoPacing} onApplyDemo={ids=>{if(!canApplyDemoPacing)return;setDemoPacingIds(ids);setItemIndices({});setSubjectRounds({});setTab('today');}} onConnectSources={()=>{setTab('sources');setSourceView('sources');requestAnimationFrame(()=>document.getElementById('note-source-entry')?.scrollIntoView({block:'start',behavior:'smooth'}));}} onEditingChange={setLongTermEditing} onSaved={()=>{void taskLearning.session?.refresh(false).catch(()=>{});void accountDailyPlan.refresh().catch(()=>{});}}/></div>}
         {tab==='today'&&sessionUser&&!accountOptedOut&&<AccountReadNoticeSlot at="above" hasSource={Boolean(accountLoaded)} state={visibleAccountStatus} onRefresh={()=>void readAccountAgain()} onResolveLibrary={()=>openSources('connections')}/>}
         {tab==='today'&&nativeProgressChecking&&<p className="study-source-update-note" role="status">{nativeHistoryError||'部分本机历史待核对；保留原记录，暂不据此判断今日已完成。'}<button type="button" onClick={noteEventsChanged}>重新核对历史</button></p>}
         {isDemoMode && !studyFocus && tab!=='sources' && !(tab==='today'&&model.practiceSummary&&model.practiceItems===null) && <details className="study-demo-notice study-demo-notice-calm max-w-6xl mx-auto mb-6">
@@ -163,6 +163,14 @@ export function DashboardView({model,paperReading=false}:{model:DashboardControl
         </details>}
         {showMigrationBanner && <section className="max-w-6xl mx-auto mb-8 border border-amber-200 dark:border-amber-900/50 rounded-2xl bg-amber-50 dark:bg-amber-950/20 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"><div><p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500 mb-1">CLOUD PROGRESS</p><strong className="block text-amber-900 dark:text-amber-200 text-lg mb-1">这台设备已有学习进度</strong><span className="text-amber-700/80 dark:text-amber-400/70 text-sm">只有点击确认后，词汇阶段、Python 完成项和到期复习状态才会写入你的云端空间；原始笔记和 API Key 不会上传。</span></div><div className="flex gap-3"><button className="whitespace-nowrap px-4 py-2 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold text-sm rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors" onClick={keepProgressLocal}>暂时只留本机</button><button className="whitespace-nowrap px-4 py-2 bg-amber-600 text-white font-bold text-sm rounded-lg hover:bg-amber-700 transition-colors" onClick={migrateLocalProgress}>确认迁移进度</button></div></section>}
         <TodayView model={model}/>
+        {!studyFocus&&tab==='today'&&<details className="workspace-utilities"><summary>学习安排与入门工具</summary><div>
+        {tab==='today'&&!studyFocus&&isDemoMode&&<NoteTrial key={JSON.stringify([model.workspaceId,model.paperLibraryScope])} owner={model.workspaceId} library={model.paperLibraryScope} featured onConnect={()=>openSources('sources')}/>}
+        {tab==='today'&&!studyFocus&&!isDemoMode&&<StudyWelcome scope={model.workspaceId} isDemo={isDemoMode}/>}
+        {!studyFocus&&['today','progress'].includes(tab)&&<div className="long-term-tools"><LongTermPlanPanel onOpenRequestHandled={version=>setLongTermOpenRequest(current=>current?.version===version?null:current)} openRequest={longTermOpenRequest?.scope===longTermScopeKey?longTermOpenRequest.version:0} key={longTermScopeKey??'unavailable'} scopeKey={longTermScopeKey} today={currentDay} model={longTerm} loadSource={loadLongTermSource} currentSourceStamp={()=>longTermSourceStampRef.current} onAISettings={()=>setAiEntryOpen(true)} canApplyDemo={canApplyDemoPacing} onApplyDemo={ids=>{if(!canApplyDemoPacing)return;setDemoPacingIds(ids);setItemIndices({});setSubjectRounds({});setTab('today');}} onConnectSources={()=>{setTab('sources');setSourceView('sources');requestAnimationFrame(()=>document.getElementById('note-source-entry')?.scrollIntoView({block:'start',behavior:'smooth'}));}} onEditingChange={setLongTermEditing} onSaved={()=>{void taskLearning.session?.refresh(false).catch(()=>{});void accountDailyPlan.refresh().catch(()=>{});}}/></div>}
+        </div></details>}
+        {!studyFocus&&tab==='progress'&&<>
+        {!studyFocus&&['today','progress'].includes(tab)&&<div className="long-term-tools"><LongTermPlanPanel onOpenRequestHandled={version=>setLongTermOpenRequest(current=>current?.version===version?null:current)} openRequest={longTermOpenRequest?.scope===longTermScopeKey?longTermOpenRequest.version:0} key={longTermScopeKey??'unavailable'} scopeKey={longTermScopeKey} today={currentDay} model={longTerm} loadSource={loadLongTermSource} currentSourceStamp={()=>longTermSourceStampRef.current} onAISettings={()=>setAiEntryOpen(true)} canApplyDemo={canApplyDemoPacing} onApplyDemo={ids=>{if(!canApplyDemoPacing)return;setDemoPacingIds(ids);setItemIndices({});setSubjectRounds({});setTab('today');}} onConnectSources={()=>{setTab('sources');setSourceView('sources');requestAnimationFrame(()=>document.getElementById('note-source-entry')?.scrollIntoView({block:'start',behavior:'smooth'}));}} onEditingChange={setLongTermEditing} onSaved={()=>{void taskLearning.session?.refresh(false).catch(()=>{});void accountDailyPlan.refresh().catch(()=>{});}}/></div>}
+        </>}
 
       {moduleNavigationSubjects.some(subject=>subject.id===tab)&&<SubjectView model={model}/>}
         {tab==='progress'&&(accountProgressChecking||nativeProgressChecking)&&<StudyRecoveryState onExit={()=>navigateToStudyTab('today')}><h2>进度还在核对</h2><p>学习记录仍然保留，未核对的历史不会当作零进度。</p><button type="button" className="study-rating" onClick={()=>openSources('sync')}>查看同步状态</button></StudyRecoveryState>}

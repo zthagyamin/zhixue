@@ -42,7 +42,8 @@ try{
     await page.waitForFunction(theme=>document.documentElement.classList.contains('dark')===(theme==='dark'),theme);
     await page.getByRole('button',{name:'开始今日自测',exact:true}).waitFor();
     if(width===390){
-      await page.getByText('查看今日任务与进度',{exact:true}).click();
+      const planDisclosure=page.getByText('查看今日任务与进度',{exact:true});
+      if(!await planDisclosure.evaluate(element=>Boolean(element.closest('details')?.open)))await planDisclosure.click();
       // Initial account reconciliation can briefly enable and disable this action.
       // Wait for its requests to settle before the single trusted append click.
       await page.waitForLoadState('networkidle');

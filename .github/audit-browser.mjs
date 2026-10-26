@@ -80,7 +80,7 @@ try{
    await search.fill('missing course');await page.getByText('没有匹配的学科或本机材料。可以调整关键词，或添加学习资料。',{exact:true}).waitFor();
    await search.fill(' ');assert.equal(await page.locator('.learning-discipline article').count(),3);
    await page.getByRole('button',{name:'切换空资料',exact:true}).click();await page.getByText('还没有正式题库；可先试学并保存本机材料。',{exact:true}).waitFor();
-   await page.getByRole('button',{name:'添加学习资料',exact:true}).click();assert.equal(await page.locator('main').getAttribute('data-chosen'),'sources');
+   await page.getByRole('button',{name:'添加资料',exact:true}).click();assert.equal(await page.locator('main').getAttribute('data-chosen'),'sources');
    assert.deepEqual(errors,[]);results.push({...common,case:'trimmed search, truthful counts, no results and empty library recovery',passed:true});await context.close();
   }
   {

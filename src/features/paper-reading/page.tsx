@@ -30,11 +30,11 @@ export function PaperReadingPage(props: PaperReadingPageProps) {
     const next = unit.position + unit.paragraphs.length;
     return <section className="paper-focused-reading" aria-label="论文专注阅读">
         <header className="paper-reading-heading">
-            <div><a href={props.returnHref??'/study'} onClick={event=>{if(props.onLeave?.()===false)event.preventDefault();}}>返回学习</a><h1>{props.title}</h1>{props.identity && <p>{props.identity}</p>}</div>
-            {(props.saving||props.error)&&<p role="status">{props.saving ? '正在保存…' : '保存未完成'}</p>}
+            <div className="paper-reading-title"><a className="paper-reading-back" href={props.returnHref??'/study'} onClick={event=>{if(props.onLeave?.()===false)event.preventDefault();}}>返回学习</a><p className="paper-reading-eyebrow">论文精读</p><h1>{props.title}</h1>{props.identity && <p className="paper-reading-identity">{props.identity}</p>}</div>
+            {(props.saving||props.error)&&<p className="paper-reading-save-status" role="status">{props.saving ? '正在保存…' : '保存未完成'}</p>}
         </header>
         {props.error && <p role="alert">{props.error}</p>}
-        {props.sources && <details><summary>更换论文或上传原文</summary>{props.sources}</details>}
+        {props.sources && <details className="paper-reading-sources"><summary>更换论文或上传原文</summary>{props.sources}</details>}
         {props.clock}
         <nav className="paper-reading-unit-controls" aria-label="阅读范围">
             <div><strong>{unit.sectionTitle}</strong><span>第 {unit.position + 1} 段{unit.paragraphs.length > 1 ? `起，共 ${unit.paragraphs.length} 段` : ''}</span>
@@ -47,15 +47,16 @@ export function PaperReadingPage(props: PaperReadingPageProps) {
                 : <span className="paper-source-limitation">原页暂不可用；原文与草稿保留。</span>}
         </nav>
         <div className="paper-reading-body">
+            <p className="paper-reading-content-label">当前原文</p>
             <article aria-label="当前单元原文">{unit.paragraphs.map(paragraph =>
                 <section key={paragraph.id} data-paragraph-id={paragraph.id}>{props.renderText(paragraph.rawEn)}</section>)}</article>
-            {props.original}
+            {props.original && <div className="paper-reading-original">{props.original}</div>}
         </div>
         {props.task}
         <nav className="paper-reading-navigation" aria-label="阅读单元导航">
             <button type="button" disabled={locked || unit.position === 0} onClick={() => props.onPosition(unit.position - 1)}>上一段</button>
             <button type="button" disabled={locked || next >= unit.totalParagraphs} onClick={() => props.onPosition(next)}>下一段</button>
         </nav>
-        {props.tools && <details><summary>更多工具</summary><div inert={props.toolsBlocked||undefined}>{props.tools}</div></details>}
+        {props.tools && <details className="paper-reading-tools"><summary>更多工具</summary><div inert={props.toolsBlocked||undefined}>{props.tools}</div></details>}
     </section>;
 }

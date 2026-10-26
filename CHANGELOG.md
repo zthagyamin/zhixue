@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — web interface sync
+
+- Refresh homepage-to-workspace navigation, subject selection, task-scoped progress, manual layouts, and keyboard focus when entering or returning from a task.
+- Restore recent paper selection and reading range in the current browser, while preserving answers, source versions, and save/retry boundaries.
+- Clarify that review candidates require source review and approval before export; import and plan confirmation remain separate, without creating formal learning results.
+
+This source update does not change the published version, download packages, website deployment, or existing learning records.
+
 ## [1.42.2] — selective public maintenance
 
 - Improve authorization, persistence, retry and local-service recovery while retaining original attempts and pending evaluation.

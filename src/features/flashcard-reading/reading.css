@@ -23,3 +23,306 @@
   width: 100%;
   text-align: left;
 }
+
+/* Presentation only: the plugin remains the authority for reveal and grading. */
+html .study-app.app-shell .study-flashcard {
+  width: 100%;
+  max-width: 52rem;
+  min-width: 0;
+  margin-inline: auto;
+  align-items: stretch;
+}
+
+html .study-app.app-shell .study-flashcard > .study-meta[aria-label="本卡来源"] {
+  margin: 0 0 18px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--study-rule);
+  color: var(--study-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+html .study-app.app-shell .study-flashcard .study-flashcard-body {
+  min-width: 0;
+  min-height: 320px;
+  margin: 0;
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid var(--study-rule);
+  border-radius: 10px;
+  background: var(--study-surface);
+  box-shadow: none;
+}
+
+html .study-app.app-shell .study-flashcard .study-flashcard-front {
+  max-width: 100%;
+  margin: 12px 0 24px;
+  color: var(--study-ink);
+  font-size: clamp(28px, 3.2vw, 40px) !important;
+  font-weight: 600 !important;
+  line-height: 1.55;
+  letter-spacing: -.025em !important;
+  overflow-wrap: anywhere;
+}
+
+html .study-app.app-shell .study-flashcard--nonword .study-flashcard-front {
+  width: 100%;
+  font-size: clamp(21px, 2.1vw, 27px) !important;
+  line-height: 1.75;
+  letter-spacing: -.015em !important;
+  text-align: left;
+}
+
+html .study-app.app-shell .study-flashcard .study-flashcard-front > small {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--study-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.8;
+  letter-spacing: 0;
+}
+
+html .study-app.app-shell .study-flashcard-body .whitespace-pre-line {
+  width: 100%;
+  min-width: 0;
+  color: var(--study-ink);
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+html .study-app.app-shell .study-flashcard-body .w-16.h-px {
+  width: 100%;
+  margin-bottom: 24px;
+  background: var(--study-rule);
+}
+
+html .study-app.app-shell .study-flashcard-body .whitespace-pre-line :is(p, li) {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+html .study-app.app-shell .study-flashcard-body :is(.nonword-text, .flashcard-answer) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.85;
+}
+
+html .study-app.app-shell .study-flashcard-body .whitespace-pre-line .nonword-text {
+  font-weight: 400;
+}
+
+html .study-app.app-shell .study-flashcard-body :is(pre, .katex-display) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+}
+
+html .study-app.app-shell .study-flashcard-body pre {
+  margin-block: 18px;
+  padding: 18px;
+  border: 1px solid var(--study-rule);
+  border-radius: 6px;
+  background: var(--study-surface-2);
+  color: var(--study-ink);
+  font-family: var(--font-geist-mono), Consolas, monospace;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.75;
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+  tab-size: 4;
+}
+
+html .study-app.app-shell .study-flashcard-body pre code {
+  font-size: inherit;
+  white-space: inherit;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+html .study-app.app-shell .study-flashcard-body .katex-display {
+  padding-block: 10px;
+  text-align: left;
+}
+
+html .study-app.app-shell .study-flashcard-body .katex-display > .katex {
+  min-width: max-content;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-answer-label {
+  margin: 0 0 12px;
+  color: var(--study-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-answer-details {
+  margin-top: 24px;
+  border-top: 1px solid var(--study-rule);
+  font-size: 15px;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-answer-details > summary {
+  min-height: 44px;
+  padding: 12px 0;
+  color: var(--study-accent-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-answer-full {
+  margin-top: 4px;
+  padding-bottom: 8px;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-image {
+  max-width: 100%;
+  margin-block: 12px;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-image canvas {
+  margin-inline: auto;
+  border: 1px solid var(--study-rule);
+  border-radius: 6px;
+}
+
+html .study-app.app-shell .study-flashcard .flashcard-image button {
+  min-height: 44px;
+  margin: 8px 8px 0 0;
+  padding: 10px 14px;
+  border: 1px solid var(--study-rule);
+  border-radius: 6px;
+  color: var(--study-accent-text);
+  background: var(--study-surface);
+  font-size: 13px;
+}
+
+html .study-app.app-shell .study-flashcard .study-swipe-handle[data-quiet-handle] {
+  min-height: 44px;
+  margin-top: 28px;
+  padding: 10px 6px 0;
+  gap: 9px;
+  color: var(--study-muted);
+}
+
+html .study-app.app-shell .study-flashcard .study-swipe-handle[data-quiet-handle] > span {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+html .study-app.app-shell .study-flashcard > div:has(> .study-rating) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  margin-top: 22px;
+  gap: 10px;
+}
+
+html .study-app.app-shell .study-flashcard .study-rating {
+  --rating-color: var(--study-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  min-width: 0;
+  min-height: 56px;
+  padding: 15px 12px;
+  border: 1px solid var(--study-rule);
+  border-radius: 7px;
+  color: var(--rating-color);
+  background: var(--study-surface);
+  box-shadow: none;
+  transform: none;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+html .study-app.app-shell .study-flashcard .study-rating--again { --rating-color: var(--study-danger); }
+html .study-app.app-shell .study-flashcard .study-rating--hard { --rating-color: var(--study-warning); }
+html .study-app.app-shell .study-flashcard .study-rating--good { --rating-color: var(--study-accent-text); }
+html .study-app.app-shell .study-flashcard .study-rating--easy { --rating-color: var(--study-success); }
+
+html .study-app.app-shell .study-flashcard .study-rating > span {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+html .study-app.app-shell .study-flashcard .study-rating:hover:not(:disabled) {
+  border-color: var(--rating-color);
+  background: var(--study-surface-2);
+  box-shadow: none;
+  transform: none;
+}
+
+html .study-app.app-shell .study-flashcard :is(button, summary):focus-visible {
+  outline: 2px solid var(--study-accent-text);
+  outline-offset: 4px;
+}
+
+html .study-app.app-shell .study-flashcard button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+html .study-app.app-shell .study-flashcard > :is(.nonword-feedback, details) {
+  width: 100%;
+  padding-top: 20px;
+  border-top: 1px solid var(--study-rule);
+  color: var(--study-ink);
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+html .study-app.app-shell .study-flashcard > :is(.nonword-feedback, details) p {
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+html .study-app.app-shell .study-flashcard > details > summary {
+  min-height: 44px;
+  color: var(--study-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  html .study-app.app-shell .study-flashcard .study-flashcard-body {
+    min-height: 280px;
+    padding: 24px 20px;
+    border-radius: 8px;
+  }
+
+  html .study-app.app-shell .study-flashcard--nonword .study-flashcard-front {
+    font-size: 21px !important;
+    line-height: 1.75;
+  }
+
+  html .study-app.app-shell .study-flashcard-body .whitespace-pre-line {
+    font-size: 16px;
+  }
+
+  html .study-app.app-shell .study-flashcard > div:has(> .study-rating) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  html .study-app.app-shell .study-flashcard .study-rating {
+    min-height: 52px;
+  }
+
+  html .study-app.app-shell .study-flashcard-body pre {
+    padding: 14px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html .study-app.app-shell .study-flashcard .study-rating { transition: none; }
+}

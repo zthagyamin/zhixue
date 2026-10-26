@@ -89,7 +89,16 @@ export function PendingAnswerWorkspace(props: PendingWorkspaceProps) {
             if (!source.referenceVerified || !source.item || !source.resumable)
                 throw Error(source.notice);
             const item = source.item;
-            const value: PendingAnswerSource = { attemptId: row.attemptId, binding: row.binding, kind: item.kind, title: item.title, sourceLabel: item.kind === 'practice' ? item.practice.sourceLabel : '词汇资料', prompt: item.kind === 'practice' ? item.practice.prompt : item.word.word, reference: item.kind === 'practice' ? String(item.practice.answer ?? item.practice.explanation ?? '') : item.word.meaning };
+            // Recovery must not reveal an unsubmitted answer without recording assistance.
+            // The learning view remains the controlled place to request hints or a reference.
+            const reference = source.attempt.submitted
+                ? item.kind === 'practice' ? String(item.practice.answer ?? item.practice.explanation ?? '') : item.word.meaning
+                : undefined;
+            const value: PendingAnswerSource = {
+                attemptId: row.attemptId, binding: row.binding, kind: item.kind, title: item.title,
+                sourceLabel: item.kind === 'practice' ? item.practice.sourceLabel : '词汇资料',
+                prompt: item.kind === 'practice' ? item.practice.prompt : item.word.word, reference,
+            };
             return value;
         }, async onResume(row) {
             const source = await runtime.loadOriginal(row.attemptId);

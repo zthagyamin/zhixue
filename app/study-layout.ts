@@ -21,6 +21,22 @@ export function layoutMediaQuery(query:string,layout:StudyLayout):string{
     .replace(/\(\s*(\d+(?:\.\d+)?)(px|rem|em)\s*(>=|<=|>|<|=)\s*width\s*\)/gi,(_all,n,u,op)=>truth(compare(pixels(n,u),op,width)))
     .replace(/\(\s*(\d+(?:\.\d+)?)(px|rem|em)\s*(>=|<=|>|<)\s*width\s*(>=|<=|>|<)\s*(\d+(?:\.\d+)?)(px|rem|em)\s*\)/gi,(_all,a,au,ao,bo,b,bu)=>truth(compare(pixels(a,au),ao,width)&&compare(width,bo,pixels(b,bu))));
 }
+/** Interactive layouts must evaluate the same width as the CSSOM override. */
+export function createStudyLayoutMedia(query:string,preference=studyLayoutPreference,matchMedia:(query:string)=>MediaQueryList=query=>window.matchMedia(query)){
+  const current=()=>matchMedia(layoutMediaQuery(query,preference.getSnapshot()));
+  return {
+    getSnapshot:()=>current().matches,
+    subscribe(listener:()=>void){
+      let media=current();
+      media.addEventListener('change',listener);
+      const unsubscribe=preference.subscribe(()=>{
+        media.removeEventListener('change',listener);
+        media=current();media.addEventListener('change',listener);listener();
+      });
+      return()=>{unsubscribe();media.removeEventListener('change',listener);};
+    },
+  };
+}
 /** Reversible CSSOM overrides also cover lazy-loaded component/Tailwind styles. */
 export function applyStudyLayout(document:Document,layout:StudyLayout){
   const originals=new Map<MediaList,string>();let frame=0;const win=document.defaultView!;

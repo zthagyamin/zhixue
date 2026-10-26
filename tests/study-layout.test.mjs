@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {layoutMediaQuery,createLayoutPreference,applyStudyLayout} from '../app/study-layout.ts';
+import {layoutMediaQuery,createLayoutPreference,applyStudyLayout,createStudyLayoutMedia} from '../app/study-layout.ts';
 test('manual layouts evaluate width breakpoints while retaining real accessibility preferences',()=>{
   assert.equal(layoutMediaQuery('(max-width: 640px)','desktop'),'(width: 0px)');
   assert.equal(layoutMediaQuery('(max-width: 640px)','mobile'),'(min-width: 0px)');
@@ -23,4 +23,27 @@ test('layout choices remain local to the browser and survive storage failures',(
   assert.equal(pref.getSnapshot(),'auto');pref.set('desktop');assert.equal(pref.getSnapshot(),'desktop');
   assert.equal(createLayoutPreference(()=>({getItem:k=>values.get(k)??null,setItem(){}})).getSnapshot(),'desktop');
   const blocked=createLayoutPreference(()=>{throw Error('blocked');});blocked.set('mobile');assert.equal(blocked.getSnapshot(),'mobile');
+});
+
+test('interactive width queries use the manual layout and follow auto media changes',()=>{
+  const preference=createLayoutPreference(()=>({getItem:()=>null,setItem(){}}));
+  let width=1280;const queries=new Map();
+  const matchMedia=query=>{
+    if(!queries.has(query))queries.set(query,{listeners:new Set(),get matches(){
+      if(query==='(width: 0px)')return false;
+      if(query==='(min-width: 0px)')return true;
+      return width<=Number(query.match(/max-width:\s*(\d+)/)?.[1]);
+    },addEventListener(_name,fn){this.listeners.add(fn);},removeEventListener(_name,fn){this.listeners.delete(fn);}});
+    return queries.get(query);
+  };
+  const media=createStudyLayoutMedia('(max-width: 760px)',preference,matchMedia);
+  let changes=0;const unsubscribe=media.subscribe(()=>changes++);
+  assert.equal(media.getSnapshot(),false);
+  preference.set('mobile');assert.equal(media.getSnapshot(),true,'1280px + mobile must open a dialog rather than a CSS-hidden rail');
+  preference.set('tablet');assert.equal(media.getSnapshot(),false);
+  width=390;preference.set('desktop');assert.equal(media.getSnapshot(),false);
+  preference.set('auto');assert.equal(media.getSnapshot(),true);
+  width=1280;for(const listener of matchMedia('(max-width: 760px)').listeners)listener();
+  assert.equal(media.getSnapshot(),false);assert.ok(changes>=5);
+  unsubscribe();assert.ok([...queries.values()].every(query=>query.listeners.size===0));
 });

@@ -17,6 +17,14 @@ Zhixue is a learning workspace for course study, vocabulary, programming, mathem
 
 This first trial needs neither Companion nor an AI key. Its answers are temporary; saving the material is a separate action and does not create formal learning results.
 
+## Find your next task
+
+The homepage leads into the learning workspace. Use **“今日”** for today's tasks, **“学科”** and **“浏览学科库”** to choose content, **“进度”** to inspect records, and **“设置”** for sources and preferences. Review and confirm generated arrangements before adopting them; generating a plan does not create a completed learning record.
+
+Progress names the selected task or current content range. Check that scope before reading the completed/total count. A dash or a pending-verification message is not zero progress, and completion is not proof of mastery.
+
+In settings, **“页面布局”** offers automatic, desktop, tablet, and mobile layouts. The selection is remembered in the current browser.
+
 ## What you can do
 
 | Area | Included in this baseline | Important limit |
@@ -26,7 +34,9 @@ This first trial needs neither Companion nor an AI key. Its answers are temporar
 | Course practice | Source-aware recall, single/multiple-choice practice, feedback, and in-place remediation | AI may abstain; pending evaluation is not a correct or incorrect grade. |
 | Programming | Python exercise execution, public-case feedback, hints, and in-place correction | Passing supplied tests does not prove complete correctness. C/C++ is not a supported production execution promise. |
 | Mathematics | Bounded numeric/symbolic checks, optional step review, and supported related exercises | Arbitrary proofs and arbitrary expressions are not covered; unsupported answers may remain pending. |
-| Paper reading | PDF/text reading, focused source questions, pause/resume, draft recovery, notes and supported figures | Source extraction and AI feedback need checking; reading feedback does not create formal grades. |
+| Paper reading | PDF/text reading, focused source questions, pause/resume, draft recovery, notes and supported figures | Saved recent material and a matching reading range can reopen in this browser; source extraction and AI feedback need checking, and reading feedback does not create formal grades. |
+
+Reading bookmarks do not promise cross-device recovery. Review candidates are drafts to inspect against the source and export after approval; exporting them does not add formal reviews, grades, or a daily schedule. Import and plan confirmation remain separate steps.
 
 Course, code, calculation, and paper workflows are **beta capabilities**. Real-material evaluation, model quality, physical mobile-device behavior, cross-device learning, and learning outcomes remain areas for validation. See the [roadmap](docs/en/roadmap.md).
 

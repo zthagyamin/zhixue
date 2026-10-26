@@ -191,6 +191,9 @@ async function paperTabs(t){
   const panel=p.getByRole('tabpanel');assert.equal(await panel.getAttribute('id'),await selected.getAttribute('aria-controls'));assert.equal(await panel.getAttribute('aria-labelledby'),await selected.getAttribute('id'));await reachable(selected);
  }
  await click(p.getByRole('tab',{name:names[1],exact:true}));await click(p.getByRole('tab',{name:names[2],exact:true}));
+ const sourceStyle=await p.locator('.paper-source-search label').evaluate(element=>({labelDisplay:getComputedStyle(element).display,inputMaxWidth:getComputedStyle(element.querySelector('input')).maxWidth}));
+ assert.equal(sourceStyle.labelDisplay,'flex','The real paper component stylesheet is missing');
+ if(t.env.layout==='mobile'||t.env.layout==='auto'&&t.env.width<=640)assert.equal(sourceStyle.inputMaxWidth,'100%','Source search must retain its mobile width constraint');
  await p.evaluate(()=>{const requests=window.__reliability.catalogRequests;requests.at(-2).reject(Error('obsolete catalog error'));requests.at(-1).resolve({localLibraryId:'synthetic-library',accountLibraryId:null,documents:[],destinations:[],limited:false});});
  await p.getByText('尚无已连接的 Notion 页面，请在资料连接中添加并授权具体页面。',{exact:true}).waitFor();
  assert.equal(await p.getByText('obsolete catalog error',{exact:true}).count(),0);await focused(p.getByRole('tab',{name:'Notion',exact:true}));
@@ -205,6 +208,20 @@ async function pairBusy(t){
  await p.evaluate(()=>window.__reliability.setPairing(true));await p.locator('#companion-pairing[aria-busy=true]').waitFor();
  assert.equal(await p.getByRole('button',{name:'立即同步资料',exact:true}).isDisabled(),true);
  await p.evaluate(()=>window.__reliability.setPairing(false));await reachable(p.getByRole('button',{name:'立即同步资料',exact:true}));
+ if(t.env.zoom===2){
+  const card=p.locator('#companion-pairing'),original=await card.getAttribute('style');
+  // A slightly narrower nested card also exercises platform-dependent native
+  // font metrics. The real title must wrap rather than impose its min-content width.
+  await card.evaluate(element=>{element.style.width='170px';});await frames(p);
+  const geometry=await p.locator('.companion-settings-heading').evaluate(element=>{
+   const content=element.querySelector(':scope > div'),title=element.querySelector('h3');
+   const available=element.getBoundingClientRect(),child=content.getBoundingClientRect();
+   return {available:{left:available.left,right:available.right,width:available.width},child:{left:child.left,right:child.right,width:child.width},title:{scrollWidth:title.scrollWidth,clientWidth:title.clientWidth},css:{minWidth:getComputedStyle(content).minWidth,maxWidth:getComputedStyle(content).maxWidth,overflowWrap:getComputedStyle(title).overflowWrap}};
+  });
+  assert.ok(geometry.child.right<=geometry.available.right+1,'Companion title content exceeds the available card width: '+JSON.stringify(geometry));
+  assert.ok(geometry.title.scrollWidth<=geometry.title.clientWidth+1,'Companion title glyphs exceed their text box: '+JSON.stringify(geometry));
+  await card.evaluate((element,style)=>{if(style===null)element.removeAttribute('style');else element.setAttribute('style',style);},original);
+ }
 }
 async function connectionEntry(t){
  for(const name of ['前往连接设备 →','先安装并配对 →','前往连接设备']){

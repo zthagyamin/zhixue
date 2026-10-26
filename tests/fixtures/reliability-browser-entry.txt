@@ -18,6 +18,7 @@ import '@repo/app/study-overview.css';
 import '@repo/app/settings-progress-hierarchy.css';
 import '@repo/app/study-settings-readability.css';
 import '@repo/app/components/ai-sidebar/study-ai.css';
+import '@repo/app/plugins/paper.css';
 import '@repo/src/features/nonword-study/study.css';
 import '@repo/src/features/paper-reading/reading.css';
 

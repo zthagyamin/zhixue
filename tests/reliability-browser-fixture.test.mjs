@@ -30,3 +30,13 @@ test('paper-sources mounts the actual source picker and becomes ready independen
 test('nonword mounts its own interaction and becomes ready independently',()=>{
  const view=compose('nonword');assert.ok(view.types.includes('quiz'));assert.ok(!view.types.includes('paper-question'));assert.equal(view.ready,true);
 });
+test('source-picker fixture loads the same component stylesheet as both real paper entrypoints',()=>{
+ const imports=tree=>tree.statements.filter(ts.isImportDeclaration).map(node=>node.moduleSpecifier.text);
+ const fixtureImports=imports(parsed);
+ for(const [file,style] of [['../app/plugins/plugin-paper.tsx','./paper.css'],['../app/paper-workshop-launcher.tsx','./plugins/paper.css']]){
+  const body=readFileSync(new URL(file,import.meta.url),'utf8');
+  const tree=ts.createSourceFile(file,body,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+  assert.ok(imports(tree).includes(style),`${file} must still own the real paper stylesheet`);
+ }
+ assert.ok(fixtureImports.includes('@repo/app/plugins/paper.css'),'The standalone source-picker fixture must load its real component stylesheet');
+});

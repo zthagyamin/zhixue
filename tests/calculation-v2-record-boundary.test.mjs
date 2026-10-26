@@ -22,7 +22,7 @@ test('a calculation V2 optional step is not treated as a course task or scored i
     assert.equal(Object.hasOwn(record.event.attempt,'step'),false);
     const script="import json,sys;sys.path.insert(0,'companion');from account_sync_schema import check_record_binding;from practice_engine import grade_answer;from calculation_step import grade_calculation_step\nrow=json.load(sys.stdin)\nprint(json.dumps({'binding':check_record_binding(row['record'],row['item']),'final':grade_answer({'questionType':'calculation','answer':'3','learningSupport':row['item']['learningSupport']},'3',ai_available=False),'step':grade_calculation_step('7',row['item']['learningSupport'])}))";
     const reply=spawnSync(process.env.PYTHON||'python',['-X','utf8','-c',script],{input:JSON.stringify({item,record}),encoding:'utf8',windowsHide:true,timeout:10000});
-    assert.equal(reply.status,0,reply.stderr);
+    assert.equal(reply.status,0,JSON.stringify({status:reply.status,signal:reply.signal,errorCode:reply.error?.code,errno:reply.error?.errno,syscall:reply.error?.syscall,stdout:reply.stdout?.slice(-2000),stderr:reply.stderr?.slice(-2000)}));
     const actual=JSON.parse(reply.stdout);assert.equal(actual.binding,'ready');assert.equal(actual.final.correct,true);
     assert.equal(actual.step.status,'incorrect');assert.equal(Object.hasOwn(actual.step,'rating'),false);
 });
@@ -33,5 +33,5 @@ test('a V2 symbolic result is pending when the kernel cannot interpret a source 
     assert.equal(result.correct,null);assert.equal(result.verdict,'unknown');
     const script="import json,sys;sys.path.insert(0,'companion');from calculation_grade import grade_calculation_reference\nprint(json.dumps(grade_calculation_reference(json.load(sys.stdin),'0')))";
     const reply=spawnSync(process.env.PYTHON||'python',['-X','utf8','-c',script],{input:JSON.stringify(item),encoding:'utf8',windowsHide:true,timeout:10000});
-    assert.equal(reply.status,0,reply.stderr);assert.equal(JSON.parse(reply.stdout).correct,null);
+    assert.equal(reply.status,0,JSON.stringify({status:reply.status,signal:reply.signal,errorCode:reply.error?.code,errno:reply.error?.errno,syscall:reply.error?.syscall,stdout:reply.stdout?.slice(-2000),stderr:reply.stderr?.slice(-2000)}));assert.equal(JSON.parse(reply.stdout).correct,null);
 });

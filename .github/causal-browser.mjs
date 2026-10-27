@@ -9,7 +9,8 @@ const evidence=resolve(process.env.UX_EVIDENCE||'scratch/ci-evidence/causal');aw
 if(!process.env.CAUSAL_OFFLINE_URL){
  const {createServer}=await import('vite'),{default:react}=await import('@vitejs/plugin-react');const root=process.cwd(),index=resolve('scratch/ci-causal/index.html');await mkdir(resolve('scratch/ci-causal'),{recursive:true});await writeFile(resolve('scratch/ci-causal/entry.tsx'),fixture);await writeFile(index,'<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module" src="/scratch/ci-causal/entry.tsx"></script></html>');
  const doubles={name:'explicit-causal-service-doubles',enforce:'pre',resolveId(source,importer){let id=source.startsWith('/app/')?source.slice(1):source.startsWith('.')&&importer?resolve(importer.split('?')[0],'..',source).slice(root.length+1).replaceAll('\\','/'):source;for(const key of Object.keys(replacements))if([key,key.replace(/\.(?:tsx?|mjs)$/,''),key.replace(/\/index\.ts$/,'')].includes(id))return '\0causal-double:'+key;},load(id){if(id.startsWith('\0causal-double:'))return replacements[id.slice(15)];}};
- server=await createServer({configFile:false,root,plugins:[doubles,react()],server:{host:'127.0.0.1',port:4186,strictPort:true},logLevel:'error'});await server.listen();
+ // Scan this fixture entry only; archived verification HTML is not application input.
+ server=await createServer({configFile:false,root,optimizeDeps:{entries:[index]},plugins:[doubles,react()],server:{host:'127.0.0.1',port:4186,strictPort:true},logLevel:'error'});await server.listen();
 }
 const url=origin+(process.env.CAUSAL_OFFLINE_URL?'/':'/scratch/ci-causal/index.html');
 const settle=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));

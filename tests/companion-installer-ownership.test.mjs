@@ -9,12 +9,14 @@ import {withFixtureCleanup} from './helpers/fixture-cleanup.mjs';
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const host = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-const quote = value => "'" + value.replaceAll("'", "''") + "'";
+// Match the production installer's child environment without changing this process.
+const powerShellEnvironment = Object.fromEntries(Object.entries(process.env)
+  .filter(([name]) => name.toLowerCase() !== 'psmodulepath'));
 let sandbox, exe, refusedExe, cleanupFailureExe;
 
 function powershell(script) {
   const result = spawnSync(host, ['-NoProfile', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')],
-    {encoding:'utf8', windowsHide:true, timeout:20000});
+    {encoding:'utf8', windowsHide:true, timeout:20000, env:powerShellEnvironment});
   assert.ifError(result.error);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return result.stdout.trim();
@@ -81,7 +83,44 @@ while(-not (Test-Path -LiteralPath (Join-Path $TargetPath 'release'))){Start-Sle
 exit 0
 `);
   const archive = path.join(sandbox, 'fixture.zip');
-  powershell(`Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::CreateFromDirectory(${quote(path.dirname(payload))},${quote(archive)})`);
+  const expectedFiles = Object.fromEntries(await Promise.all(
+    ['version.json', 'hold-file.ps1', 'install-or-upgrade.ps1'].map(async name =>
+      ['zhixue-companion/' + name, (await readFile(path.join(payload, name))).toString('base64')])));
+  // ZIP data preparation is separate from the real Windows PowerShell 5.1
+  // compiler and installer execution below, and retains its own 20-second bound.
+  const zipScript = String.raw`import base64,json,pathlib,sys,zipfile,zlib
+row=json.load(sys.stdin)
+root=pathlib.Path(row['payload'])
+expected={name:base64.b64decode(data,validate=True) for name,data in row['files'].items()}
+assert set(expected)=={'zhixue-companion/version.json','zhixue-companion/hold-file.ps1','zhixue-companion/install-or-upgrade.ps1'}
+with zipfile.ZipFile(row['archive'],'x',compression=zipfile.ZIP_DEFLATED) as archive:
+    for name in expected:
+        archive.write(root/pathlib.PurePosixPath(name).name,arcname=name)
+entries=[]
+with zipfile.ZipFile(row['archive'],'r') as archive:
+    assert len(archive.infolist())==len(expected)
+    assert set(archive.namelist())==set(expected)
+    assert archive.testzip() is None
+    for name,data in expected.items():
+        info=archive.getinfo(name)
+        actual=archive.read(name)
+        assert info.compress_type==zipfile.ZIP_DEFLATED
+        assert info.file_size==len(data)
+        assert info.CRC==(zlib.crc32(data)&0xffffffff)
+        assert actual==data
+        entries.append({'name':name,'bytes':len(actual),'data':base64.b64encode(actual).decode('ascii')})
+print(json.dumps({'crcVerified':True,'entries':entries}))
+`;
+  const zipped = spawnSync(process.env.PYTHON || 'python', ['-X','utf8','-c',zipScript],
+    {input:JSON.stringify({payload,archive,files:expectedFiles}),encoding:'utf8',windowsHide:true,timeout:20000});
+  assert.ifError(zipped.error);assert.equal(zipped.status,0,zipped.stderr||zipped.stdout);
+  const verified = JSON.parse(zipped.stdout);
+  assert.equal(verified.crcVerified,true);
+  assert.deepEqual(verified.entries.map(entry=>entry.name).sort(),Object.keys(expectedFiles).sort());
+  for(const entry of verified.entries){
+    assert.equal(entry.data,expectedFiles[entry.name]);
+    assert.equal(entry.bytes,Buffer.from(expectedFiles[entry.name],'base64').length);
+  }
   let source;
   try { source = await readFile(path.join(project, 'scripts/companion-installer.cs'), 'utf8'); }
   catch (error) {
@@ -96,7 +135,7 @@ exit 0
   exe = path.join(sandbox, 'fixture-setup.exe');
   const compiled = spawnSync(host, ['-NoProfile','-ExecutionPolicy','Bypass','-File',
     path.join(project,'scripts/compile-companion-installer.ps1'),'-SourcePath',sourcePath,
-    '-OutputPath',exe,'-PayloadPath',archive], {encoding:'utf8',windowsHide:true,timeout:60000});
+    '-OutputPath',exe,'-PayloadPath',archive], {encoding:'utf8',windowsHide:true,timeout:60000,env:powerShellEnvironment});
   assert.ifError(compiled.error); assert.equal(compiled.status,0,compiled.stderr||compiled.stdout);
   for (const [name, needle, replacement] of [
     ['refused', 'Marshal.WriteIntPtr(jobs, job);', 'Marshal.WriteIntPtr(jobs, IntPtr.Zero);'],
@@ -106,7 +145,7 @@ exit 0
     await writeFile(variantSource,source.replace(needle,replacement));
     const variant = spawnSync(host,['-NoProfile','-ExecutionPolicy','Bypass','-File',
       path.join(project,'scripts/compile-companion-installer.ps1'),'-SourcePath',variantSource,
-      '-OutputPath',variantExe,'-PayloadPath',archive],{encoding:'utf8',windowsHide:true,timeout:60000});
+      '-OutputPath',variantExe,'-PayloadPath',archive],{encoding:'utf8',windowsHide:true,timeout:60000,env:powerShellEnvironment});
     assert.ifError(variant.error);assert.equal(variant.status,0,variant.stderr||variant.stdout);
     if(name==='refused')refusedExe=variantExe;else cleanupFailureExe=variantExe;
   }

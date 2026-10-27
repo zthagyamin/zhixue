@@ -271,6 +271,8 @@ test('recovered host time counts an overlapping cleanup interval once',async()=>
     now+=5000;gate.resolve();await committed.promise;await tick();await session.flush();await tick();
     assert.equal((await fresh.drivers[0].runtime.repository.read(original.attemptId)).checkpoint.activeSeconds,5);
     fresh.transport.online=true;fresh.transport.confirmed=true;await fresh.hostAction('恢复核对');
+    await waitForObservation(fresh.settle,()=>fresh.drivers[0].runtime.session.snapshot().evaluation.status==='resolved'
+      &&button(fresh.host.view(),'恢复核对')?.props.disabled!==true,{label:'overlapping cleanup source recovery durably resolved'});
     assert.equal(fresh.drivers[0].runtime.session.snapshot().evaluation.status,'resolved');
     assert.equal(fresh.drivers[0].runtime.session.snapshot().checkpoint.activeSeconds,5);
     assert.match(text(fresh.host.view()),/本组有效用时 0 分 5 秒/);

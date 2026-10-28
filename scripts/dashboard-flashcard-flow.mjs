@@ -20,7 +20,7 @@ export async function runDashboardFlashcardFlow({page,account,width,variant,them
   await page.getByRole('button',{name:'暂停并保存',exact:true}).click();
   await page.getByRole('button',{name:'继续学习',exact:true}).waitFor();
   await page.reload();await page.waitForLoadState('networkidle');
-  await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).click();
+  await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).click();
   await page.getByRole('button',{name:'继续学习',exact:true}).click();
   await page.getByRole('button',{name:'忘记',exact:true}).waitFor();
   assert.match(await page.locator('.study-flashcard-body').innerText(),/信息泄漏让评估样本影响了待评估系统/);

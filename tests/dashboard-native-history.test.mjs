@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {loadTsx} from './fixtures/tsx-components.mjs';
+const {finishDashboardPractice}=loadTsx(new URL('../app/study-dashboard/practice-session-adapter.ts',import.meta.url));
 import {dashboardEffect,dashboardFunction,dashboardJsxProp} from './fixtures/dashboard-functions.mjs';
 import {rebuildEventProgress} from '../app/review-projection.ts';
 import {nativeSourceScope,nativeProgressView} from '../app/native-progress-view.ts';
@@ -46,5 +48,5 @@ test('entering practice during native replay also freezes the pending publicatio
 
 test('finishing inline native practice rereads frozen history even without another grade',()=>{
   let refreshes=0;const env={accountAttemptActiveRef:{current:true},accountLoadedRef:{current:null},accountPendingLoadedRef:{current:null},pendingLocalSourceRef:{current:null},workspaceId:'account:a',setPracticeItems(){},setPracticeSummary(){},noteEventsChanged(){refreshes++;}};
-  dashboardJsxProp('PracticeSession','onFinish',env)({answered:0,correct:0,wrong:0});assert.equal(env.accountAttemptActiveRef.current,false);assert.equal(refreshes,1);
+  dashboardJsxProp('PracticeSession','onFinish',{model:env,finishDashboardPractice})({reason:'stopped',answered:0,correct:0,wrong:0});assert.equal(env.accountAttemptActiveRef.current,false);assert.equal(refreshes,1);
 });

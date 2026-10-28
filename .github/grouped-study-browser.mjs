@@ -52,7 +52,7 @@ try{
     await page.goto(origin+'/study');
     await page.waitForFunction(theme=>document.documentElement.classList.contains('dark')===(theme==='dark'),theme);
     await assertFixtureDay(page,account.day);
-    await page.getByRole('button',{name:'开始今日自测',exact:true}).waitFor();
+    await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:'开始下一项',exact:true}).waitFor();
     if(width===390){
       const planDisclosure=page.getByText('查看今日任务与进度',{exact:true});
       if(!await planDisclosure.evaluate(element=>Boolean(element.closest('details')?.open)))await planDisclosure.click();
@@ -68,7 +68,7 @@ try{
     // The account may briefly reconcile again; click only while the same three-group entry is ready.
     await page.waitForLoadState('networkidle');
     await assertFixtureDay(page,account.day);
-    await page.getByRole('region',{name:'今日自测入口'}).filter({hasText:/今日待自测\s*3\s*组/}).getByRole('button',{name:'开始今日自测',exact:true}).click();
+    await page.getByRole('region',{name:'今日自测入口'}).filter({hasText:/今日待自测\s*3\s*组/}).getByRole('button',{name:'开始下一项',exact:true}).click();
     await page.getByText('到期复习 · 本组 2 题',{exact:true}).waitFor();await recallPass(page);
     await until(()=>preview.inspect().records===2);
     assert.equal((await preview.records()).filter(row=>row.record.event.attempt?.correct).length,0);
@@ -84,7 +84,7 @@ try{
     assert.match(await result.innerText(),/已练 2 \/ 2/);assert.equal(preview.inspect().records,2);
     await page.getByRole('button',{name:'返回本轮完成页',exact:true}).click();
     await page.waitForLoadState('networkidle');
-    if(width===390){await page.getByRole('button',{name:'返回今日',exact:true}).click();await page.getByRole('button',{name:'开始今日自测',exact:true}).click();}
+    if(width===390){await page.getByRole('button',{name:'返回今日',exact:true}).click();await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:'开始下一项',exact:true}).click();}
     else await page.getByRole('button',{name:'继续今日自测',exact:true}).click();
     await page.getByText('到期复习 · 本组 3 词',{exact:true}).waitFor();
     await page.getByRole('heading',{name:'disturb',exact:true}).waitFor();
@@ -94,7 +94,7 @@ try{
     await until(()=>preview.inspect().records===3);
     await page.getByRole('button',{name:'返回今日',exact:true}).click();
     await page.waitForLoadState('networkidle');
-    await page.getByRole('region',{name:'今日自测入口'}).filter({hasText:/今日待自测\s*2\s*组/}).getByRole('button',{name:/^(开始|继续)今日自测$/}).click();
+    await page.getByRole('region',{name:'今日自测入口'}).filter({hasText:/今日待自测\s*2\s*组/}).getByRole('button',{name:'开始下一项',exact:true}).click();
     await page.locator('.study-word-card').waitFor();assert.equal(await page.getByRole('heading',{name:'本轮练习结束',exact:true}).count(),0);
     await page.screenshot({path:resolve(evidence,`group-resume-${theme}-${width}.png`),fullPage:true});assert.deepEqual(errors,[]);
     results.push({viewport:width,theme,case:'grouped recall, extra practice, next group and partial vocabulary resume',passed:true});

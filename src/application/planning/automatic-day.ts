@@ -7,6 +7,8 @@ export async function prepareMissingDailyPlan<State extends AutomaticDailyState,
   build:(state:State,snapshot:LongTermPlanSnapshot)=>Promise<Plan|null>;
   saveDraft:(command:{plan:Plan;operationId:string;expectedRevision:number})=>Promise<{status:unknown}>;
   readDay:()=>Promise<State>;
+  matchesCreated?:(plan:Plan,after:State,before:State)=>boolean;
+  onCreated?:(plan:Plan,after:State)=>void;
 }):Promise<State>{
   const {state,day,isCurrent}=ports;
   if(!isCurrent()||state.day!==day||state.currentPlan||state.approvedPlan||state.decision!=='none')return state;
@@ -22,5 +24,9 @@ export async function prepareMissingDailyPlan<State extends AutomaticDailyState,
   const receipt=await ports.saveDraft({plan,operationId:ports.newId(),expectedRevision:state.revision});
   if(!['accepted','duplicate','stale'].includes(String(receipt.status)))throw Error('今日安排尚未保存，请重新核对。');
   // A competing edit wins via the existing revision check. A draft is never approved here.
-  return ports.readDay();
+  const after=await ports.readDay();
+  if(receipt.status==='accepted'&&isCurrent()&&ports.matchesCreated?.(plan,after,state)){
+    try{ports.onCreated?.(plan,after);}catch{/* Display evidence must not change plan preparation. */}
+  }
+  return after;
 }

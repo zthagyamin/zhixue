@@ -15,10 +15,10 @@ import {sealCloudTaskPlan} from './account-study-planning.ts';
 import {prepareMissingDailyPlan} from '../src/application/planning/index.ts';
 
 /** Called after goal reconciliation. Prepare only a missing day; approval stays explicit. */
-export async function prepareAutomaticAccountDay({client,loaded,state,day,workspaceId,journal,isCurrent,expectedLongTermRevision}:{
+export async function prepareAutomaticAccountDay({client,loaded,state,day,workspaceId,journal,isCurrent,expectedLongTermRevision,onCreated}:{
   client:Pick<ReturnType<typeof createAccountStudyClient>,'getLongTermPlanState'|'getPlanState'|'mutatePlan'>;
   loaded:AccountStudyLoaded;state:AccountPlanState;day:string;workspaceId:string;
-  journal:SubmissionJournal;isCurrent:()=>boolean;expectedLongTermRevision:number;
+  journal:SubmissionJournal;isCurrent:()=>boolean;expectedLongTermRevision:number;onCreated?:(value:{revision:number;hash:string})=>void;
 }):Promise<AccountPlanState>{
   return prepareMissingDailyPlan({state,day,expectedLongTermRevision,isCurrent,newId:()=>crypto.randomUUID(),
     readGoals:()=>client.getLongTermPlanState(),assertEvidence:()=>assertAccountPlanEvidence(workspaceId,loaded,journal),
@@ -31,5 +31,7 @@ export async function prepareAutomaticAccountDay({client,loaded,state,day,worksp
     },
     saveDraft:async command=>({status:(await client.mutatePlan({action:'save',...command})).status}),
     readDay:async()=>await client.getPlanState(day) as unknown as AccountPlanState,
+    matchesCreated:(plan,after,before)=>after.day===day&&after.revision===before.revision+1&&after.currentPlan?.cloudPlanHash===plan.cloudPlanHash,
+    onCreated:(plan,after)=>onCreated?.({revision:after.revision,hash:plan.cloudPlanHash}),
   });
 }

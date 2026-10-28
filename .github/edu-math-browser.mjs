@@ -59,7 +59,7 @@ try{
    await page.getByRole('button',{name:/控制其他条件/}).click();
    await page.getByRole('button',{name:'继续',exact:true}).click();
    await page.getByRole('heading',{name:'原题本轮结束',exact:true}).waitFor();
-   assert.deepEqual(await page.evaluate(()=>window.__math.summary),{answered:1,correct:0,wrong:1});
+   assert.deepEqual(await page.evaluate(()=>window.__math.summary),{answered:1,correct:0,wrong:1,reason:'exhausted',skipped:0,remaining:0});
   }else{
    await page.getByRole('textbox',{name:'你的答案',exact:true}).fill('3');
    await page.getByRole('button',{name:'提交',exact:true}).click();

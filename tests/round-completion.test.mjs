@@ -51,10 +51,13 @@ test("today view celebrates when every module completes and badges finished modu
 });
 
 test("due review session ends with a settlement summary instead of silently closing", async () => {
-  const source = await readDashboardSource();
-  assert.match(source, /setPracticeSummary\(summary\)/);
-  assert.match(source, /本轮复习完成/);
-  assert.match(source, /再来一轮/);
+  const {PracticeResult}=loadTsx(new URL('../src/features/review-session/result-view.tsx',import.meta.url));
+  const html=renderToStaticMarkup(PracticeResult({result:{reason:'stopped',answered:1,correct:0,wrong:1,remaining:2},onBack(){},onReload(){}}));
+  assert.match(html, /已提前结束/);
+  assert.match(html, /已核对 1 次/);
+  assert.match(html, /本轮剩余 2 题/);
+  assert.match(html, /重新读取到期题/);
+  assert.doesNotMatch(html, /<h2>本轮复习完成/);
 });
 
 test("explained panel offers a Socratic AI tutor follow-up through the companion hint channel", async () => {
@@ -146,7 +149,8 @@ test("vocabulary is paced in 20-word daily groups with a free-choice override", 
   assert.ok(pacing.includes("export function splitGroupBounds"));
   assert.ok(pacing.includes("export function resolveServedGroup"));
   assert.ok(dashboard.includes("splitGroupBounds(allItems.length, isVocabPaced ? selectedVocabReference?.groupQuota ?? vocabPacing.settings.quota : allItems.length)"), "已保存计划使用生成时词量，无计划时可自由调整");
-  assert.ok(dashboard.includes("词库分组：第"));
+  const {wordStudyPresentation}=loadTsx(new URL('../src/features/study-word-progress/presentation.ts',import.meta.url));
+  assert.equal(wordStudyPresentation({demo:false,planned:false,review:false,groupIndex:0,groupCount:2,total:20,completed:1,ready:true,practiced:false,stage:1,quickReview:false,threeStage:true,modeLabel:''}).scope,'自由学习 · 词库第 1 / 2 组');
   assert.ok(dashboard.includes("每日词量"));
   assert.ok(dashboard.includes("复习词条（计划内）"), "单词复习条目不伪装成第 1 组");
   assert.ok(dashboard.includes("继续下一组"));

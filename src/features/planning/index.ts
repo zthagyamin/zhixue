@@ -10,3 +10,5 @@ export {nativePlanDraftActions} from './native-plan-draft-actions';
 export {DailyMinimumStatus,AccountDailyMinimumStatus} from './daily-minimum-status';
 export {useStudyDayClock} from './use-study-day-clock';
 export {PracticeBudgetControls,PracticeBudgetStatus} from './practice-budget-controls';
+export {recentStudySubject} from './recent-study-subject';
+export type {RecentStudyRecord,RecentStudyItem,RecentStudySubject} from './recent-study-subject';

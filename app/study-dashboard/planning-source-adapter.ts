@@ -14,6 +14,52 @@ import type {CloudTaskPlanV1} from '../account-study-planning';
 import {accountTaskActivity,accountTaskCompletedItems} from '../account-study-planning-projection';
 import {readAccountLocalPractice} from '../study-submission-history';
 import type {SubmissionJournal} from '../study-submission-journal';
+import {recentStudySubject} from '../../src/features/planning';
+import {useEffect,useState} from 'react';
+
+/** The account reader already verified each envelope against its original bundle. */
+export function recentDashboardSubject(account:AccountStudyLoaded|null,subjects:DynamicSubject[],historyVerified:boolean,local:Awaited<ReturnType<SubmissionJournal['list']>>=[],nativeEvents:NativeProjection['events']=[]){
+  const libraryId=account?.bundle.snapshot.libraryId;
+  const envelopes=account?[...account.records.map(row=>row.record),...local.flatMap(row=>row.payload.route.kind==='account'?[row.payload.route.record]:[])]:[];
+  const records=envelopes.flatMap(record=>record.provenanceMode==='task'||record.libraryId!==libraryId?[]:[{
+    eventType:record.event.eventType,occurredAt:record.event.occurredAt,itemKey:record.event.item.key,
+    contentHash:record.contentHash,verified:account!.bundles.some(bundle=>bundle.snapshot.libraryId===libraryId
+      &&bundle.snapshot.snapshotId===record.snapshotId&&bundle.items.some(item=>item.itemKey===record.event.item.key&&item.contentHash===record.contentHash)),
+  }]);
+  if(!account)for(const row of local){
+    if(row.payload.route.kind!=='local')continue;
+    const event=row.payload.core.event,binding=row.payload.route.binding;
+    if(event.eventType!=='practice-attempt')continue;
+    const item=binding?subjects.flatMap(subject=>subject.items).find(item=>stableStudyItemKey(item)===event.item.key&&binding.contentHash===item.contentHash&&binding.localBindingHash===item.localBindingHash):undefined;
+    records.push({eventType:event.eventType,occurredAt:event.occurredAt,itemKey:event.item.key,contentHash:binding?.contentHash??'',
+      verified:Boolean(binding&&item&&binding.eventId===event.eventId&&binding.coreHash===event.coreHash)});
+  }
+  if(!account)for(const event of nativeEvents){
+    if(event.eventType!=='practice-attempt'||local.some(row=>row.payload.route.kind==='local'&&row.payload.core.event.eventId===event.eventId&&row.payload.core.event.coreHash===event.coreHash))continue;
+    // A V3 core alone has no source version. Do not call an older bound answer the latest.
+    records.push({eventType:event.eventType,occurredAt:event.occurredAt,itemKey:event.item.key,contentHash:'',verified:false});
+  }
+  return recentStudySubject({historyVerified,records,items:subjects.flatMap(subject=>subject.items.flatMap(item=>{
+    const itemKey=stableStudyItemKey(item);return itemKey&&typeof item.contentHash==='string'?[{itemKey,contentHash:item.contentHash,subjectId:subject.id}]:[];
+  }))});
+}
+
+/** Reads durable local submissions without changing drafts, navigation or delivery. */
+export function useRecentDashboardSubject(input:{account:AccountStudyLoaded|null;subjects:DynamicSubject[];historyVerified:boolean;workspaceId:string;sourceScope:string;journal:SubmissionJournal;revision:number;nativeEvents?:NativeProjection['events']}){
+  const {account,subjects,historyVerified,workspaceId,sourceScope,journal,revision,nativeEvents}=input;
+  const scope=JSON.stringify([workspaceId,sourceScope,account?.bundle.snapshot.snapshotId??null,revision]);
+  type Recent=ReturnType<typeof recentDashboardSubject>;
+  const [snapshot,setSnapshot]=useState<{scope:string;result:Recent}|null>(null);
+  useEffect(()=>{
+    if(!historyVerified)return;
+    let active=true;
+    void journal.list(workspaceId).then(local=>{
+      if(active)setSnapshot({scope,result:recentDashboardSubject(account,subjects,true,local,nativeEvents)});
+    }).catch(()=>{if(active)setSnapshot({scope,result:{kind:'unavailable'}});});
+    return()=>{active=false;};
+  },[account,subjects,historyVerified,workspaceId,scope,journal,nativeEvents]);
+  return historyVerified&&snapshot?.scope===scope?snapshot.result:{kind:'checking'} as const;
+}
 
 type Frame={owner:string;day:string;nativeScope:string;subjects:DynamicSubject[];latestSubjects:()=>DynamicSubject[];progress:CloudProgress;overrides:PluginOverrides;
   selection:{scope:string;taskIds:string[]}|null;nativeSession:TaskPlanningSession|null;nativeProjection:NativeProjection|null;nativeReady:boolean;

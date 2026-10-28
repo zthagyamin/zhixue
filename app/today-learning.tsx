@@ -1,6 +1,7 @@
 "use client";
 import {DailyMinimumStatus} from '../src/features/planning';
 import type {LongTermPlanSpec} from '../src/domain/planning';
+import type {NativeGenerationPhase} from '../src/application/planning/task-planning-session';
 export {nativePlanDraftActions} from "../src/features/planning";
 
 import {StudySubjectTaskGroups} from './study-subject-task-groups';
@@ -26,6 +27,8 @@ export type TodayLearningProps={
   activePractice?:boolean;
   plan:TaskPlanV2|null;catalog:PlanningCatalog|null;summary:TaskPlanSummary;completedTaskIds:string[];reviewRounds?:ReviewObligation[];
   dirty:boolean;loading:boolean;ready:boolean;message:string;lastSyncedAt?:string;pendingCount?:number;
+  generationPhase?:NativeGenerationPhase|null;
+  draftOrigin?:'automatic'|'manual'|null;
   offline?:boolean;hasVerifiedHistory?:boolean;
   hasBackup?:boolean;onRestoreBackup?:()=>void;
   onGenerate:()=>void;onReload:()=>void;onStart:(taskId:string,eligibleTaskIds?:string[])=>void;onEdit:(edit:TaskEdit)=>void;
@@ -103,6 +106,7 @@ export function TodayLearning(props:TodayLearningProps) {
     </li>;
   }
   const feedback=<>
+    {props.generationPhase&&<p role="status" className="mt-3 text-sm">{props.generationPhase==='checking'?'正在核对资料和复习记录…':props.generationPhase==='generating'?'正在生成规则安排…':'正在请求可选任务建议…'}</p>}
     {props.message && <p role="status" className="mt-4 border-l-2 border-[var(--orange)] pl-3 text-sm leading-relaxed">{props.message}</p>}
     {props.offline && <p className="mt-3 text-sm">离线 · 使用上次完整同步的资料与本机新记录，不代表已核对其他设备。</p>}
   </>;
@@ -110,8 +114,9 @@ export function TodayLearning(props:TodayLearningProps) {
   return <section className={props.studyFirst?'study-plan-board':'rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-8 text-[var(--ink)]'} aria-labelledby={`${id}-title`} aria-busy={loading}>
     {!editing&&minimumStatus}
     {props.dirty&&<p role="status" className="mt-2 mb-3 text-sm text-[var(--warning)]">尚未保存到学习知识库 · 可在“调整安排”中保存。</p>}
+    {plan&&<p className="study-meta">{props.draftOrigin==='automatic'?'本次由长期计划自动准备':props.draftOrigin==='manual'?'本次手动生成或刷新':'已有安排 · 来源待核对'}</p>}
     {feedback}
-    {props.studyFirst&&plan&&<DashboardFocusHero summary={focusSummary} lead={focusLead} disabled={busy||!focusReady} keyboardEnabled={!props.activePractice&&!editing} onStart={()=>{if(focusLead)props.onStart(focusLead.taskId,focusTasks.map(task=>task.taskId));}} onAdvanced={()=>setEditing(true)}/>}
+    {props.studyFirst&&plan&&<DashboardFocusHero summary={focusSummary} lead={focusLead} subjectName={catalog?.subjects.find(subject=>subject.subjectId===leadTask?.subjectId)?.name} disabled={busy||!focusReady} keyboardEnabled={!props.activePractice&&!editing} onStart={()=>{if(focusLead)props.onStart(focusLead.taskId,focusTasks.map(task=>task.taskId));}} onAdvanced={()=>setEditing(true)}/>}
     <details className="study-plan-details" open><summary hidden={!props.studyFirst||!plan}>查看今日任务与进度</summary>
     <PlanRelationshipNotice allocation={plan?.longTermAllocation} hasPlan={Boolean(plan)} onLongTerm={props.onLongTerm}/>
     {props.studyFirst ? (
@@ -155,7 +160,7 @@ export function TodayLearning(props:TodayLearningProps) {
               <StudyEmptyPlanIcon/>
               <div>
                 <h4>今天还没生成计划</h4>
-                <p>生成计划后开始学习，或先进行自由学习。</p>
+                <p>生成计划后开始学习，或先进行自由学习。</p><p>联网时可能使用已配置的 AI 提供可选任务建议，费用由对应服务商计收。</p>
               </div>
               <div className="flex gap-3 mt-3">
                 <button type="button" className="c-btn-orange" disabled={busy} onClick={props.onGenerate}>生成计划</button>
@@ -181,7 +186,7 @@ export function TodayLearning(props:TodayLearningProps) {
     ) : (
       <>
         {!plan ? (
-          <div className="py-7"><h3 className="font-bold">今天还没生成计划</h3><p className="mt-2 mb-4 text-sm opacity-60">你仍可选择学科自由学习。无需先填写学习时长。</p><button className={`${button} bg-[var(--ink)] text-[var(--surface)]`} disabled={busy} onClick={props.onGenerate}>生成今日安排</button></div>
+          <div className="py-7"><h3 className="font-bold">今天还没生成计划</h3><p className="mt-2 mb-4 text-sm opacity-60">你仍可选择学科自由学习。无需先填写学习时长。联网时可能使用已配置的 AI 提供可选任务建议，费用由对应服务商计收。</p><button className={`${button} bg-[var(--ink)] text-[var(--surface)]`} disabled={busy} onClick={props.onGenerate}>生成今日安排</button></div>
         ) : (
           <>
             <div className="my-6 grid grid-cols-1 sm:grid-cols-2 border-y border-[var(--line)]" aria-label="每日必做">
@@ -216,6 +221,7 @@ export function TodayLearning(props:TodayLearningProps) {
     <StudyPanel open={editing} onClose={()=>setEditing(false)} title="调整今日安排">
       {minimumStatus}
       {feedback}
+      <p className="mt-3 text-sm">刷新安排时可能使用已配置的 AI 提供可选任务建议，费用由对应服务商计收。</p>
       <div className="mt-6 pt-5 border-t border-[var(--line)] flex flex-wrap gap-2">
         <button className={button} disabled={busy} onClick={props.onGenerate}>刷新今天的安排</button>
         {props.onTopUpMinimums&&<button className={button} disabled={busy||props.activePractice} onClick={props.onTopUpMinimums}>按长线最低量补齐今日草稿</button>}

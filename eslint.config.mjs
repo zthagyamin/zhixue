@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "dist/**",
     "out/**",
+    "outputs/**", // Generated local evidence is gitignored; lint product source and tests.
     "build/**",
     "scratch/**",
     ".superpowers/**",

@@ -57,7 +57,7 @@ test('relationship UI separates frozen today policy from future changes and both
  const {PlanRelationshipNotice}=loadTsx(new URL('../app/plan-relationship-notice.tsx',import.meta.url));
  const html=renderToStaticMarkup(h(PlanRelationshipNotice,{hasPlan:true,allocation:{vocabularyTarget:5,reviewTarget:3,budgetMinutes:20},onLongTerm(){throw new Error('Render cannot navigate');}}));
  assert.match(html,/今日安排来自长线计划/);assert.match(html,/5 个/);assert.match(html,/今天的配额已固定/);assert.match(html,/额外/);
- const dashboard=readDashboardSourceSync();assert.match(dashboard,/<TodayLearning\b[^>]*studyFirst onLongTerm=/);assert.match(dashboard,/<AccountStudyPlan\b[^>]*studyFirst onLongTerm=/);assert.match(dashboard,/onOpenRequestHandled=\{version=>setLongTermOpenRequest/);
+ const dashboard=readDashboardSourceSync();assert.match(dashboard,/<TodayLearning\b[^>]*studyFirst\b[^>]*onLongTerm=/);assert.match(dashboard,/<AccountStudyPlan\b[^>]*studyFirst\b[^>]*onLongTerm=/);assert.match(dashboard,/onOpenRequestHandled=\{version=>setLongTermOpenRequest/);
 });
 
 test('dedup preserves different completion rules and deliberate manual groups with additional content',()=>{

@@ -32,7 +32,7 @@ export async function runDashboardLateResult({page,context,account,width,out,err
   assert.equal(observed.body.attemptId,submitted.id);
   assert.equal(observed.body.sourceVersion,submitted.contentHash);
   await page.getByRole('button',{name:'返回今日',exact:true}).click();
-  await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).waitFor();
+  await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).waitFor();
   assert.equal(await input.count(),0);
   assert.equal((await account.status()).counts.records,0);
   release();await finished;await page.waitForLoadState('networkidle');
@@ -43,7 +43,7 @@ export async function runDashboardLateResult({page,context,account,width,out,err
   assert.equal(pendingStatus.counts.records,0);assert.equal(pendingStatus.counts.aiRequests,0);
   await page.screenshot({path:resolve(out,'late-after-leave-'+width+'.png'),fullPage:true});
   await context.unroute('**/api/account-study**');
-  await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).click();await input.waitFor();
+  await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).click();await input.waitFor();
   assert.equal(await input.inputValue(),' 4 ');
   await page.getByRole('button',{name:'提交',exact:true}).dblclick();
   const resolved=await waitForReadback(async()=>(await page.evaluate(()=>window.__dashboardProbe.read())).find(row=>row.id===after.id),

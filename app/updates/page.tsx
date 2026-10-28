@@ -32,7 +32,17 @@ const reliabilityUpdate = {
     '选择题反馈接续键盘焦点，题内追问失败可被通知，论文来源页签支持方向键。已有答案与学习记录保留。',
   ],
 };
-const history = [...announcements, experienceUpdate, webUpdate, reliabilityUpdate].sort((a, b) => b.date.localeCompare(a.date));
+const learningFlowUpdate = {
+  version: '', date: '2026-10-28', title: '结束状态更准确，续学和同步更清楚',
+  changes: [
+    '提前结束、空题和题组恢复未完成分别说明；结束摘要保留待核对与跳过数量，不把本轮结束当作任务完成。',
+    '今日与结束页可直接查看同步详情，区分账号接收和学习库写回；关闭详情后保留原练习和焦点。',
+    '进行中任务显示对应学科与已核实进度；没有计划时，可从已核对的最近作答返回学科。',
+    '计划草稿按实际执行显示生成阶段；自动准备的来源有据可查，AI 建议与确认生效分别说明。',
+    '词库组、当前步骤和本组完成数分别显示；到期回忆核对不再伪装为逐步完成三个阶段。已有答案和学习记录保留。',
+  ],
+};
+const history = [...announcements, experienceUpdate, webUpdate, reliabilityUpdate, learningFlowUpdate].sort((a, b) => b.date.localeCompare(a.date));
 
 export default function UpdatesPage() {
   return <main className="support-page">

@@ -16,7 +16,7 @@ test('immediate reordered review never saves a second event or upgrades the firs
  assert.match(text(f.hooks.view()),/即时重练.*不计入正式记录/);
  assert.equal(plugin(f.hooks.view()).props.context.recallPersistenceRequired,false);
  await plugin(f.hooks.view()).props.onGrade('good');await settle(f);
- assert.deepEqual(records,['again']);assert.deepEqual(finished,[{answered:1,correct:0,wrong:1}]);
+ assert.deepEqual(records,['again']);assert.deepEqual(finished,[{answered:1,correct:0,wrong:1,reason:'exhausted',skipped:0,remaining:0}]);
 });
 test('an old companion changing a calculation answer is rejected without losing the original feedback',async()=>{
  const f=fixture(),records=[],calc={...A,questionType:'calculation',answer:'4'};
@@ -43,7 +43,7 @@ test('parent-provided items preserve B, its draft and summary through transport 
  f.hooks.mount(f.Practice,props);await settle(f);await plugin(f.hooks.view()).props.onGrade('good');f.hooks.render();
  plugin(f.hooks.view()).props.context.draft.write('answer','B draft');
  for(const companionClient of [{},null]){f.hooks.render({...props,companionClient});await settle(f);assert.equal(plugin(f.hooks.view()).props.data.prompt,'B');assert.equal(plugin(f.hooks.view()).props.context.draft.read('answer',''),'B draft');}
- await plugin(f.hooks.view()).props.onGrade('good');assert.deepEqual(records,['A','B']);assert.deepEqual(finished,[{answered:2,correct:2,wrong:0}]);
+ await plugin(f.hooks.view()).props.onGrade('good');assert.deepEqual(records,['A','B']);assert.deepEqual(finished,[{answered:2,correct:2,wrong:0,reason:'exhausted',skipped:0,remaining:0}]);
 });
 test('refreshing transport invalidates its pending variant without resetting the provided session',async()=>{
  const f=fixture(),items=[A,B],wait=deferred();const props={items,companionClient:{variantPractice:()=>wait.promise},drafts:f.store};

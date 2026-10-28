@@ -19,15 +19,16 @@ import {runDashboardQuizFlow} from './dashboard-quiz-flow.mjs';
 import {runDashboardFlashcardFlow} from './dashboard-flashcard-flow.mjs';
 import {runDashboardCodeFlow,createDashboardCodeAccount} from './dashboard-code-flow.mjs';
 import {verifyDashboardCodeAssets} from './dashboard-code-assets.mjs';
+import {runDashboardUxNavigation} from './dashboard-ux-navigation.mjs';
 const repo=resolve(import.meta.dirname,'..'),project=repo.replaceAll('\\','/');
 const {values:args}=parseArgs({options:{'browser-driver':{type:'string'},chrome:{type:'string'},out:{type:'string'},scenario:{type:'string'}}});
-const root=await mkdtemp(resolve(tmpdir(),'zhixue-dashboard-recovery-')),out=resolve(args.out??resolve(root,'evidence'));
+const root=await mkdtemp(resolve(tmpdir(),'zhixue-dashboard-recovery-')),out=resolve(args.out??process.env.AGENT_EVIDENCE_DIR??resolve(root,'evidence'));
 const driver=args['browser-driver']??process.env.UX_BROWSER_DRIVER;
 await mkdir(out,{recursive:true});
 await writeFile(resolve(out,'results.json'),JSON.stringify({complete:false,passed:0,phase:'setup',ownerProcessId:process.pid}));
 let account,server,browser,lastPage,lastErrors=[],lastDocuments=[],lastRuntimeNetwork=[],lastConsole=[],lastHttpProblems=[],diagnostics=null,failure=null,runtimeAssets=null;const requests=[],pages=[],dialogs=[],retired=[];
 try{
- if(args.scenario&&!['recovery','late-result','completion','receipt-loss','pending-continuation','formal-receipt-loss','formal-receipt-no-replay','scope-switch','source-update','quiz-flow','flashcard-flow','code-flow'].includes(args.scenario))throw Error('Unknown Dashboard check scenario');
+ if(args.scenario&&!['recovery','late-result','completion','receipt-loss','pending-continuation','formal-receipt-loss','formal-receipt-no-replay','scope-switch','source-update','quiz-flow','flashcard-flow','code-flow','ux-navigation'].includes(args.scenario))throw Error('Unknown Dashboard check scenario');
  await writeFile(resolve(root,'index.html'),'<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module" src="/entry.jsx"></script></html>');
  await writeFile(resolve(root,'entry.jsx'),`
 import React from'react';import{createRoot}from'react-dom/client';
@@ -115,16 +116,22 @@ createRoot(document.getElementById('root')).render(<OnboardingProvider><StudyLay
   });
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort('blockedbyclient'));
   await page.goto(origin+'/study?companionPort=59999');await page.waitForLoadState('networkidle');
-  await page.getByRole('button',{name:'开始今日自测',exact:true}).waitFor({timeout:30000});
+  const todayStart=page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/});
+  await todayStart.waitFor({timeout:30000});
   if(theme==='dark'){
    await page.getByRole('button',{name:'数据与设置',exact:true}).click();
    await page.getByRole('button',{name:/^深色模式/}).click();
    await page.locator('html.dark').waitFor();
    await page.getByRole('button',{name:'今日',exact:true}).click();
-   await page.getByRole('button',{name:'开始今日自测',exact:true}).waitFor();
+   await todayStart.waitFor();
   }
   if(theme)assert.equal(await page.locator('.dark').count()>0,theme==='dark','Verify actual site theme, not browser preference');
-  await page.getByRole('button',{name:'开始今日自测',exact:true}).click();
+  if(args.scenario==='ux-navigation'){
+   const checked=await runDashboardUxNavigation({page,account,width,out,errors,requests,todayStart});
+   assert.equal(documentNavigations.length,1,'Sync panel must keep the original document');
+   pages.push({...checked,documentNavigations});await context.close();continue;
+  }
+  await todayStart.click();
   if(args.scenario==='code-flow'){
    const checked=await runDashboardCodeFlow({page,account,width,variant,theme,out,errors});
    assert.equal(documentNavigations.length,2,'Code flow only uses initial navigation and final explicit reload');
@@ -183,14 +190,14 @@ createRoot(document.getElementById('root')).render(<OnboardingProvider><StudyLay
   await page.getByRole('button',{name:'提交',exact:true}).click();
   await page.getByText('首轮答案已保留 · 待核对',{exact:true}).waitFor();
   const pending=await page.evaluate(()=>window.__dashboardProbe.read());assert.equal(pending[0].submitted,' 1/2 ');assert.equal(pending[0].evaluation,'pending');assert.equal(pending[0].formal,null);
-  await page.reload();await page.waitForLoadState('networkidle');await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).click();await input.waitFor();
+  await page.reload();await page.waitForLoadState('networkidle');await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).click();await input.waitFor();
   assert.equal(await input.inputValue(),' 1/2 ');assert.deepEqual(await page.evaluate(()=>window.__dashboardProbe.read()),pending);
   await context.route('**/api/account-study**',route=>route.abort('failed'));
   await page.reload();await page.waitForLoadState('networkidle');await page.getByText('待核对答案',{exact:true}).waitFor();
   assert.deepEqual(await page.evaluate(()=>window.__dashboardProbe.read()),pending);
   await page.screenshot({path:resolve(out,'api-offline-'+width+'.png'),fullPage:true});
   await context.unroute('**/api/account-study**');
-  await page.reload();await page.waitForLoadState('networkidle');await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).click();await input.waitFor();
+  await page.reload();await page.waitForLoadState('networkidle');await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).click();await input.waitFor();
   assert.equal(await input.inputValue(),' 1/2 ');assert.deepEqual(await page.evaluate(()=>window.__dashboardProbe.read()),pending);
 
   await page.screenshot({path:resolve(out,'initial-'+width+'.png'),fullPage:true});

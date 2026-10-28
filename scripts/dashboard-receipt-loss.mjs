@@ -46,7 +46,7 @@ export async function runDashboardReceiptLoss({page,context,account,width,out,er
     await page.screenshot({path:resolve(out,'receipt-lost-'+width+'.png'),fullPage:true});
     blocked=false;
     await page.reload();await page.waitForLoadState('networkidle');
-    await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).click();await input.waitFor();
+    await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).click();await input.waitFor();
     assert.equal(await input.inputValue(),' 1/2 ');
     await page.getByRole('button',{name:'提交',exact:true}).dblclick();
     await page.getByText('首轮答案已保留 · 待核对',{exact:true}).waitFor();

@@ -22,7 +22,7 @@ export async function runDashboardCompletion({page,account,width,out,previous,er
   await page.getByRole('button',{name:'返回今日',exact:true}).click();
   const finished=page.getByRole('heading',{name:/^(今日这一轮已结束|当前没有待自测任务)$/});
   await finished.waitFor();
-  const start=page.getByRole('button',{name:'开始今日自测',exact:true});
+  const start=page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:'开始下一项',exact:true});
   assert.equal(await start.isDisabled(),true);
   const todayBeforeReload=await page.locator('body').innerText();
   const headingBeforeReload=await finished.innerText();

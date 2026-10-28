@@ -1,7 +1,7 @@
 "use client";
 import {NonWordPluginHost,createNonWordContinuation,restorePendingAnswers,scopeForNonWord,nonWordRoundMembers,useNonWordRoundCache,subjectLearningServices,cursorSeed,restoreSavedPending,restartSavedRound,makeExtra} from './nonword-plugin-host';
 import { createNonWordQuestionSelection, bindNonWordNavigation, sourceUpdateNotice } from '../../src/features/nonword-study';
-import {practicedSubjectKeys,pendingSubjectKeys,isSubjectPassComplete,skipSubjectRound} from '../subject-round';
+import {practicedSubjectKeys,pendingSubjectKeys,isSubjectPassComplete,skipSubjectRound,advanceSubjectRound,emptySubjectRound,isSubjectRoundComplete} from '../subject-round';
 import {DemoModeBadge} from "../demo-mode-badge";
 import {StudyGuidanceHelp,StudyRoundGuidance} from '../study-guidance';
 import {StudySaveStatus} from '../study-save-status';
@@ -37,10 +37,10 @@ import { recordStudyAttempt,type StudyAttemptInput } from "../study-event-contro
 import {prepareAttemptEvidence} from "../../src/domain/assessment";
 import {completesSubjectItemAfterAttempt,isInitialReviewProbe,reviewDisplayStage,reviewSubmission} from "../../src/domain/planning";
 import {createSubjectGradeHandler} from "../../src/features/study-attempt";
+import {wordStudyPresentation,WordStudyQueue,WordProgressHelp} from "../../src/features/study-word-progress";
 import type { StudyEventV3 } from "../study-event-v3";
 import { StudyRecoveryState,StudySessionShell,StudySubjectMenu } from "../study-session-shell";
 import { strongerAuxiliaryDelivery } from "../study-submission-status";
-import { advanceSubjectRound,emptySubjectRound,isSubjectRoundComplete } from "../subject-round";
 import { assertPlanningStudySources,taskWordStages } from "../task-plan-runtime";
 import { advanceThreeStageSession } from "../three-stage-order";
 import { firstIncompleteGroup,pacingForSubject,resolveServedGroup,splitGroupBounds,vocabQuotaOptions } from "../vocab-pacing";
@@ -355,18 +355,26 @@ function SubjectViewSession({model}:Props){
             );
           }
 
+          const wordPresentation=wordStudyPresentation({
+            vocabulary:isVocabPaced,
+            demo:isDemoMode,planned:Boolean(taskScope),review:scopedTask?.category==='review',groupIndex:vocabServedGroup,groupCount:vocabBounds.length,
+            total:items.length,completed:recallPassUsed||actualPluginType==='recall'?practiced.length:isVocabPaced?vocabServedCompletedCount:round.correctKeys.length,
+            ready:!accountLoaded||scopedAccountProgress?.historyReady===true,practiced:recallPassUsed||actualPluginType==='recall',
+            stage:currentStage,quickReview,threeStage:actualPluginType==='three-stage',modeLabel:pluginLabels[actualPluginType],
+          });
           return (
             <StudySessionShell key={subject.id} title={subject.name} assistant={<StudyAITrigger onUnavailable={()=>setAiEntryOpen(true)}/>}
               notice={sourceUpdateNotice(Boolean(accountLoaded),visibleAccountStatus.phase,localSourcePending)}
-              scope={isDemoMode?'公开示例 · 不计入个人记录':taskScope?`${scopedTask?.category==='review'?'到期复习':'今日任务'} · 本组 ${items.length} ${isVocabPaced?'词':'题'}`:isVocabPaced?`自由学习 · 第 ${vocabServedGroup+1} / ${vocabBounds.length} 组`:'自由学习'}
-              progress={accountLoaded&&!scopedAccountProgress?.historyReady?'进度待核对':`${recallPassUsed||actualPluginType==='recall'?'已练':'已完成'} ${recallPassUsed||actualPluginType==='recall'?practiced.length:isVocabPaced?vocabServedCompletedCount:round.correctKeys.length} / ${items.length}`}
-              mode={actualPluginType==='three-stage'?`${['认义','语境','自评'][currentStage-1]} · ${currentStage}/3`:pluginLabels[actualPluginType]}
+              scope={wordPresentation.scope}
+              progress={wordPresentation.progress}
+              mode={wordPresentation.mode}
               onExit={()=>navigateToStudyTab('today')}
               subjects={<StudySubjectMenu subjects={subjects} activeId={subject.id} onChoose={id=>navigateToStudyTab(id)} />}
               source={<StudyItemSource item={currentItem} source={data.source} canOpenLocal={!accountLoaded&&Boolean(companionSession)&&syncState==='connected'} getObsidianUri={getObsidianUri} preferenceScope={JSON.stringify([workspaceId,accountLibraryId??data.localLibraryId??'local'])}/>}
-              queue={<div className="word-stage-list">{items.map((item,index)=>{const key=resolveStudyItemProgressKey(item,index,uiProgress),stage=learningStages[key]||0;return <button key={key} type="button" className={index===idx?'active':''} onClick={()=>selectQuestion(index)}><span>{itemLabel(item,index)}</span>{(item.pluginType||item.type||subject.pluginType)==='three-stage'&&<b>{[1,2,3].map(step=><i key={step} className={stage>=step?'done':''}/>)}</b>}</button>;})}</div>}
+              queue={<WordStudyQueue items={items.map((item,index)=>({key:resolveStudyItemProgressKey(item,index,uiProgress),label:itemLabel(item,index),stage:learningStages[resolveStudyItemProgressKey(item,index,uiProgress)]||0,threeStage:(item.pluginType||item.type||subject.pluginType)==='three-stage'}))} currentIndex={idx} ready={!accountLoaded||scopedAccountProgress?.historyReady===true} onChoose={selectQuestion}/>}
               options={<>
                 <StudyGuidanceHelp kind={actualPluginType} pendingEvaluation={Boolean(nonWordScope)}/>
+                {isVocabPaced&&<WordProgressHelp/>}
                 <section aria-label="本题复习安排"><h3>本题复习安排</h3><ReviewContext temporary={isDemoMode} completedStage={actualPluginType==='three-stage'?completedStage:undefined} category={scopedTask?.category} due={uiProgress.fsrsData?.[itemProgressKey]?.due} recorded={draftAdapter.hasSavedFeedback?.()}/></section>
                 {(taskPlanningEnabled||accountLoaded) && <div className="mb-4 flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="学习范围">
                   <button className="rounded-lg border border-[var(--line)] px-3 py-2 focus-visible:outline-2" aria-pressed={Boolean(modulePlan)} onClick={()=>navigateToStudyTab('today')}>今日任务</button>
@@ -415,9 +423,9 @@ function SubjectViewSession({model}:Props){
                     <span>切换只改变练习方式，不会清空本题进度；不兼容题目会自动回到 资料默认方式。</span>
                     {itemOverride && itemOverride !== "ai" && <button className="font-black underline underline-offset-4" onClick={() => setItemPluginOverride(overrideKey, "ai")}>本题恢复资料默认方式</button>}
                   </div>
-                  {isVocabPaced && (taskScope && modulePlan ? <div className="mt-3 text-sm font-bold"><span>今日任务 · {scopedTask?.category==='review'?'复习':'新学'} · 本次 {items.length} 词（已完成 {vocabServedCompletedCount}）</span>{plannedVocabEntries.length>1&&<label className="mt-2 flex items-center gap-2">切换任务<select aria-label="计划词汇任务" value={selectedVocabEntry?.itemKey??''} onChange={event=>chooseVisiblePlanEntry(event.target.value)} className="min-h-11 min-w-0 max-w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2">{plannedVocabEntries.map(entry=><option key={entry.itemKey} value={entry.itemKey}>{entry.title} · {entry.practice?.count} 词</option>)}</select></label>}</div> :
+                  {isVocabPaced && (taskScope && modulePlan ? <div className="mt-3 text-sm font-bold"><span>{wordPresentation.scope} · {wordPresentation.progress}</span>{plannedVocabEntries.length>1&&<label className="mt-2 flex items-center gap-2">切换任务<select aria-label="计划词汇任务" value={selectedVocabEntry?.itemKey??''} onChange={event=>chooseVisiblePlanEntry(event.target.value)} className="min-h-11 min-w-0 max-w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2">{plannedVocabEntries.map(entry=><option key={entry.itemKey} value={entry.itemKey}>{entry.title} · {entry.practice?.count} 词</option>)}</select></label>}</div> :
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[var(--line)] bg-[rgba(0,0,0,0.02)] dark:bg-[rgba(255,255,255,0.02)] px-4 py-2.5 text-xs font-bold text-[var(--ink)] opacity-80">
-                      <span>词库分组：第 {vocabServedGroup + 1} / {vocabBounds.length} 组 · 本次 {items.length} 词（已完成 {vocabServedCompletedCount}）</span>
+                      <span>{wordPresentation.scope} · {wordPresentation.progress}</span>
                       <label className="flex items-center gap-1.5">
                         {(taskPlanningEnabled||Boolean(accountLoaded))?'分组大小':'每日词量'}
                         <select

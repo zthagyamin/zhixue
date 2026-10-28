@@ -48,7 +48,7 @@ export async function runDashboardQuizFlow({page,account,width,variant,theme,out
   rows=await waitForReadback(read,values=>firstOnly(values)[0]?.formal?.status==='linked'&&firstOnly(values)[0].traversed,
     {label:'Quiz formal and traversal durable'});
   const first=firstOnly(rows)[0];assert.equal(firstOnly(rows).length,1);assert.deepEqual(immutable(first),immutable(original));
-  assert.equal(first.formal.rating,variant==='correct'?'good':'again');
+  assert.equal(first.formal.rating,variant==='correct'?'good':variant==='partial'?'hard':'again');
   if(child)assert.deepEqual(rows.find(row=>row.id===child.id),child);
   const loaded=await account.client.load(),records=loaded.records;
   assert.equal(records.length,1);assert.equal(records[0].record.event.eventId,first.formal.eventId);

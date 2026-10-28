@@ -251,6 +251,9 @@ export function DashboardView({model,paperReading=false}:{model:DashboardControl
         </section>}
         {tab==='sources'&&<SourcesView model={model.sourcesModel}/>}
     </section>
+    <StudyPanel open={model.syncDetails.open} onClose={model.syncDetails.close} title="同步与记录">
+      {model.syncDetails.open&&<div ref={node=>model.syncDetails.focusTarget(node)}><SourcesView model={{...model.sourcesModel,navigation:{...model.sourcesModel.navigation,tab:'sources'}}}/></div>}
+    </StudyPanel>
         <StudyPanel open={aiEntryOpen} onClose={()=>setAiEntryOpen(false)} title="AI 与 API Key 设置" variant="center"><div data-ai-private>{studyAI?<StudyAISettings/>:<div className="study-ai-settings"><h3>在手机、平板或电脑上使用 AI</h3>{!sessionUser?<><p>先登录自己的账号，即可读取账号学习库和 AI 设置。手机不需要连接这台电脑的本地服务。</p><a href={companionSignInLink(companionUrl)}>登录知学</a></>:<><p>{accountAILibrary.phase==='loading'?'正在读取账号学习库信息，无需等待全部题目加载。':accountAILibrary.phase==='failed'?'账号学习库信息暂时无法读取，请重试。':'你的账号尚未关联学习库。先在电脑上接入一份材料并启用账号题库，之后可直接在手机或平板配置账号 API Key。'}</p><button type="button" onClick={accountAILibrary.refresh}>重新读取账号信息</button><button type="button" onClick={()=>{setAiEntryOpen(false);setTab('sources');setSourceView('sources');}}>前往知识库接入</button></>}</div>}<details className="study-context"><summary>没有 API Key：复制提示词到网页 AI</summary><StudyAICopyPrompt/></details></div></StudyPanel>
   </main></DashboardAIWorkspace>;
 }

@@ -677,8 +677,8 @@ export function SourcesView({ model }: Props) {
               {activeSection === "sync" && (
                 <div className="settings-content-pane">
                   <div className="settings-section-header">
-                    <h3>同步概况与记录</h3>
-                    <p>核对学习库已登记题目、作答历史记录与多端复习事件同步</p>
+                    <h3 id="study-sync-details" tabIndex={-1}>同步概况与记录</h3>
+                    <p>查看记录状态；检查与发送记录是两个独立操作。</p>
                   </div>
 
                   {/* 题库与作答统计 */}
@@ -723,7 +723,7 @@ export function SourcesView({ model }: Props) {
                       </div>
                       <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--surface)]">
                         <span className="text-xs text-[var(--ink)] opacity-60 block mb-1">
-                          🕒 本机待同步队列
+                          🕒 当前账号在本机待处理
                         </span>
                         <strong className="text-xl font-bold font-mono text-[var(--ink)]">
                           {settingsReadView?.pending
@@ -745,7 +745,7 @@ export function SourcesView({ model }: Props) {
                     )}
                     {settingsDeliveryLabel && (
                       <p className="text-[11px] text-[var(--ink)] opacity-50 mt-1" title={settingsDeliveryLabel}>
-                        {settingsDeliveryLabel} · 上传、知识库写回及辅助摘要分别核对。
+                        {settingsDeliveryLabel} · 包括该账号各学习库；上传、知识库写回及辅助摘要分别核对。
                       </p>
                     )}
                   </section>
@@ -771,6 +771,7 @@ export function SourcesView({ model }: Props) {
                         <p className="text-xs font-medium text-[var(--ink)] opacity-80 leading-relaxed max-w-xl">
                           {cloudMessage || cloudStatusDetail}
                         </p>
+                        <p className="mt-2 text-xs text-[var(--ink)] opacity-70">“立即同步进度”会尝试发送待处理记录并核对回执；下方“重新检查”只检查复习状态。</p>
                       </div>
                       <div className="shrink-0 flex gap-2">
                         {cloudStatus === "needs-migration" ? (

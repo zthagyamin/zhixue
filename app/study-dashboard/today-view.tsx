@@ -1,10 +1,10 @@
 "use client";
-import {DemoModeBadge} from "../demo-mode-badge";
+import {DemoModeBadge} from '../demo-mode-badge';
+import {PracticeResult} from '../../src/features/review-session';
 import {GeneratedPlanStart} from "../generated-plan-start";
 import {StudyTermHelp} from "../study-term-help";
 import {useCallback} from 'react';
 import { AccountStudyPlan } from "../account-study-controls";
-import { accountStudyPayload } from "../account-study-payload";
 import { AccountReadNoticeSlot } from "../account-study-status";
 import {
 type ConstraintMode,
@@ -24,11 +24,11 @@ import {createLazyComponent} from '../plugins/lazy-plugin';
 import { StudyEmptyPlanIcon,StudyIcon,StudyTodayLayout } from "../study-session-shell";
 import { emptySubjectRound,isSubjectRoundComplete } from "../subject-round";
 import { TodayLearning,nativePlanDraftActions } from "../today-learning";
-import { StudyPayload } from "./prelude";
+import {SyncSummary} from '../../src/features/sync';
 import type { DashboardController } from './use-dashboard-controller';
-import {inlineNonWordScope,inlinePracticeGroup} from './nonword-scopes';
+import {inlineNonWordScope,inlinePracticeGroup,finishDashboardPractice} from './practice-session-adapter';
 const PracticeSession=createLazyComponent<Parameters<typeof import('../practice-session').PracticeSession>[0]>(async()=>({default:(await import('../practice-session')).PracticeSession}),'复习练习');
-type Props={model:Pick<DashboardController,"accountAiEntryOwner"|"accountAttemptActiveRef"|"accountClient"|"accountDailyPlan"|"accountLibraryId"|"accountLoaded"|"accountLoadedRef"|"accountOptedOut"|"accountPendingLoadedRef"|"accountWorkspaceId"|"activeProject"|"activeTaskScope"|"allItems"|"allSubjectsComplete"|"applyAccountLoaded"|"applyLocalStudySource"|"approveTodayPlan"|"choosePlanVocabEntry"|"companionPlanClient"|"companionSession"|"completeAccountTask"|"completedItems"|"completion"|"constraintAuthority"|"constraintMode"|"currentDay"|"data"|"effectivePlan"|"eventRevision"|"focusDetail"|"focusPath"|"focusTitle"|"generateTodayPlan"|"getObsidianUri"|"gradeAccountCalculation"|"inputPoolPractice"|"isDemoMode"|"lastStudyReceipts"|"learningDrafts"|"legacyPlanningVisibility"|"navigateToStudyTab"|"normalizedSubjects"|"noteEventsChanged"|"openLongTermFromToday"|"openSources"|"paperLibraryScope"|"paperServices"|"pendingActivities"|"pendingLocalSourceRef"|"planApproved"|"planCandidate"|"planCurrent"|"planDeadlineDraft"|"planHistory"|"planLoading"|"planMessage"|"planMode"|"planRevision"|"planSettings"|"practiceItems"|"practiceLoading"|"practiceSessionKey"|"practiceSummary"|"primarySubject"|"progressEvents"|"readAccountAgain"|"recordPracticeAttempt"|"rejectTodayPlan"|"removePlanEntry"|"requestAiHint"|"requestAiTutor"|"restorePlanRevision"|"runAccountQuestionAi"|"savePlanSettings"|"sessionUser"|"setAccountAiEntryOwner"|"setConstraintMode"|"setData"|"setPlanDeadlineDraft"|"setPlanMessage"|"setPlanMode"|"setPlanSettings"|"setPracticeItems"|"setPracticeSummary"|"setTab"|"setTemporaryUntil"|"startAccountLearning"|"startPlannedQuestionPractice"|"startPractice"|"startTaskLearning"|"storageReady"|"subjectRounds"|"subjects"|"syncState"|"tab"|"taskLearning"|"taskPlanningEnabled"|"temporaryUntil"|"uiProgress"|"useCaughtUpPage"|"visibleAccountStatus"|"vocabPacingWorkspace"|"workspaceId"|"studyTaskNavigation">};
+type Props={model:Pick<DashboardController,"accountAiEntryOwner"|"accountAttemptActiveRef"|"accountClient"|"accountDailyPlan"|"accountLibraryId"|"accountLoaded"|"accountLoadedRef"|"accountOptedOut"|"accountPendingLoadedRef"|"accountWorkspaceId"|"activeProject"|"activeTaskScope"|"allItems"|"allSubjectsComplete"|"applyAccountLoaded"|"applyLocalStudySource"|"approveTodayPlan"|"choosePlanVocabEntry"|"companionPlanClient"|"companionSession"|"completeAccountTask"|"completedItems"|"completion"|"constraintAuthority"|"constraintMode"|"currentDay"|"data"|"effectivePlan"|"eventRevision"|"focusDetail"|"focusPath"|"focusTitle"|"generateTodayPlan"|"getObsidianUri"|"gradeAccountCalculation"|"inputPoolPractice"|"isDemoMode"|"lastStudyReceipts"|"learningDrafts"|"legacyPlanningVisibility"|"navigateToStudyTab"|"normalizedSubjects"|"noteEventsChanged"|"openLongTermFromToday"|"openSources"|"paperLibraryScope"|"paperServices"|"pendingActivities"|"pendingLocalSourceRef"|"planApproved"|"planCandidate"|"planCurrent"|"planDeadlineDraft"|"planHistory"|"planLoading"|"planMessage"|"planMode"|"planRevision"|"planSettings"|"practiceItems"|"practiceLoading"|"practiceSessionKey"|"practiceSummary"|"primarySubject"|"progressEvents"|"readAccountAgain"|"recordPracticeAttempt"|"rejectTodayPlan"|"removePlanEntry"|"requestAiHint"|"requestAiTutor"|"restorePlanRevision"|"runAccountQuestionAi"|"savePlanSettings"|"sessionUser"|"setAccountAiEntryOwner"|"setConstraintMode"|"setData"|"setPlanDeadlineDraft"|"setPlanMessage"|"setPlanMode"|"setPlanSettings"|"setPracticeItems"|"setPracticeSummary"|"setTab"|"setTemporaryUntil"|"startAccountLearning"|"startPlannedQuestionPractice"|"startPractice"|"startTaskLearning"|"storageReady"|"subjectRounds"|"subjects"|"syncState"|"tab"|"taskLearning"|"taskPlanningEnabled"|"temporaryUntil"|"uiProgress"|"useCaughtUpPage"|"visibleAccountStatus"|"vocabPacingWorkspace"|"workspaceId"|"studyTaskNavigation"|"syncDetails"|"settingsReadView"|"continueTodayStudy"|"recentSubject">};
 export function TodayView({model}:Props){
  const focusPracticeSurface=useCallback((node:HTMLElement|null)=>{
    if(!node||document.querySelector('dialog[open],.study-ai-panel:not([hidden])')||document.activeElement?.closest('input,textarea,select,[contenteditable]'))return;
@@ -36,21 +36,16 @@ export function TodayView({model}:Props){
  },[]);
  const {
   accountAiEntryOwner,
-  accountAttemptActiveRef,
   accountClient,
   accountDailyPlan,
   accountLibraryId,
   accountLoaded,
-  accountLoadedRef,
   accountOptedOut,
-  accountPendingLoadedRef,
   accountWorkspaceId,
   activeProject,
   activeTaskScope,
   allItems,
   allSubjectsComplete,
-  applyAccountLoaded,
-  applyLocalStudySource,
   approveTodayPlan,
   choosePlanVocabEntry,
   companionPlanClient,
@@ -77,13 +72,11 @@ export function TodayView({model}:Props){
   legacyPlanningVisibility,
   navigateToStudyTab,
   normalizedSubjects,
-  noteEventsChanged,
   openLongTermFromToday,
   openSources,
   paperLibraryScope,
   paperServices,
   pendingActivities,
-  pendingLocalSourceRef,
   planApproved,
   planCandidate,
   planCurrent,
@@ -112,12 +105,10 @@ export function TodayView({model}:Props){
   sessionUser,
   setAccountAiEntryOwner,
   setConstraintMode,
-  setData,
   setPlanDeadlineDraft,
   setPlanMessage,
   setPlanMode,
   setPlanSettings,
-  setPracticeItems,
   setPracticeSummary,
   setTab,
   setTemporaryUntil,
@@ -139,6 +130,11 @@ export function TodayView({model}:Props){
   vocabPacingWorkspace,
   workspaceId,
  }=model;
+ const syncSummary=!isDemoMode?<SyncSummary pending={model.settingsReadView?.pending??null} checkedAt={model.settingsReadView?.checkedAt}
+   receipts={lastStudyReceipts} workspaceId={workspaceId} libraryId={accountLibraryId??data.localLibraryId??null}
+   accountStatus={accountLoaded?'enabled':accountOptedOut?'not-enabled':'unknown'} companionStatus={syncState==='offline'?'offline':syncState==='connected'?'online':'unknown'} onOpenDetails={model.syncDetails.show}/>:null;
+ const openSubjects=()=>{if(navigateToStudyTab('today'))requestAnimationFrame(()=>document.getElementById('study-subjects')?.scrollIntoView({block:'start'}));};
+ const unplanned=accountLoaded?accountDailyPlan.ready&&!accountDailyPlan.state?.approvedPlan:taskPlanningEnabled?Boolean(taskLearning.state?.ready&&!taskLearning.state.draft?.plan):!effectivePlan;
  return <>{tab === "today" && (useCaughtUpPage ? <section className="caught-up-state max-w-6xl mx-auto" aria-live="polite">
           <span className="caught-up-mark">✓</span>
           <p className="module-eyebrow">TODAY · ALL CLEAR</p>
@@ -147,11 +143,14 @@ export function TodayView({model}:Props){
           <div><button onClick={() => setTab("progress")}>查看学习进度</button><button onClick={() => openSources("sources")}>管理资料来源</button></div>
         </section> : <StudyTodayLayout
             plan={<>
-              {accountLoaded&&accountWorkspaceId&&<div className="col-span-1 lg:col-span-2"><AccountStudyPlan {...model.studyTaskNavigation} studyFirst onLongTerm={openLongTermFromToday} activePractice={practiceItems!==null} initialSection={accountAiEntryOwner===accountWorkspaceId?'ai':undefined} onCloseEditor={()=>setAccountAiEntryOwner(null)} key={accountWorkspaceId} localRevision={eventRevision} state={accountDailyPlan.state} refreshPlanState={accountDailyPlan.refresh} planError={accountDailyPlan.error} client={accountClient} loaded={accountLoaded} day={currentDay} workspaceId={accountWorkspaceId} onStart={startAccountLearning} onComplete={completeAccountTask}/></div>}
+              {unplanned&&model.recentSubject.kind==='available'&&<section className="study-card" aria-label="最近学习的学科"><p className="study-meta">从已核实的最近作答找到</p><strong>{subjects.find(subject=>model.recentSubject.kind==='available'&&subject.id===model.recentSubject.subjectId)?.name}</strong><p>返回该学科查看已有进度；这不是恢复原题或原草稿。</p><button type="button" className="study-secondary-action" onClick={()=>{if(model.recentSubject.kind==='available')navigateToStudyTab(model.recentSubject.subjectId,"free");}}>返回最近学科</button></section>}
+              {unplanned&&model.recentSubject.kind==='unavailable'&&<p role="status">最近作答与当前资料暂时无法对应，请从学科列表选择内容；原记录保留。</p>}
+              {accountLoaded&&accountWorkspaceId&&<div className="col-span-1 lg:col-span-2"><AccountStudyPlan {...model.studyTaskNavigation} studyFirst draftOrigin={accountDailyPlan.draftOrigin} onLongTerm={openLongTermFromToday} activePractice={practiceItems!==null} initialSection={accountAiEntryOwner===accountWorkspaceId?'ai':undefined} onCloseEditor={()=>setAccountAiEntryOwner(null)} key={accountWorkspaceId} localRevision={eventRevision} state={accountDailyPlan.state} refreshPlanState={accountDailyPlan.refresh} planError={accountDailyPlan.error} client={accountClient} loaded={accountLoaded} day={currentDay} workspaceId={accountWorkspaceId} onStart={startAccountLearning} onComplete={completeAccountTask}/></div>}
               {planMessage && <p role="status" className="text-sm text-[var(--orange)]">{planMessage}</p>}
               <div className="col-span-1 lg:col-span-2 flex flex-col gap-8" aria-label="今日计划与复习">
           {legacyPlanningVisibility.warning && <p className="text-sm border-l-2 border-[var(--orange)] pl-3" role="status">当前 Companion 尚未支持任务型今日学习，请更新并重启；下方暂时显示旧版兼容计划。</p>}
           {accountLoaded ? null : taskPlanningEnabled ? <TodayLearning {...model.studyTaskNavigation} studyFirst onLongTerm={openLongTermFromToday} activePractice={practiceItems!==null}
+            generationPhase={taskLearning.state?.generationPhase} draftOrigin={taskLearning.state?.draftOrigin}
             plan={taskLearning.state?.draft?.plan??null} catalog={taskLearning.state?.catalog??null}
             summary={taskLearning.state?.summary??{newDone:0,newTarget:20,newMissing:0,reviewDone:0,reviewTotal:0}}
             completedTaskIds={taskLearning.state?.completedTaskIds??[]} dirty={taskLearning.state?.draft?.dirty??false}
@@ -308,6 +307,8 @@ export function TodayView({model}:Props){
             <PracticeSession
               key={practiceSessionKey}
               items={practiceItems}
+              practiceScopeLabel={activeTaskScope||effectivePlan?'今日计划范围':'当前学习库范围'} onOpenSubjects={openSubjects}
+              onOpenPlan={activeTaskScope||effectivePlan?()=>navigateToStudyTab('today'):undefined}
               groupFor={item=>inlinePracticeGroup(model,item)}
               drafts={learningDrafts}
               temporary={isDemoMode}
@@ -317,7 +318,7 @@ export function TodayView({model}:Props){
               onRecordAttempt={recordPracticeAttempt}
               nonWordScopeFor={item=>inlineNonWordScope(model,item)}
               recallScopeFor={item=>!isDemoMode&&item.contentHash&&(accountLibraryId||data.localLibraryId)?{workspaceId,libraryId:accountLibraryId??data.localLibraryId!,itemKey:stableStudyItemKey(item)??item.itemId,contentHash:item.contentHash}:undefined}
-              onFinish={(summary) => { const wasNativeActive=accountAttemptActiveRef.current&&!accountLoadedRef.current;setPracticeItems(null);setPracticeSummary(summary);accountAttemptActiveRef.current=false;const pending=accountPendingLoadedRef.current;if(pending)void applyAccountLoaded(pending);else{const account=accountLoadedRef.current;if(account)setData(accountStudyPayload(account,workspaceId) as unknown as StudyPayload);else if(pendingLocalSourceRef.current?.workspaceId===workspaceId)applyLocalStudySource(pendingLocalSourceRef.current.payload,workspaceId);}if(wasNativeActive)noteEventsChanged(); }}
+              onFinish={summary=>finishDashboardPractice(model,summary)}
               context={{
                 recallPersistenceRequired:!isDemoMode,paperServices,
                 requestAiHint:accountLoaded?(item,selected)=>runAccountQuestionAi('hint',item,selected??'').then(result=>result.text):companionPlanClient?requestAiHint:undefined,
@@ -329,19 +330,14 @@ export function TodayView({model}:Props){
             </section>
           )}
 
-          {practiceSummary && practiceItems === null && (
-            <section className="caught-up-state" aria-live="polite">
-              <span className="caught-up-mark">✓</span>
-              <p className="module-eyebrow">DUE REVIEW · SESSION COMPLETE</p>
-              <h2>本轮复习完成</h2>
-              <p>共作答 {practiceSummary.answered} 次：答对 {practiceSummary.correct} 次、答错 {practiceSummary.wrong} 次。</p>
-              {isDemoMode?<DemoModeBadge/>:<p>作答先保存到本机，再分别同步云端与学习库；实际送达和待重试状态请查看复习诊断。</p>}
-              <div>
-                <button onClick={() => setPracticeSummary(null)}>关闭</button>
-                <button onClick={() => { setPracticeSummary(null); if(taskPlanningEnabled && activeTaskScope?.taskId) void startTaskLearning(activeTaskScope.taskId);else void startPractice(); }}>再来一轮</button>
-              </div>
-            </section>
-          )}
+          {practiceSummary && practiceItems === null && <PracticeResult result={practiceSummary}
+            taskComplete={Boolean(taskLearning.state?.ready&&activeTaskScope?.taskId&&taskLearning.state.completedTaskIds.includes(activeTaskScope.taskId))}
+            onBack={()=>setPracticeSummary(null)} onContinue={(taskPlanningEnabled||accountLoaded)&&activeTaskScope?()=>void model.continueTodayStudy():undefined}
+            onPending={()=>{const target=document.querySelector<HTMLButtonElement>('[aria-label="待核对答案队列"] > button');target?.scrollIntoView({block:'center'});target?.focus();if(target?.getAttribute('aria-expanded')==='false')target.click();}}
+            onReload={()=>{setPracticeSummary(null);if(taskPlanningEnabled&&activeTaskScope?.taskId)void startTaskLearning(activeTaskScope.taskId);else void startPractice();}}>
+            {isDemoMode?<DemoModeBadge/>:syncSummary}
+          </PracticeResult>}
+          {!practiceSummary&&practiceItems===null&&syncSummary}
 
           {legacyPlanningVisibility.constraints && <details className="study-legacy-options"><summary>旧版计划选项</summary><section className="p-8 bg-white dark:bg-zinc-900 border border-[var(--line)] rounded-3xl shadow-sm">
             <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-6 mb-4">
@@ -459,11 +455,6 @@ export function TodayView({model}:Props){
             <div className="flex gap-5 mb-8"><span className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)] opacity-70"><i className="w-3 h-3 rounded-full bg-[var(--lime)]"/>{primarySubject ? modulePresentation(primarySubject).eyebrow : "学习内容"}</span></div>
             <div>
               {data.dashboard && <p className="text-xs font-medium text-[var(--ink)] opacity-60">已记录 <strong className="opacity-100">{data.dashboard.activityCount}</strong> 次练习 · 估算用时 <strong className="opacity-100">{data.dashboard.activityMinutes}</strong> 分钟</p>}
-              {pendingActivities.length > 0 && <p className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-500 text-[10px] font-bold tracking-wide border border-amber-200 dark:border-amber-900/50">{pendingActivities.length} 条记录等待同步</p>}
-              {(lastStudyReceipts.cloud || lastStudyReceipts.companion) && <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold" aria-label="最近一次学习记录回执">
-                {lastStudyReceipts.cloud&&<span className="px-2.5 py-1 rounded-md border border-[var(--line)]">账号：{lastStudyReceipts.cloud === "acked" ? "已接收" : lastStudyReceipts.cloud === "conflict" ? "冲突" : "等待接收"}</span>}
-                {lastStudyReceipts.companion&&<span className="px-2.5 py-1 rounded-md border border-[var(--line)]">{lastStudyReceipts.companion==='applied'?'学习库：已写回':lastStudyReceipts.companion==='blocked'?'学习库写回：待处理':lastStudyReceipts.companion==='received'||lastStudyReceipts.companion==='acked'?'Companion：已接收 · 实际写回待核对':lastStudyReceipts.companion==='conflict'?'Companion：记录冲突':'Companion：等待接收或处理'}</span>}
-              </div>}
             </div>
           </section>
               {data.dashboard && <section className="col-span-1 lg:col-span-2 border border-[var(--line)] rounded-3xl bg-[#ebe9df] dark:bg-[rgba(0,0,0,0.2)] p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 mt-2 shadow-inner">

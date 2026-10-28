@@ -2,7 +2,7 @@
 import { ChangeEvent,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,useSyncExternalStore } from "react";
 import {useSubjectRoundSessions} from '../use-subject-round-sessions';
 import {createRestartBatch} from '../restart-batch';
-import {useSyncCoordinator,useSyncTriggers,useLegacyCloud} from '../../src/features/sync';
+import {useSyncCoordinator,useSyncTriggers,useLegacyCloud,useSyncDetails} from '../../src/features/sync';
 import {useAccountSource,useConnectionValue,useCompanionSource,useSourceTransitions,useSourceMaintenance,useSourceReader,useSourceChanges} from '../../src/features/sources';
 import {createCompanionHttp} from '../../src/infrastructure/sources';
 import {readWorkspaceSnapshot,WorkspaceReadError,type CompanionNotice} from '../../src/application/sources';
@@ -66,7 +66,7 @@ import { syncTaskEvents } from "../local-task-events";
 import { previewLongTermPlan } from "../long-term-editor-model";
 import { buildLongTermEditorSource } from "../long-term-editor-source";
 import {useAutomaticPlanning,usePlanningNavigation,useLegacyPlanning,useLegacyPlanState,useStudyDayClock} from "../../src/features/planning";
-import {createPlanningSourceAdapter,resolvePlanningGroups,type NavigationContext,type AccountNavigationQuery} from './planning-source-adapter';
+import {createPlanningSourceAdapter,resolvePlanningGroups,useRecentDashboardSubject,type NavigationContext,type AccountNavigationQuery} from './planning-source-adapter';
 import {readDashboardBoundHistory} from "./bound-history-adapter";
 import { applySavedNativeAttempt,nativeProgressView,nativeSourceScope,type NativeProjection } from "../native-progress-view";
 import { readNativeStudyHistory } from "../native-study-history";
@@ -88,7 +88,7 @@ type ItemPluginOverride,
 type PluginOverrides,
 type PluginType
 } from "../plugin-routing";
-import { type PracticeAttempt,type PracticeSummary,type PracticePersistenceContext } from "../practice-session";
+import { type PracticeAttempt,type PracticeSessionResult,type PracticePersistenceContext } from "../practice-session";
 
 import { rebuildEventProgress } from "../review-projection";
 import { sandboxVisibleSubjects } from "../sandbox-pacing";
@@ -508,6 +508,7 @@ export function useDashboardController(){
   }), [currentDay, isDemoMode, moduleCatalog, demoVisibleSubjects, effectivePlan]);
   const useCaughtUpPage=(isDemoMode||Boolean(accountLoaded)||nativeView.ready&&nativeView.unresolvedKeys.length===0)&&shouldUseCaughtUpPage({accountMode:Boolean(accountLoaded),isCaughtUp:dynamicUi.isCaughtUp,hasEffectivePlan:Boolean(effectivePlan),taskPlanningEnabled});
   const subjects = dynamicUi.playableSubjects as Subject[];
+  const recentSubject=useRecentDashboardSubject({account:accountLoaded,subjects,historyVerified:progressHistoryReady,workspaceId,sourceScope:nativeScope,journal:submissionJournal,revision:eventRevision,nativeEvents:nativeProjection?.events});
   // 词库分组与每日配额（默认 20 词/组、20 词/天）：状态存 workspace，
   // 当天固定服务同一组，跨天自动推进到第一个未完成组。
   const [subjectPacing, setSubjectPacing] = useState<SubjectPacing>({schemaVersion:1,subjects:{}});
@@ -640,7 +641,7 @@ export function useDashboardController(){
   const [practiceSessionKey, setPracticeSessionKey] = useState(0);
   useLayoutEffect(()=>{accountAttemptActiveRef.current=!['today','progress','sources'].includes(tab)||practiceItems!==null;},[tab,practiceItems]);
   const [practiceLoading, setPracticeLoading] = useState(false);
-  const [practiceSummary, setPracticeSummary] = useState<PracticeSummary | null>(null);
+  const [practiceSummary, setPracticeSummary] = useState<PracticeSessionResult | null>(null);
   const practiceRequest = useRef(0);
   useEffect(() => {
     if (storageReady && data.practiceItems) void saveWorkspaceRecord(workspaceId,"practice-cache",data.practiceItems);
@@ -1176,6 +1177,7 @@ export function useDashboardController(){
   }
   const settingsUsesAccount=Boolean(accountLoaded)||accountWanted;
   const settingsReadScope=JSON.stringify([accountWorkspaceId,settingsUsesAccount,accountLoaded?.bundle.snapshot.libraryId??null]);
+  const syncDetails=useSyncDetails(settingsReadScope,()=>setSourceView('sync'));
   const refreshSettingsOverview=useCallback(async()=>{
     const owner=accountWorkspaceId;
     if(!owner||!storageReady||!sessionResolved||deliveryOwnerRef.current!==owner)return;
@@ -1199,10 +1201,10 @@ export function useDashboardController(){
   useEffect(()=>{
     // This ref is a read-generation counter, not a rendered DOM node.
     const readGeneration=settingsReadEpoch;
-    if(tab!=='sources'||(sourceView!=='overview'&&sourceView!=='sync')){readGeneration.current++;return;}
+    if(!syncDetails.open&&!(tab==='today'&&practiceItems===null)&&!(tab==='sources'&&(sourceView==='overview'||sourceView==='sync'))){readGeneration.current++;return;}
     const timer=window.setTimeout(()=>void refreshSettingsOverview(),0);
     return()=>{window.clearTimeout(timer);readGeneration.current++;};
-  },[tab,sourceView,refreshSettingsOverview,eventRevision]);
+  },[tab,sourceView,refreshSettingsOverview,eventRevision,syncDetails.open,practiceItems]);
   const primarySubject = subjects[0];
   const allItems = primarySubject?.items || [];
   const completedItems = allItems.filter((item, idx) => {
@@ -1484,6 +1486,8 @@ export function useDashboardController(){
     navigation: {homeHref, setAiEntryOpen, setPairingCode, setSourceView, setStarterOpen, setTab:requestStudyTab, sourceView, starterOpen, studyAI, tab}
   };
  return {
+  recentSubject,
+  syncDetails,
   sourcesModel,
   retryWorkspace,
   acceptCurrentAccountLibrary,

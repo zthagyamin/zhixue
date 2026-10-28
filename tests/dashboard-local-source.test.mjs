@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {loadTsx} from './fixtures/tsx-components.mjs';
+const {finishDashboardPractice}=loadTsx(new URL('../app/study-dashboard/practice-session-adapter.ts',import.meta.url));
 import {dashboardFunction,dashboardDeclaredFunction,dashboardClick,dashboardJsxProp} from './fixtures/dashboard-functions.mjs';
 function fixture(){
   let updates=0,epochs=0;const env={taskWorkspaceRef:{current:'account:a'},accountLoadedRef:{current:null},accountIntentRef:{current:false},accountAttemptActiveRef:{current:true},pendingLocalSourceRef:{current:null},
@@ -45,5 +47,5 @@ test('the learning options Today button uses the source-draining navigation path
 test('finishing the legacy inline practice consumes a deferred local source',()=>{
   let rereads=0;const f=fixture();f.env.pendingLocalSourceRef.current={workspaceId:'account:a',payload:{subjects:[{id:'new'}]}};
   const env={...f.env,workspaceId:'account:a',accountPendingLoadedRef:{current:null},setPracticeItems(){},setPracticeSummary(){},applyLocalStudySource:f.apply(),noteEventsChanged(){rereads++;}};
-  dashboardJsxProp('PracticeSession','onFinish',env)({completed:1});assert.equal(f.updates(),1);assert.equal(f.env.pendingLocalSourceRef.current,null);assert.equal(rereads,1);
+  dashboardJsxProp('PracticeSession','onFinish',{model:env,finishDashboardPractice})({reason:'stopped',answered:1,correct:1,wrong:0});assert.equal(f.updates(),1);assert.equal(f.env.pendingLocalSourceRef.current,null);assert.equal(rereads,1);
 });

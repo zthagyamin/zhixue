@@ -31,8 +31,9 @@ import type {StudyEventV3} from '../../domain/evidence';
 
 export type TaskPlanningBundle=Omit<PlanningInputFacts,'day'|'previous'|'optionalMinutes'> & {longTermPlan?:LongTermPlanSnapshot|null;authority:PlanDocumentPayload;studyData?:unknown;offline?:boolean;pendingTaskCount?:number;cacheWarning?:string};
 export type TaskPlanConflict={revision:number;sourceHash:string;local:TaskDraft;remote:TaskPlanV2|null};
+export type NativeGenerationPhase='checking'|'generating'|'suggesting';
 export type TaskPlanningState=TaskPlanState & {minimumSpec?:LongTermPlanSpec|null;ready:boolean;busy:boolean;offline:boolean;catalog:PlanningCatalog|null;summary:TaskPlanSummary;
-  completedTaskIds:string[];completionEvents:StudyEventV3[];reviewRounds:ReviewObligation[];message:string;lastSyncedAt?:string;pendingCount:number;conflict:TaskPlanConflict|null;lastBackup:TaskDraft|null};
+  completedTaskIds:string[];completionEvents:StudyEventV3[];reviewRounds:ReviewObligation[];message:string;lastSyncedAt?:string;pendingCount:number;conflict:TaskPlanConflict|null;lastBackup:TaskDraft|null;generationPhase:NativeGenerationPhase|null;draftOrigin:'automatic'|'manual'|null};
 const emptySummary:TaskPlanSummary={newDone:0,newTarget:20,newMissing:0,reviewDone:0,reviewTotal:0};
 function semantic(plan:TaskPlanV2):string {
   return canonicalizeJson([plan.day,plan.sourceHash,plan.tasks,plan.vocabulary,plan.manual,plan.optionalMinutes??null,plan.longTermAllocation??null]);
@@ -45,9 +46,9 @@ export function createTaskPlanningSession(dependencies:{
   buildInput:(facts:PlanningInputFacts)=>Promise<PlanningInputComposition>;completedTasks:(plan:TaskPlanV2|null,facts:CompletionFacts)=>string[];
 }) {
   let state:TaskPlanningState={workspaceId:'',day:'',draft:null,loading:false,error:null,ready:false,busy:false,offline:false,catalog:null,
-    summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',pendingCount:0,conflict:null,lastBackup:null};
+    summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',pendingCount:0,conflict:null,lastBackup:null,generationPhase:null,draftOrigin:null};
   let bundle:TaskPlanningBundle|null=null,composed:PlanningInputComposition|null=null;
-  let context=0,readVersion=0;
+  let context=0,readVersion=0,generationVersion=0;
   const now=dependencies.now;
   const snapshot=()=>structuredClone(state),publish=()=>dependencies.publish(snapshot());
   const controller=createTaskPlanController({load:dependencies.loadDraft,save:dependencies.saveDraft,publish:value=>{state={...state,...value};publish();}});
@@ -78,25 +79,27 @@ export function createTaskPlanningSession(dependencies:{
       completions:composed.input.completions,reviews:reviewRounds,identities:composed.input.wordIdentities??[],taskEvents:composed.taskEvents});
     state={...state,minimumSpec:bundle.longTermPlan?.spec??null,completedTaskIds,completionEvents,reviewRounds,summary:plan?summarizeTaskPlan(plan,composed.input.words,reviewRounds):emptySummary};publish();
   };
-  const regenerate=async(canContinue=()=>true,minimums=false)=>{
+  const regenerate=async(canContinue=()=>true,minimums=false,stage?:(value:NativeGenerationPhase)=>void)=>{
     requireReady();const owner=context,epoch=readVersion;
-    await controller.change(async draft=>{
+    let created=false;const changed=await controller.change(async draft=>{
       if(!canContinue())return null;
       const current=draft?.plan??(isTaskPlan(bundle!.authority.candidate)?bundle!.authority.candidate:null);
-      const nextFacts=await inputFor(current,undefined,true,minimums);
+      stage?.('checking');const nextFacts=await inputFor(current,undefined,true,minimums);
+      stage?.('generating');
       const fresh=await generateTaskPlan(nextFacts.input);
       const retainedSuggestions=draft?.plan.tasks.filter(task=>['ai','fallback'].includes(task.origin)).map(task=>task.taskId)??[];
       const plan=draft?await mergeTaskPlans(draft.plan,fresh,nextFacts.completedTaskIds,bundle!.context.catalog,nextFacts.input.reviews,retainedSuggestions):fresh;
       if(owner!==context || epoch!==readVersion || !canContinue()) return null;
       composed=nextFacts;
       if(draft && semantic(draft.plan)===semantic(plan)) return null;
-      return {plan,baseRevision:draft?.baseRevision??bundle!.authority.revision,dirty:true};
+      created=!draft;return {plan,baseRevision:draft?.baseRevision??bundle!.authority.revision,dirty:true};
     });
     if(owner===context && epoch===readVersion) publishCompletions();
+    return changed&&created;
   };
   const refresh=async(full=true):Promise<void>=>working(async()=>{
     const owner=context,epoch=++readVersion,workspaceId=state.workspaceId,day=state.day;
-    controller.invalidateEvidence();state={...state,ready:false};publish();
+    controller.invalidateEvidence();state={...state,ready:false,draftOrigin:null};publish();
     const fetched=await dependencies.loadBundle(workspaceId,day,full);
     if(owner!==context || epoch!==readVersion) return;
     if(fetched.authority.revision!==fetched.context.planRevision) throw new Error('计划在读取期间已更新，请重新同步。');
@@ -129,7 +132,7 @@ export function createTaskPlanningSession(dependencies:{
       message:fetched.offline?'离线使用上次完整同步的资料；本机练习继续保存，恢复连接后再核对其他设备。':fetched.cacheWarning??''};publishCompletions();
     if(controller.snapshot().draft) await regenerate();
   });
-  const suggest=async(intent:SuggestionRequest['intent']):Promise<void>=>working(async()=>{
+  const suggest=async(intent:SuggestionRequest['intent'],stage?:(value:NativeGenerationPhase)=>void):Promise<void>=>working(async()=>{
     const facts=requireReady(),owner=context,epoch=readVersion;
     if(state.offline && intent!=='less') throw new Error('当前离线，已保留已有建议；恢复连接后再请求 AI。');
     await controller.change(async draft=>{
@@ -143,7 +146,7 @@ export function createTaskPlanningSession(dependencies:{
     const accepted=await controller.suggest(intent,request=>{
       const plan=controller.snapshot().draft?.plan;
       if(!plan||plan.sourceHash!==request.sourceHash||plan.draftVersion!==request.draftVersion)throw new Error('stale-suggestion');
-      return dependencies.client.suggestPlan({...request,selectedUnitIds:[...new Set([...request.selectedUnitIds,...coveredPlanningUnitIds(plan,facts.context.catalog)])]});
+      stage?.('suggesting');return dependencies.client.suggestPlan({...request,selectedUnitIds:[...new Set([...request.selectedUnitIds,...coveredPlanningUnitIds(plan,facts.context.catalog)])]});
     },async(draft,response)=>{
       message=response.message;
       return {...draft,plan:await applyTaskSuggestions(draft.plan,response,facts.context.catalog),dirty:true};
@@ -152,7 +155,7 @@ export function createTaskPlanningSession(dependencies:{
   });
   const resolveConflict=async(choice:'local'|'remote',restoreDraft?:TaskDraft):Promise<void>=>working(async()=>{
     const conflict=state.conflict,current=controller.snapshot().draft,owner=context,workspace=state.workspaceId,day=state.day,epoch=++readVersion;
-    controller.invalidateEvidence();state={...state,ready:false};publish();
+    controller.invalidateEvidence();state={...state,ready:false,draftOrigin:null};publish();
     if(!current || (!conflict && !restoreDraft) || !dependencies.archiveDraft) throw new Error('草稿备份不可用，未替换任何内容；请恢复本机存储后重新同步。');
     const checkpoint=conflict??{revision:bundle?.authority.revision,sourceHash:bundle?.context.catalog.sourceHash,remote:bundle?.authority.candidate};
     const fetched=await dependencies.loadBundle(workspace,day,true);
@@ -198,8 +201,8 @@ export function createTaskPlanningSession(dependencies:{
       return resolveConflict('local',structuredClone(state.lastBackup));
     },
     open:async(workspaceId:string,day:string)=>{
-      const owner=++context;readVersion++;bundle=null;composed=null;
-      state={...state,minimumSpec:null,ready:false,busy:false,offline:false,catalog:null,summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',lastSyncedAt:undefined,pendingCount:0,conflict:null,lastBackup:null};
+      const owner=++context;readVersion++;generationVersion++;bundle=null;composed=null;
+      state={...state,minimumSpec:null,ready:false,busy:false,offline:false,catalog:null,summary:emptySummary,completedTaskIds:[],completionEvents:[],reviewRounds:[],message:'',lastSyncedAt:undefined,pendingCount:0,conflict:null,lastBackup:null,generationPhase:null,draftOrigin:null};
       await controller.open(workspaceId,day);
       if(owner!==context) return;
       const backup=await dependencies.loadLastBackup?.(workspaceId,day);
@@ -207,8 +210,8 @@ export function createTaskPlanningSession(dependencies:{
       if(backup) state={...state,lastBackup:backup};
       await refresh();
     },
-    invalidate:()=>{readVersion++;controller.invalidateEvidence();state={...state,ready:false};publish();},
-    evidenceChanged:()=>{readVersion++;controller.invalidateEvidence();state={...state,ready:false};publish();},
+    invalidate:()=>{readVersion++;controller.invalidateEvidence();state={...state,ready:false,draftOrigin:null};publish();},
+    evidenceChanged:()=>{readVersion++;controller.invalidateEvidence();state={...state,ready:false,draftOrigin:null};publish();},
     prepareAutomaticDay:async(expected:LongTermPlanSnapshot,isCurrent=()=>true)=>{
       if(state.draft)return true;
       if(state.busy||!isCurrent())return false;
@@ -218,7 +221,8 @@ export function createTaskPlanningSession(dependencies:{
       if(state.draft)return true;
       if(!isCurrent()||!state.ready||!bundle?.longTermPlan
         ||canonicalLongTermJson(bundle.longTermPlan)!==canonicalLongTermJson(expected))return false;
-      try{await working(()=>regenerate(()=>isCurrent()&&!controller.snapshot().draft));}
+      const epoch=readVersion;
+      try{const created=await working(()=>regenerate(()=>isCurrent()&&!controller.snapshot().draft));if(created&&owner===context&&epoch===readVersion&&isCurrent()){state={...state,draftOrigin:'automatic'};publish();}}
       catch(error){
         if(!(error instanceof Error)||error.message!=='stale-task-draft'||owner!==context||!isCurrent())throw error;
         // Another tab prepared or edited the same day first. Read its durable draft.
@@ -228,10 +232,14 @@ export function createTaskPlanningSession(dependencies:{
       return Boolean(state.draft);
     },
     generate:async(options:{minimums?:boolean}={})=>{
-      const owner=context,epoch=readVersion;await working(()=>regenerate(()=>true,options.minimums===true));
-      if(owner!==context || epoch!==readVersion) return;
-      if(state.offline){state={...state,message:'已依据上次完整同步与本机新记录更新规则任务；当前离线，AI 建议未刷新。'};publish();return;}
-      if(!controller.snapshot().draft?.plan.longTermAllocation)await suggest('standard');
+      const owner=context,epoch=readVersion,generation=++generationVersion,stage=(value:NativeGenerationPhase)=>{if(owner===context&&epoch===readVersion&&generation===generationVersion){state={...state,generationPhase:value};publish();}};
+      try{
+        await working(()=>regenerate(()=>true,options.minimums===true,stage));
+        if(owner!==context || epoch!==readVersion) return;
+        if(generation===generationVersion&&controller.snapshot().draft){state={...state,draftOrigin:'manual'};publish();}
+        if(state.offline){state={...state,message:'已依据上次完整同步与本机新记录更新规则任务；当前离线，AI 建议未刷新。'};publish();return;}
+        if(!controller.snapshot().draft?.plan.longTermAllocation){try{await suggest('standard',stage);}catch(error){if(owner===context&&epoch===readVersion&&generation===generationVersion&&controller.snapshot().draft){state={...state,message:`规则草稿已保留；建议请求未完成：${error instanceof Error?error.message:'请稍后重试。'}`};publish();}throw error;}}
+      }finally{if(owner===context&&generation===generationVersion){state={...state,generationPhase:null};publish();}}
     },suggest,
     edit:(edit:TaskEdit,isCurrent=()=>true)=>working(async()=>{
       const facts=requireReady();

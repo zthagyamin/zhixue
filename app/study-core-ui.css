@@ -221,3 +221,16 @@
     transition: none;
   }
 }
+
+/* Review outcome actions remain readable and wrap naturally on small screens. */
+.study-app .study-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-block: 16px;
+}
+.study-app .practice-result > p {
+  margin-block: 8px;
+  overflow-wrap: anywhere;
+}

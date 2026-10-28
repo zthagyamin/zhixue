@@ -35,7 +35,7 @@ for(const mode of ['code','quiz','flashcard'])test(`inline ${mode} explicit wron
   const wait=deferred(),f=inline([item('A',mode),item('B',mode)],()=>wait.promise,{scoped:true});await settle(f);
   const saving=f.plugin().props.onGrade('again');await tick();f.hooks.render();assert.equal(f.plugin().props.data.itemId,'A');
   wait.resolve();await saving;await settle(f);assert.equal(f.plugin().props.data.itemId,'B');assert.equal(f.records[0].correct,false);
-  await f.plugin().props.onGrade('good');await settle(f);assert.equal(f.done.length,1);assert.deepEqual(f.done[0],{answered:2,correct:1,wrong:1});f.hooks.unmount();
+  await f.plugin().props.onGrade('good');await settle(f);assert.equal(f.done.length,1);assert.deepEqual(f.done[0],{answered:2,correct:1,wrong:1,reason:'exhausted',skipped:0,remaining:0});f.hooks.unmount();
 });
 for(const mode of ['quiz','flashcard'])test(`inline original word ${mode} preserves wrong-answer review`,async()=>{
   const f=inline([item('A',mode,{word:'tree'})]);await settle(f);await f.plugin().props.onGrade('again');await settle(f);

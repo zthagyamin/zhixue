@@ -33,7 +33,7 @@ export async function runDashboardSourceUpdate({page,context,account,width,out,e
     await page.getByText('资料与同步详情',{exact:true}).click();
     await page.locator('.study-account-read-note').getByRole('button',{name:'刷新',exact:true}).click();
     await page.getByText('下一组：'+body.title,{exact:true}).waitFor();
-    const start=page.getByRole('button',{name:/^(开始|继续)今日自测$/});
+    const start=page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/});
     await waitForReadback(()=>start.isEnabled(),ready=>ready,{label:'Updated source task entry'});
     await start.click();await input.waitFor();
     await page.getByText(body.practice.prompt,{exact:true}).waitFor();

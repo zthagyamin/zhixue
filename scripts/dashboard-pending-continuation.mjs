@@ -38,7 +38,7 @@ export async function runDashboardPendingContinuation({page,account,width,out,pr
   assert.deepEqual(await read(),original);
   assert.deepEqual((await activity()).completedTaskIds,[]);
   await page.getByRole('button',{name:'返回今日',exact:true}).click();
-  const start=page.getByRole('button',{name:/^(开始|继续)今日自测$/});
+  const start=page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/});
   await start.waitFor();
   await waitForReadback(()=>start.isEnabled(),ready=>ready,{label:'Today entry after pending restore'});
   await page.reload();await page.waitForLoadState('networkidle');

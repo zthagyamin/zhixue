@@ -29,7 +29,7 @@ export async function runDashboardScopeSwitch({page,context,account,activate,var
     assert.equal(original.submitted,' 4 ');assert.equal(original.evaluation,'pending');assert.equal(original.formal,null);
     assert.equal(held.body.attemptId,original.id);
     await page.getByRole('button',{name:'返回今日',exact:true}).click();
-    await page.getByRole('button',{name:/^(开始|继续)今日自测$/}).waitFor();
+    await page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/}).waitFor();
     const next=await activate(variant==='owner'?{ownerTag:'owner-b'}:{libraryId:'library-b'});
     const nextLoaded=await next.client.load(),nextScope={ownerId:next.userId,libraryId:nextLoaded.bundle.snapshot.libraryId};
     assert.equal(nextLoaded.bundle.items[0].itemKey,oldLoaded.bundle.items[0].itemKey);
@@ -47,7 +47,7 @@ export async function runDashboardScopeSwitch({page,context,account,activate,var
       await page.getByRole('button',{name:'使用账号当前关联的学习库',exact:true}).click();
       await page.getByRole('button',{name:'今日',exact:true}).click();
     }
-    const start=page.getByRole('button',{name:/^(开始|继续)今日自测$/});
+    const start=page.getByRole('region',{name:'今日自测入口'}).getByRole('button',{name:/^(开始下一项|继续今日任务)$/});
     await start.waitFor();await waitForReadback(()=>start.isEnabled(),ready=>ready,{label:'New scope task entry'});
     release();await done;
     await start.click();await input.waitFor();

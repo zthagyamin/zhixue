@@ -25,6 +25,8 @@ import {orderPracticeItems,practiceGroup,reorderRemainingPracticeItems,type Prac
 import {acceptLegacyReview} from '../src/domain/guided-math';
 import {completesSubjectItemAfterAttempt} from '../src/domain/planning';
 import {isNonWordOriginal,hasExecutableCodeMaterial} from '../src/domain/content';
+import {PracticeEmpty,practiceSessionResult,type PracticeSessionResult,type PracticeEndReason,type PracticeSummary} from '../src/features/review-session';
+export type {PracticeSummary,PracticeSessionResult} from '../src/features/review-session';
 
 /**
  * Practice session shell (Task 7).
@@ -47,11 +49,6 @@ export type PracticeAttempt = {
   assistance?:AssistanceObservation|null;
 };
 
-export type PracticeSummary = {
-  answered: number;
-  correct: number;
-  wrong: number;
-};
 /** Host adapter receipt; never serialized into the attempt or passed to a plugin. */
 export type PracticePersistenceContext={request:StudyAttemptRequest;durable:()=>void};
 
@@ -61,7 +58,10 @@ export type PracticeSessionProps = {
   temporary?:boolean;
   items: PracticeItem[] | null;
   companionClient?: CompanionPlanClient | null;
-  onFinish?: (summary: PracticeSummary) => void;
+  onFinish?: (summary: PracticeSessionResult) => void;
+  practiceScopeLabel?:string;
+  onOpenSubjects?:()=>void;
+  onOpenPlan?:()=>void;
   /** v3 event hook: the dashboard wires recordStudyAttempt with its delivery deps. */
   onRecordAttempt?: (attempt: PracticeAttempt,context:PracticePersistenceContext) => void|Promise<unknown>;
   drafts?:LearningDraftStore;
@@ -142,7 +142,7 @@ function FallbackPractice({item,onSkip}:{item:PracticeItem;onSkip:()=>void}){
   </section>;
 }
 
-export function PracticeSession({ items, companionClient, onFinish, onRecordAttempt, context,recallScopeFor,nonWordScopeFor,groupFor=practiceGroup,drafts:providedDrafts,reviewContextFor,sourcePreferenceScope,temporary }: PracticeSessionProps) {
+export function PracticeSession({ items, companionClient, onFinish, onRecordAttempt, context,recallScopeFor,nonWordScopeFor,groupFor=practiceGroup,drafts:providedDrafts,reviewContextFor,sourcePreferenceScope,temporary,practiceScopeLabel='当前练习范围',onOpenSubjects,onOpenPlan }: PracticeSessionProps) {
   const localDrafts=useMemo(()=>createLearningDraftStore('inline-practice'),[]),drafts=providedDrafts??localDrafts;
   useSyncExternalStore(drafts.subscribe,drafts.getSnapshot,()=>0);
   const practiceAlive=useRef(true);useEffect(()=>{practiceAlive.current=true;return()=>{practiceAlive.current=false;};},[]);
@@ -218,7 +218,10 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
     try{const group=await getRound(roundBinding.scope);if(!group)throw Error('本题组尚未启用恢复。');
       const state=await group.read();if(!practiceAlive.current||currentRoundKey.current!==key||sessionEpoch.current!==epoch)return;
       restoreRound(state);setRoundError('');
-      if(state.currentItemKey===null&&!ended.current){ended.current=true;onFinish?.(projectInlineNonWordRound(roundBinding,state).summary);}
+      if(state.currentItemKey===null&&!ended.current){
+        const result=projectInlineNonWordRound(roundBinding,state);
+        ended.current=true;onFinish?.(practiceSessionResult(result.summary,'exhausted',{awaitingReview:result.awaiting,skipped:result.skipped,remaining:0}));
+      }
     }catch(reason){if(practiceAlive.current&&currentRoundKey.current===key)setRoundError(reason instanceof Error?reason.message:'续学状态尚未保存，请重试。');}
   };
   const skipSavedRound=async()=>{
@@ -271,13 +274,13 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
     setOrder(next);
   };
 
-  const advance = (nextSummary: PracticeSummary) => {
+  const advance = (nextSummary: PracticeSummary, skippedCount=skipped) => {
     if(ended.current)return;
     if(roundBinding){void continueSavedRound();return;}
     invalidateVariant();
     const nextIndex = index + 1;
     if (nextIndex >= list.length) {
-      ended.current=true;onFinish?.(nextSummary);
+      ended.current=true;onFinish?.(practiceSessionResult(nextSummary,'exhausted',{skipped:skippedCount,remaining:0}));
       return;
     }
     const next = list[nextIndex] ?? null;
@@ -344,13 +347,17 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
   const handleSkip = () => {
     if(drafts.isPending())return;
     if(activeItem?.questionType==='calculation'){draftAdapter?.continueAfterFeedback?.();return;}
-    advance(summary);
+    setSkipped(value=>value+1);advance(summary,skipped+1);
   };
 
-  const handleFinish = () => {
+  const handleFinish = (reason:PracticeEndReason='stopped') => {
     if(drafts.isPending()||ended.current)return;
     if(drafts.hasUnrecoverableInput()&&!window.confirm('还有未提交的输入，结束复习后不会保留。已保存的学习记录不受影响。仍要结束吗？'))return;
-    invalidateVariant();ended.current=true;sessionEpoch.current++;onFinish?.(summary);
+    const known=roundBinding&&roundReady===roundKey&&!roundError;
+    const remaining=roundBinding?known?Math.max(0,list.length-summary.answered-awaitingReview-skipped):undefined:Math.max(0,list.length-index);
+    invalidateVariant();ended.current=true;sessionEpoch.current++;onFinish?.(practiceSessionResult(summary,reason,{
+      ...(known?{awaitingReview,skipped}:!roundBinding?{skipped}:{}),remaining,
+    }));
   };
 
   if (practiceLoading) {
@@ -369,32 +376,25 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
         <p className="text-sm text-[var(--ink)] opacity-70 mb-4">{loadError}</p>
         <div className="flex gap-3">
           <button className="px-5 py-2.5 rounded-xl bg-[var(--ink)] text-[var(--surface)] font-black text-sm hover:brightness-110 active:scale-95 transition-all" onClick={() => setReloadToken((current) => current + 1)}>重试</button>
-          <button className="px-5 py-2.5 rounded-xl border border-[var(--line)] text-[var(--ink)] font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all" onClick={handleFinish}>结束复习</button>
+          <button className="px-5 py-2.5 rounded-xl border border-[var(--line)] text-[var(--ink)] font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all" onClick={()=>handleFinish('load-error')}>结束复习</button>
         </div>
       </section>
     );
   }
 
   if (list.length === 0) {
-    return (
-      <section className="p-8 bg-white dark:bg-zinc-900 border border-[var(--line)] rounded-3xl shadow-sm" aria-label="复习练习">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--ink)] opacity-50 mb-2">开始复习</p>
-        <h3 className="font-serif text-2xl tracking-tight text-[var(--ink)] mb-2">今日没有到期复习题</h3>
-        <p className="text-sm text-[var(--ink)] opacity-60">练习会话会从 /v1/practice 拉取到期条目；先去读一点材料，或稍后再来。</p>
-        <button className="mt-4 px-5 py-2.5 rounded-xl border border-[var(--line)] text-[var(--ink)] font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all" onClick={handleFinish}>关闭</button>
-      </section>
-    );
+    return <PracticeEmpty scope={practiceScopeLabel} onBack={()=>handleFinish('empty')} onSubjects={onOpenSubjects} onPlan={onOpenPlan}/>;
   }
 
   if(roundBinding&&(roundReady!==roundKey||roundError))return <section className="study-card" aria-label="复习练习">
     <p role={roundError?'alert':'status'}>{roundError||'正在恢复本题组的作答与当前位置…'}</p>
     {roundError&&<button type="button" className="study-secondary-action" onClick={()=>setRoundRetry(value=>value+1)}>重试恢复题组</button>}
-    <button type="button" className="study-secondary-action" onClick={handleFinish}>结束复习</button>
+    <button type="button" className="study-secondary-action" onClick={()=>handleFinish(roundError?'recovery-error':'stopped')}>结束复习</button>
   </section>;
   if(roundBinding&&!activeItem)return <section className="study-card study-feedback" aria-label="本轮已练">
     <h2>本轮已练</h2><p>已答 {summary.answered} · 正确 {summary.correct} · 待巩固 {summary.wrong} · 待核对 {awaitingReview} · 暂时跳过 {skipped}</p>
     {awaitingReview>0&&<p>待核对的原答案保留在“待核对答案”中，尚未计入正确或错误。</p>}
-    <button type="button" className="study-secondary-action" onClick={handleFinish}>结束复习</button>
+    <button type="button" className="study-secondary-action" onClick={()=>handleFinish('exhausted')}>结束复习</button>
   </section>;
 
   const adaptedPlugin = activeItem ? pluginDataFor(activeItem) : null;
@@ -437,7 +437,7 @@ export function PracticeSession({ items, companionClient, onFinish, onRecordAtte
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-[var(--ink)] opacity-60">已答 {summary.answered} · 正确 {summary.correct} · 待复习 {summary.wrong}{roundBinding&&<> · 待核对 {awaitingReview} · 暂时跳过 {skipped}</>}</span>
-          <button className="px-4 py-2 rounded-xl border border-[var(--line)] text-[var(--ink)] font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all" onClick={handleFinish}>结束复习</button>
+          <button className="px-4 py-2 rounded-xl border border-[var(--line)] text-[var(--ink)] font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all" onClick={()=>handleFinish()}>结束复习</button>
         </div>
       </div>
 

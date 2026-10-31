@@ -72,8 +72,19 @@ export function recallReferencePrompt(data: RecallContent): string {
     const point=generatedPoint(data);
     return point!==null?legacyTaskPrompt(point)??recallPrompt(data):recallPrompt(data);
 }
+/** Strip paired presentation markup only. Code contents and powers stay literal. */
+function referenceFormatting(text: string): string {
+    const markup = /(?<!`)(`+)([^`\r\n]+)\1(?!`)|(?<![A-Za-z0-9_*])\*\*([^\s*](?:[^*\r\n]*[^\s*])?)\*\*(?![A-Za-z0-9_*])|(?<![A-Za-z0-9_])__([^\s_](?:[^_\r\n]*[^\s_])?)__(?![A-Za-z0-9_])/gu;
+    return text.replace(markup, (match, ticks: string | undefined, code: string | undefined, bold: string | undefined, underline: string | undefined, offset: number) => {
+        if (ticks) return code!;
+        // A pair of ** between operands can be a power chain, not emphasis.
+        if (bold !== undefined && /[A-Za-z0-9_)\]]\s*$/u.test(text.slice(0, offset))
+            && /^\s*[+-]?\s*(?:[A-Za-z0-9_(]|\.\d)/u.test(text.slice(offset + match.length))) return match;
+        return referenceFormatting(bold ?? underline ?? '');
+    });
+}
 function withoutWrapper(text: string): string {
-    let value = text.trim();
+    let value = referenceFormatting(text).trim();
     while (wrapper.test(value))
         value = value.replace(wrapper, '');
     return value.replace(/^(?:参考答案|参考要点|答案|解析)\s*[:：]\s*/u, '');

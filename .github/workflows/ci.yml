@@ -117,7 +117,7 @@ jobs:
           - suite: grouped-study
             expected: 4
           - suite: edu-quality
-            expected: 76
+            expected: 92
           - suite: edu-remediation
             expected: 36
           - suite: edu-math

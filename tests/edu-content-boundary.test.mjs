@@ -25,6 +25,19 @@ test('zero flashcard references and visible React text remain valid',()=>{
  for(const back of [0,createElement('span',null,'有依据的回答')])assert.match(boundary('flashcard',{front:'结果是多少？',back}).html,/VALID CONTENT/);
 });
 
+test('duplicate flashcards including visible React text never reach a grading view',()=>{
+ for(const [front,back] of [['BN vs LN？','BN vs LN'],['BN vs LN？','**BN vs LN**'],[createElement('strong',null,'BN vs LN？'),createElement('span',null,'BN vs LN')]]){
+  let renders=0;
+  const context={draft:{read:(_key,fallback)=>fallback},contentNavigation:{onSkip(){}}};
+  const result=boundary('flashcard',{front,back},context,props=>{
+   renders++;for(const rating of ['again','hard','good','easy'])props.onGrade(rating);
+   return createElement('p',null,'INVALID GRADING VIEW');
+  });
+  assert.equal(renders,0);assert.equal(result.grades,0);
+  assert.match(result.html,/本题暂不计入成绩/);assert.match(result.html,/暂时跳过，不计成绩/);
+ }
+});
+
 test('word sources with recall or flashcard recommendation retain their valid reference in every compatible view',()=>{
  const word={word:'Tree',meaning:'树',context:'植物',example:'A tree grows here.'};
  for(const sourceMode of ['recall','flashcard'])for(const mode of ['recall','flashcard','spelling']){

@@ -17,6 +17,11 @@ const criteria=[{id:'definition',text:'说明观察结果与因果结论的区�
 let item={id:'edu-q1',itemId:'edu-q1',fingerprint:'synthetic-edu',questionType:'recall',prompt:'如何区分观察结果与单项因素的贡献？',answer:'观察到整体提升，并不能单独确定某个因素的贡献；需要控制其他条件进行比较。',explanation:'观察到整体提升，并不能单独确定某个因素的贡献；需要控制其他条件进行比较。'};
 let pluginMode='recall',sourceMode='recall',source=item;
 if(['echo','inline','extra'].includes(mode))Object.assign(item,{answer:item.prompt,explanation:item.prompt});
+if(mode==='formatted-echo')Object.assign(item,{prompt:'BN vs LN？',answer:'`BN vs LN`',explanation:'**BN vs LN**'});
+if(['duplicate-card','formatted-card','restored-card'].includes(mode)){
+ pluginMode=sourceMode='flashcard';
+ Object.assign(item,{questionType:'flashcard',prompt:'BN vs LN？',front:'BN vs LN？',back:mode==='formatted-card'?'**BN vs LN**':'BN vs LN',answer:'BN vs LN',explanation:'BN vs LN'});
+}
 if(['mandatory','partial'].includes(mode))item.learningSupport={schemaVersion:1,type:'recall',criteria};
 if(mode==='invalid-config')item.learningSupport={schemaVersion:999,type:'recall',criteria};
 if(mode==='quiz'){
@@ -38,7 +43,14 @@ if(mode==='legacy-flashcard'){
 }
 Object.freeze(source);Object.freeze(item);probe.original=JSON.stringify([item,source]);
 function Trial(){
- const store=useMemo(()=>createLearningDraftStore('edu-browser'),[]),[done,setDone]=useState(false);
+ const store=useMemo(()=>{
+  const value=createLearningDraftStore('edu-browser');
+  if(mode==='restored-card'){
+   const restored=value.adapter('q1','flashcard');
+   restored.write('isFlipped',true);restored.write('flashcardRating','good');
+  }
+  return value;
+ },[]),[done,setDone]=useState(false);
  const draft=store.adapter('q1',pluginMode),Plugin=registry.get('@zhixue/plugin-'+pluginMode);
  const skip=()=>{probe.skips++;store.clearItem('q1');setDone(true);};
  if(done)return <section><h2>本轮练习结束</h2><p>这是隔离测试，没有写入正式学习成绩。</p></section>;

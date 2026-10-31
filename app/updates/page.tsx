@@ -42,7 +42,16 @@ const learningFlowUpdate = {
     '词库组、当前步骤和本组完成数分别显示；到期回忆核对不再伪装为逐步完成三个阶段。已有答案和学习记录保留。',
   ],
 };
-const history = [...announcements, experienceUpdate, webUpdate, reliabilityUpdate, learningFlowUpdate].sort((a, b) => b.date.localeCompare(a.date));
+const referenceGuardUpdate = {
+  version: '', date: '2026-10-31', title: '重复卡片暂缓评分，回忆参考核对更严格',
+  changes: [
+    '卡片背面仅重复题面时，暂不计入成绩，可核对来源或暂时跳过。',
+    '回忆参考会过滤已识别的加粗、行内代码等题干重复形式；缺少可核对的参考时不请求 AI 判定。',
+    '保留数字零、大小写、数学运算和代码表达的差异，已有学习记录与来源材料保持原样。',
+    '本次网页更新不升级已安装的 Companion。',
+  ],
+};
+const history = [...announcements, experienceUpdate, webUpdate, reliabilityUpdate, learningFlowUpdate, referenceGuardUpdate].sort((a, b) => b.date.localeCompare(a.date));
 
 export default function UpdatesPage() {
   return <main className="support-page">

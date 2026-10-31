@@ -1,6 +1,6 @@
 import type { PracticeMode as PluginType, LearningSupport } from '../content/index';
 // @ts-expect-error TS5097: standalone Node contract tests.
-import { parseLearningSupport, assessmentContentShape, needsConcreteRecallQuestion, courseTaskReadiness, hasExecutableCodeMaterial } from '../content/index.ts';
+import { parseLearningSupport, assessmentContentShape, needsConcreteRecallQuestion, courseTaskReadiness, hasExecutableCodeMaterial, isRecallEcho } from '../content/index.ts';
 // @ts-expect-error TS5097: standalone Node contract tests.
 import { recallReference } from './recall-reference.ts';
 // @ts-expect-error TS5097: standalone Node contract tests.
@@ -130,16 +130,22 @@ export function checkContentQuality(mode: PluginType, input: unknown): ContentCh
     else if (mode === 'flashcard') {
         const back = data.back ?? data.answer ?? data.explanation;
         canSelfCheck = Boolean(text(back));
+        let echoed = isRecallEcho(text(back), text(data.front));
         if (support?.type === 'flashcard') {
             if (!support.parentId)
                 issue('unexpanded-flashcard', 'learningSupport', '本组卡片尚未展开，请更新来源后重试。');
             if (support.mode === 'occlusion') {
+                echoed = false; // The image, not its text caption, is the question.
                 canSelfCheck = Boolean(support.masks.find(mask => mask.id === support.activeMaskId)?.answer.trim());
                 // Decoding and asset-version checks remain enforced by FlashcardImage.
                 issue('asset-readiness-required', 'learningSupport', '图片加载及版本核对完成后才可评分。', 'notice');
             }
         }
-        if (!canSelfCheck)
+        if (echoed) {
+            canSelfCheck = false;
+            issue('echoed-flashcard-reference', 'back', '卡片背面重复了题面，尚无可核对的答案，暂不计入成绩。');
+        }
+        else if (!canSelfCheck)
             issue('missing-flashcard-reference', 'back', '本题缺少卡片背面或遮挡答案，暂不计入成绩。');
     }
     else if (mode === 'three-stage' || mode === 'spelling') {

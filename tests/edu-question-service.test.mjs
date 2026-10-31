@@ -13,6 +13,18 @@ test('account service refuses missing/echo-only references before sending any pr
  for(const data of [{prompt:'为什么？',answer:'为什么？',explanation:'为什么？',reviewPoint:'为什么？'},{prompt:'解释概念。',answer:'',explanation:'',reviewPoint:'解释概念。'}])await assert.rejects(service.run(request,await item(data),{maxOutputTokens:300}),/missing-reference/);
  assert.equal(calls,0);
 });
+
+test('account service rejects formatted echoes without a provider call or source mutation',async()=>{
+ let calls=0;
+ const service=createAccountStudyQuestionAi({enabled:true,key:'synthetic',model:'fixture',fetcher:async()=>{calls++;throw Error('must not call');}});
+ for(const reference of ['**BN vs LN**','__BN vs LN__','`BN vs LN`','**`BN vs LN`**']){
+  const original=await item({prompt:'BN vs LN？',answer:reference,explanation:reference,reviewPoint:reference});
+  const before=JSON.stringify(original);
+  await assert.rejects(service.run(request,original,{maxOutputTokens:300}),/missing-reference/);
+  assert.equal(JSON.stringify(original),before);
+ }
+ assert.equal(calls,0);
+});
 test('account provider sees a valid reference rather than echoing explanation; original content/hash unchanged',async()=>{
  const original=await item({explanation:'为什么需要对照？'}),before=JSON.stringify(original);let calls=0;
  const service=createAccountStudyQuestionAi({enabled:true,key:'synthetic',model:'fixture',fetcher:async(_url,init)=>{

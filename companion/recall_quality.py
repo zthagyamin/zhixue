@@ -95,9 +95,30 @@ def needs_concrete_recall_question(item: dict) -> bool:
         r"请闭卷回忆(?:「[^」]*」|这条复习记录)的核心要点，并说明相关概念、依据或适用条件[。.!！?？]*", prompt))
 
 
+def _reference_formatting(text: str) -> str:
+    """Strip paired presentation markup; keep code contents and powers literal."""
+    markup = re.compile(
+        r"(?<!`)(`+)([^`\r\n]+)\1(?!`)"
+        r"|(?<![A-Za-z0-9_*])\*\*([^\s*](?:[^*\r\n]*[^\s*])?)\*\*(?![A-Za-z0-9_*])"
+        r"|(?<![A-Za-z0-9_])__([^\s_](?:[^_\r\n]*[^\s_])?)__(?![A-Za-z0-9_])"
+    )
+
+    def replace(match: re.Match) -> str:
+        if match.group(1):
+            return match.group(2)
+        # A pair of ** between operands can be a power chain, not emphasis.
+        if (match.group(3) is not None
+                and re.search(r"[A-Za-z0-9_)\]]\s*$", text[:match.start()])
+                and re.match(r"\s*[+-]?\s*(?:[A-Za-z0-9_(]|\.\d)", text[match.end():])):
+            return match.group(0)
+        return _reference_formatting(match.group(3) or match.group(4) or "")
+
+    return markup.sub(replace, text)
+
+
 def is_recall_echo(reference: str, prompt: str) -> bool:
     def normalized(value: str) -> str:
-        value = value.strip()
+        value = _reference_formatting(value).strip()
         while _WRAPPER.match(value):
             value = _WRAPPER.sub("", value, count=1)
         value = re.sub(r"^(?:参考答案|参考要点|答案|解析)\s*[:：]\s*", "", value, count=1)
